@@ -7,28 +7,8 @@ This project generates benchmark samples for a **single patient** by:
 3. calling an LLM model to synthesize a chronological doctor-patient inpatient conversation,
 4. writing reproducible artifacts (`packet.json`, prompts, logs, `conversation.jsonl`, `summary.json`).
 
-Scope in this implementation:
-- `Benchmark generation`: implemented
 
 
-## Folder Structure
-
-```text
-medical_benchmark/
-├── main.py
-├── requirements.txt
-├── README.md
-└── med_benchmark/
-    ├── config.py
-    ├── duckdb_store.py
-    ├── extractor.py
-    ├── llm_client.py
-    ├── pipeline.py
-    ├── prompting.py
-    ├── utils.py
-    ├── validation.py
-    └── writers.py
-```
 
 ## Prerequisites
 
@@ -96,8 +76,8 @@ Generated under:
 medical_benchmark/output/
 ├── top1000_by_admission_count.csv
 └── <SUBJECT_ID>/
-    ├── conversation_details.jsonl    # all turns with full metadata (adds subject_id, hadm_id)
-    ├── conversation_only.json        # grouped by admission; each turn keeps only speaker + text
+    ├── conversation_details.jsonl    # all turns with full data
+    ├── conversation_only.json        # each turn keeps only speaker + text
     ├── patient_manifest.json
     └── admissions/<HADM_ID>/
         ├── packet.json
@@ -107,5 +87,5 @@ medical_benchmark/output/
         ├── raw_model_output.json
         ├── conversation.jsonl
         ├── summary.json
-        └── unlinked_notes.json        # optional (if unlinked radiology notes exist)
+        └── unlinked_notes.json     
 ```
