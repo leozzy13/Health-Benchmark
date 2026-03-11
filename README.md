@@ -1,4 +1,4 @@
-# Simplified MIMIC Admission Benchmark
+# A Long Context Medical Benchmark
 
 This project generates a simplified, generation-only long-context benchmark from MIMIC-IV v3.1 and MIMIC-IV-Note v2.2.
 
