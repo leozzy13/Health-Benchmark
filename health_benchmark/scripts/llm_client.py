@@ -5,34 +5,27 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel
+
 from .config import BenchmarkConfig
+from .validation import GenerationOutput
 
 
 def _import_openai():
     try:
         from openai import OpenAI  # type: ignore
     except ImportError as exc:  # pragma: no cover - runtime dependency
-        raise RuntimeError(
-            "openai package is required for model calls. Install dependencies in requirements.txt"
-        ) from exc
+        raise RuntimeError("openai is required. Install dependencies in requirements.txt") from exc
     return OpenAI
 
 
 @dataclass
-class LLMAttempt:
-    attempt_index: int
-    status: str
-    latency_ms: int
-    input_tokens: int | None
-    output_tokens: int | None
-    error: str | None
-
-
-@dataclass
 class LLMCallResult:
-    text: str
+    parsed_output: dict[str, Any]
     raw_response: dict[str, Any]
-    attempts: list[LLMAttempt]
+    usage: dict[str, int]
+    response_id: str | None
+    latency_ms: int
 
 
 class OpenAILLMClient:
@@ -43,102 +36,67 @@ class OpenAILLMClient:
     @property
     def client(self):
         if self._client is None:
-            api_key = os.getenv(self.config.model.api_key_env)
+            api_key = os.getenv(self.config.openai.api_key_env)
             if not api_key:
                 raise RuntimeError(
-                    f"Missing API key in environment variable {self.config.model.api_key_env}."
+                    f"Missing API key in environment variable {self.config.openai.api_key_env}."
                 )
             OpenAI = _import_openai()
-            client_kwargs: dict[str, Any] = {
+            kwargs: dict[str, Any] = {
                 "api_key": api_key,
-                "timeout": self.config.model.timeout_seconds,
+                "timeout": self.config.openai.timeout_seconds,
             }
-            if self.config.model.openai_base_url:
-                client_kwargs["base_url"] = self.config.model.openai_base_url
-            self._client = OpenAI(**client_kwargs)
+            if self.config.openai.base_url:
+                kwargs["base_url"] = self.config.openai.base_url
+            self._client = OpenAI(**kwargs)
         return self._client
 
-    def generate_with_retries(self, system_message: str, user_message: str) -> LLMCallResult:
-        attempts: list[LLMAttempt] = []
-        last_error: Exception | None = None
-        raw_response: dict[str, Any] = {}
-        response_text = ""
+    def generate_structured_response(
+        self,
+        system_message: str,
+        user_message: str,
+        response_schema: type[BaseModel],
+    ) -> LLMCallResult:
+        started = time.time()
+        response = self.client.responses.parse(
+            model=self.config.openai.model,
+            instructions=system_message,
+            input=user_message,
+            temperature=self.config.openai.temperature,
+            max_output_tokens=self.config.openai.max_output_tokens,
+            text_format=response_schema,
+        )
+        latency_ms = int((time.time() - started) * 1000)
+        parsed_output = response.output_parsed
+        if parsed_output is None:
+            raise RuntimeError("OpenAI response did not contain parsed structured output.")
+        usage = getattr(response, "usage", None)
+        return LLMCallResult(
+            parsed_output=parsed_output.model_dump(mode="json"),
+            raw_response=self._serialize_response(response),
+            usage={
+                "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
+                "output_tokens": int(getattr(usage, "output_tokens", 0) or 0),
+                "total_tokens": int(getattr(usage, "total_tokens", 0) or 0),
+            },
+            response_id=getattr(response, "id", None),
+            latency_ms=latency_ms,
+        )
 
-        total_attempts = max(1, int(self.config.model.retry_limit))
-        for attempt_idx in range(1, total_attempts + 1):
-            started = time.time()
+    def generate_response(self, system_message: str, user_message: str) -> LLMCallResult:
+        return self.generate_structured_response(system_message, user_message, GenerationOutput)
+
+    @staticmethod
+    def _serialize_response(response: Any) -> dict[str, Any]:
+        if hasattr(response, "model_dump"):
             try:
-                request_kwargs: dict[str, Any] = {
-                    "model": self.config.model.name,
-                    "temperature": self.config.model.temperature,
-                    "max_output_tokens": self.config.model.max_output_tokens,
-                    "text": {"format": {"type": "json_object"}},
-                    "input": [
-                        {"role": "system", "content": [{"type": "input_text", "text": system_message}]},
-                        {"role": "user", "content": [{"type": "input_text", "text": user_message}]},
-                    ],
-                }
-                if self.config.model.seed is not None:
-                    request_kwargs["seed"] = self.config.model.seed
-                resp = self.client.responses.create(**request_kwargs)
-                latency_ms = int((time.time() - started) * 1000)
-                response_text = self._extract_text(resp)
-                raw_response = self._serialize_response(resp)
-                usage = getattr(resp, "usage", None)
-                input_tokens = getattr(usage, "input_tokens", None) if usage else None
-                output_tokens = getattr(usage, "output_tokens", None) if usage else None
-                attempts.append(
-                    LLMAttempt(
-                        attempt_index=attempt_idx,
-                        status="ok",
-                        latency_ms=latency_ms,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        error=None,
-                    )
-                )
-                return LLMCallResult(text=response_text, raw_response=raw_response, attempts=attempts)
-            except Exception as exc:  # pragma: no cover - network/runtime
-                latency_ms = int((time.time() - started) * 1000)
-                last_error = exc
-                attempts.append(
-                    LLMAttempt(
-                        attempt_index=attempt_idx,
-                        status="error",
-                        latency_ms=latency_ms,
-                        input_tokens=None,
-                        output_tokens=None,
-                        error=str(exc),
-                    )
-                )
-
-        raise RuntimeError(f"Model call failed after {total_attempts} attempts: {last_error}")
-
-    @staticmethod
-    def _extract_text(resp: Any) -> str:
-        output_text = getattr(resp, "output_text", None)
-        if isinstance(output_text, str) and output_text.strip():
-            return output_text
-
-        chunks: list[str] = []
-        outputs = getattr(resp, "output", None) or []
-        for item in outputs:
-            for content in getattr(item, "content", []) or []:
-                text = getattr(content, "text", None)
-                if isinstance(text, str):
-                    chunks.append(text)
-        if chunks:
-            return "".join(chunks)
-        raise RuntimeError("OpenAI response did not contain text output.")
-
-    @staticmethod
-    def _serialize_response(resp: Any) -> dict[str, Any]:
-        if hasattr(resp, "model_dump"):
-            return resp.model_dump()
-        if hasattr(resp, "to_dict"):
-            return resp.to_dict()
-        return {"repr": repr(resp)}
+                return response.model_dump(warnings=False)
+            except TypeError:
+                return response.model_dump()
+        if hasattr(response, "to_dict"):
+            return response.to_dict()
+        return {"repr": repr(response)}
 
 
-def build_llm_client(config: BenchmarkConfig):
+def build_llm_client(config: BenchmarkConfig) -> OpenAILLMClient:
     return OpenAILLMClient(config)

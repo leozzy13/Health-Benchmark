@@ -1,147 +1,185 @@
 from __future__ import annotations
 
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
-@dataclass
-class DatasetVersions:
-    mimiciv: str = "3.1"
-    mimiciv_note: str = "2.2"
+def _import_yaml():
+    try:
+        import yaml  # type: ignore
+    except ImportError as exc:  # pragma: no cover - runtime dependency
+        raise RuntimeError("PyYAML is required. Install dependencies in requirements.txt") from exc
+    return yaml
 
 
 @dataclass
-class NullHandlingPolicy:
-    labevents_hadm_id_null: str = "PROXIMAL_TIME_JOIN"
-    microbiologyevents_hadm_id_null: str = "PROXIMAL_TIME_JOIN"
-    emar_hadm_id_null: str = "LINK_VIA_PHARMACY_OR_TIME_WINDOW"
-    radiology_hadm_id_null: str = "LOG_AND_EXCLUDE_BY_DEFAULT"
+class DatasetConfig:
+    mimiciv_hosp_path: Path
+    mimiciv_note_path: Path
 
 
 @dataclass
-class TruncationConfig:
-    ruleset_id: str = "trunc.v1"
-    # `None` means uncapped.
-    per_section_row_caps: dict[str, int | None] = field(
-        default_factory=lambda: {
-            "transfers": None,
-            "services": None,
-            "discharge": None,
-            "discharge_detail": None,
-            "radiology": None,
-            "radiology_detail": None,
-            "labs": 800,
-            "microbiology": 200,
-            "poe": 400,
-            "poe_detail": 800,
-            "prescriptions": 400,
-            "pharmacy": 400,
-            "emar": 600,
-            "emar_detail": 1200,
-            "diagnoses_icd": 80,
-            "procedures_icd": 80,
-            "drgcodes": 20,
-            "icustays": 20,
-        }
-    )
+class OutputConfig:
+    root: Path
 
 
 @dataclass
-class ExtractionConfig:
-    proximal_lab_capture: bool = True
-    proximal_micro_capture: bool = True
-    proximal_padding_hours: int = 0
-    include_icu_stays: bool = True
-    include_omr_baseline: bool = False
-    require_discharge_note: bool = True
-    only_admissions_with_discharge: bool = True
-    include_unlinked_radiology_in_sidecar: bool = True
-    emar_time_window_fallback: bool = True
-    stable_order_admissions_by: str = "admittime ASC, hadm_id ASC"
+class SelectionConfig:
+    subject_id: int | None
+    max_admissions: int | None
 
 
 @dataclass
-class PromptConfig:
-    template_version: str = "prompt.v1.0"
-    delimiters: dict[str, str] = field(
-        default_factory=lambda: {
-            "metadata": "<<BENCHMARK_METADATA>>",
-            "metadata_end": "<<END_BENCHMARK_METADATA>>",
-            "prev_summary": "<<PREVIOUS_ADMISSION_SUMMARY>>",
-            "prev_summary_end": "<<END_PREVIOUS_ADMISSION_SUMMARY>>",
-            "ehr_json": "<<EHR_PACKET_JSON>>",
-            "ehr_json_end": "<<END_EHR_PACKET_JSON>>",
-            "task": "<<TASK>>",
-            "task_end": "<<END_TASK>>",
-        }
-    )
+class OpenAIConfig:
+    model: str
+    temperature: float
+    max_output_tokens: int
+    timeout_seconds: int
+    max_retries: int
+    api_key_env: str
+    base_url: str | None
 
 
 @dataclass
-class ModelConfig:
-    name: str = "gpt-4.1-mini"
-    temperature: float = 0.0
-    max_output_tokens: int = 12000
-    reasoning_effort: str | None = None
-    seed: int | None = None
-    retry_limit: int = 2
-    timeout_seconds: int = 180
-    api_key_env: str = "OPENAI_API_KEY"
-    openai_base_url: str | None = None
+class RuntimeConfig:
+    use_duckdb: bool
+    save_raw_response: bool
+    replace_existing_patient_output: bool
+    staging_dir_name: str = "_tmp"
 
 
 @dataclass
 class PathsConfig:
+    repo_root: Path
     project_dir: Path
-    mimiciv_dir: Path
-    mimiciv_note_dir: Path
-    output_root: Path
-
-    def as_serializable(self) -> dict[str, str]:
-        return {
-            "project_dir": str(self.project_dir),
-            "mimiciv_dir": str(self.mimiciv_dir),
-            "mimiciv_note_dir": str(self.mimiciv_note_dir),
-            "output_root": str(self.output_root),
-        }
+    config_path: Path
 
 
 @dataclass
 class BenchmarkConfig:
-    benchmark_name: str = "mimic_longctx"
-    benchmark_version: str = "0.1.0"
-    packet_schema_version: str = "0.1.0"
-    manifest_schema_version: str = "0.1.0"
-    dataset_versions: DatasetVersions = field(default_factory=DatasetVersions)
-    null_handling: NullHandlingPolicy = field(default_factory=NullHandlingPolicy)
-    truncation: TruncationConfig = field(default_factory=TruncationConfig)
-    extraction: ExtractionConfig = field(default_factory=ExtractionConfig)
-    prompt: PromptConfig = field(default_factory=PromptConfig)
-    model: ModelConfig = field(default_factory=ModelConfig)
-    paths: PathsConfig | None = None
-    strict_validation: bool = True
-
-    def to_log_dict(self) -> dict[str, Any]:
-        data = asdict(self)
-        if self.paths is not None:
-            data["paths"] = self.paths.as_serializable()
-        return data
+    benchmark_name: str
+    benchmark_version: str
+    packet_schema_version: str
+    dataset_versions: dict[str, str]
+    dataset: DatasetConfig
+    output: OutputConfig
+    selection: SelectionConfig
+    openai: OpenAIConfig
+    runtime: RuntimeConfig
+    paths: PathsConfig
 
 
 def build_default_config(project_dir: Path) -> BenchmarkConfig:
     project_dir = project_dir.resolve()
     repo_root = project_dir.parent
+    config_path = repo_root / "config.yaml"
+    raw = _load_yaml_config(config_path)
+
     data_dir = repo_root / "data"
-    mimiciv_dir = Path(os.getenv("MIMIC_IV_DIR", str(data_dir / "mimic-iv"))).resolve()
-    mimiciv_note_dir = Path(os.getenv("MIMIC_IV_NOTE_DIR", str(data_dir / "mimic-iv-notes"))).resolve()
-    output_root = Path(os.getenv("MEDBENCH_OUTPUT_ROOT", str(repo_root / "output"))).resolve()
-    cfg = BenchmarkConfig()
-    cfg.paths = PathsConfig(
-        project_dir=project_dir,
-        mimiciv_dir=mimiciv_dir,
-        mimiciv_note_dir=mimiciv_note_dir,
-        output_root=output_root,
+    default_hosp = data_dir / "mimic-iv" / "hosp"
+    default_note = data_dir / "mimic-iv-notes"
+    default_output = repo_root / "output"
+
+    dataset_cfg = raw.get("dataset", {})
+    output_cfg = raw.get("output", {})
+    selection_cfg = raw.get("selection", {})
+    openai_cfg = raw.get("openai", {})
+    runtime_cfg = raw.get("runtime", {})
+
+    hosp_path = _resolve_path(
+        os.getenv("MIMIC_IV_HOSP_PATH")
+        or _normalize_mimiciv_root_env(os.getenv("MIMIC_IV_DIR"))
+        or dataset_cfg.get("mimiciv_hosp_path")
+        or str(default_hosp),
+        repo_root,
     )
-    return cfg
+    note_path = _resolve_path(
+        os.getenv("MIMIC_IV_NOTE_PATH")
+        or os.getenv("MIMIC_IV_NOTE_DIR")
+        or dataset_cfg.get("mimiciv_note_path")
+        or str(default_note),
+        repo_root,
+    )
+    output_root = _resolve_path(
+        os.getenv("MEDBENCH_OUTPUT_ROOT") or output_cfg.get("root") or str(default_output),
+        repo_root,
+    )
+
+    return BenchmarkConfig(
+        benchmark_name=str(raw.get("benchmark_name", "mimic_longctx")),
+        benchmark_version=str(raw.get("benchmark_version", "0.2.0")),
+        packet_schema_version=str(raw.get("packet_schema_version", "0.2.0")),
+        dataset_versions={
+            "mimiciv": str(raw.get("dataset_versions", {}).get("mimiciv", "3.1")),
+            "mimiciv_note": str(raw.get("dataset_versions", {}).get("mimiciv_note", "2.2")),
+        },
+        dataset=DatasetConfig(
+            mimiciv_hosp_path=hosp_path,
+            mimiciv_note_path=note_path,
+        ),
+        output=OutputConfig(root=output_root),
+        selection=SelectionConfig(
+            subject_id=_coerce_optional_int(selection_cfg.get("subject_id")),
+            max_admissions=_coerce_optional_int(selection_cfg.get("max_admissions")),
+        ),
+        openai=OpenAIConfig(
+            model=str(openai_cfg.get("model", "gpt-5.2")),
+            temperature=float(openai_cfg.get("temperature", 0.2)),
+            max_output_tokens=int(openai_cfg.get("max_output_tokens", 8000)),
+            timeout_seconds=int(openai_cfg.get("timeout_seconds", 300)),
+            max_retries=int(openai_cfg.get("max_retries", 1)),
+            api_key_env=str(openai_cfg.get("api_key_env", "OPENAI_API_KEY")),
+            base_url=_coerce_optional_str(openai_cfg.get("base_url")),
+        ),
+        runtime=RuntimeConfig(
+            use_duckdb=bool(runtime_cfg.get("use_duckdb", True)),
+            save_raw_response=bool(runtime_cfg.get("save_raw_response", True)),
+            replace_existing_patient_output=bool(runtime_cfg.get("replace_existing_patient_output", True)),
+        ),
+        paths=PathsConfig(
+            repo_root=repo_root,
+            project_dir=project_dir,
+            config_path=config_path,
+        ),
+    )
+
+
+def _load_yaml_config(config_path: Path) -> dict[str, Any]:
+    if not config_path.exists():
+        return {}
+    yaml = _import_yaml()
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise RuntimeError(f"Config file must contain a YAML object: {config_path}")
+    return data
+
+
+def _resolve_path(value: str | os.PathLike[str], repo_root: Path) -> Path:
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = (repo_root / path).resolve()
+    return path.resolve()
+
+
+def _normalize_mimiciv_root_env(value: str | None) -> str | None:
+    if not value:
+        return None
+    base = Path(value).expanduser()
+    hosp_dir = base / "hosp"
+    if hosp_dir.exists():
+        return str(hosp_dir)
+    return str(base)
+
+
+def _coerce_optional_int(value: Any) -> int | None:
+    if value in (None, "", "null"):
+        return None
+    return int(value)
+
+
+def _coerce_optional_str(value: Any) -> str | None:
+    if value in (None, "", "null"):
+        return None
+    return str(value)

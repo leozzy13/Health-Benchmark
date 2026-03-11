@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date, datetime, timedelta
+import re
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 
 
-DATE_ONLY_FIELDS = {"chartdate", "storedate", "expirationdate"}
+EXACT_TS_FORMAT = "%Y-%m-%d %H:%M:%S"
+DATE_ONLY_FORMAT = "%Y-%m-%d"
 
 
 def ensure_dir(path: Path) -> Path:
@@ -20,7 +22,7 @@ def canonical_json_dumps(data: Any) -> str:
 
 
 def pretty_json_dumps(data: Any) -> str:
-    return json.dumps(data, indent=2, sort_keys=False, ensure_ascii=False)
+    return json.dumps(data, indent=2, ensure_ascii=False)
 
 
 def sha256_hex(text: str) -> str:
@@ -28,7 +30,7 @@ def sha256_hex(text: str) -> str:
 
 
 def write_text(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_dir(path.parent)
     path.write_text(text, encoding="utf-8")
 
 
@@ -36,117 +38,102 @@ def write_json(path: Path, data: Any) -> None:
     write_text(path, pretty_json_dumps(data) + "\n")
 
 
-def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(canonical_json_dumps(row))
-            f.write("\n")
+def format_dt(value: datetime | date | str | None) -> str | None:
+    dt = parse_dt(value)
+    if dt is None:
+        return None
+    return dt.strftime(EXACT_TS_FORMAT)
 
 
 def parse_dt(value: Any) -> datetime | None:
     if value is None or value == "":
         return None
     if isinstance(value, datetime):
-        return value
+        return value.replace(microsecond=0)
     if isinstance(value, date):
-        return datetime.combine(value, datetime.min.time())
+        return datetime.combine(value, time.min)
     if isinstance(value, str):
-        value = value.strip()
-        if not value:
+        stripped = value.strip()
+        if not stripped:
             return None
-        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"):
+        for fmt in (EXACT_TS_FORMAT, DATE_ONLY_FORMAT, "%Y-%m-%dT%H:%M:%S"):
             try:
-                dt = datetime.strptime(value, fmt)
-                if fmt == "%Y-%m-%d":
-                    return datetime.combine(dt.date(), datetime.min.time())
-                return dt
+                parsed = datetime.strptime(stripped, fmt)
+                if fmt == DATE_ONLY_FORMAT:
+                    return datetime.combine(parsed.date(), time.min)
+                return parsed
             except ValueError:
                 continue
     return None
 
 
-def dt_to_iso(value: Any, field_name: str | None = None) -> str | None:
-    if value is None or value == "":
-        return None
-    if isinstance(value, str):
-        dt = parse_dt(value)
-        if dt is None:
-            return value
-        return dt.strftime("%Y-%m-%dT%H:%M:%S")
-    if isinstance(value, datetime):
-        return value.strftime("%Y-%m-%dT%H:%M:%S")
-    if isinstance(value, date):
-        if field_name in DATE_ONLY_FIELDS:
-            return datetime.combine(value, datetime.min.time()).strftime("%Y-%m-%dT%H:%M:%S")
-        return value.isoformat()
-    return str(value)
-
-
-def normalize_scalar(value: Any, field_name: str | None = None) -> Any:
+def normalize_scalar(value: Any) -> Any:
     if value is None:
         return None
-    if isinstance(value, (datetime, date)):
-        return dt_to_iso(value, field_name=field_name)
+    if isinstance(value, datetime):
+        return value.replace(microsecond=0).strftime(EXACT_TS_FORMAT)
+    if isinstance(value, date):
+        return value.strftime(DATE_ONLY_FORMAT)
     if isinstance(value, timedelta):
-        return value.total_seconds()
+        return int(value.total_seconds())
     return value
 
 
 def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-    return {k: normalize_scalar(v, field_name=k) for k, v in row.items()}
+    return {key: normalize_scalar(value) for key, value in row.items()}
 
 
-def minutes_since(start_dt: datetime | None, event_dt: Any) -> int | None:
-    if start_dt is None:
-        return None
-    dt = parse_dt(event_dt)
+def normalize_date_to_noon(value: Any) -> str | None:
+    dt = parse_dt(value)
     if dt is None:
         return None
-    return int((dt - start_dt).total_seconds() // 60)
+    noon_dt = datetime.combine(dt.date(), time(hour=12))
+    return noon_dt.strftime(EXACT_TS_FORMAT)
 
 
-def format_relative_time_from_minutes(minutes: int | None) -> str | None:
-    if minutes is None:
-        return None
-    sign = "-" if minutes < 0 else ""
-    abs_min = abs(minutes)
-    hours, mins = divmod(abs_min, 60)
-    return f"{sign}H+{hours:02d}:{mins:02d}"
+def dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for row in rows:
+        key = canonical_json_dumps(row)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(row)
+    return unique
 
 
-def hospital_day_label(minutes: int | None) -> str | None:
-    if minutes is None:
-        return None
-    if minutes < 0:
-        return None
-    day = (minutes // (24 * 60)) + 1
-    hh = (minutes % (24 * 60)) // 60
-    mm = minutes % 60
-    return f"HospitalDay{day} {hh:02d}:{mm:02d}"
+def split_sentences(text: str) -> list[str]:
+    raw_parts = re.split(r"(?<=[.!?])\s+|\n+", text or "")
+    sentences: list[str] = []
+    for part in raw_parts:
+        normalized = normalize_grounding_phrase(part)
+        if len(normalized) < 12:
+            continue
+        sentences.append(normalized)
+    return sentences
 
 
-def clip_rows(rows: list[dict[str, Any]], cap: int | None) -> tuple[list[dict[str, Any]], bool]:
-    if cap is None or cap < 0:
-        return rows, False
-    if len(rows) <= cap:
-        return rows, False
-    return rows[:cap], True
+def normalize_grounding_phrase(text: str) -> str:
+    compact = re.sub(r"\s+", " ", (text or "").strip())
+    compact = compact.strip(" ,;:.")
+    return compact.lower()
 
 
-def flatten_eids(obj: Any) -> set[str]:
-    eids: set[str] = set()
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == "eid" and isinstance(v, str):
-                eids.add(v)
-            else:
-                eids.update(flatten_eids(v))
-    elif isinstance(obj, list):
-        for item in obj:
-            eids.update(flatten_eids(item))
-    return eids
+def round_mean(values: list[int | float]) -> float:
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 1)
 
 
 def utc_now_iso() -> str:
-    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def conversation_token_render(lines: list[dict[str, Any]]) -> str:
+    rendered: list[str] = []
+    for line in lines:
+        rendered.append(
+            f"{line['turn_number']} | {line['time']} | {line['speaker']} | {line['text']}"
+        )
+    return "\n".join(rendered)
