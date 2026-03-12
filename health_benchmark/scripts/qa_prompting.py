@@ -82,7 +82,7 @@ def render_single_admission_qa_prompt(
             "- Keep question wording natural.",
             "- Questions are written for benchmark users, not for the patient.",
             "- Do not use second-person wording like 'you' or 'your' in the question.",
-            "- Use third-person phrasing such as 'the patient', 'the patient's symptoms', or 'the doctor' when needed.",
+            "- Do not use wording like 'he' or 'she' to refer to the patient or the doctor. Use third-person phrasing such as 'the patient', 'the patient's symptoms', or 'the doctor' when needed.",
             "- Do not mention raw identifiers in the question.",
             "- Every question must begin with a date-based admission prefix.",
             "- If the admission spans multiple dates, start with: During the hospitalization from YYYY-MM-DD to YYYY-MM-DD, ...",
