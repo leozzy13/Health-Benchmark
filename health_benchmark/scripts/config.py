@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+DEFAULT_VLLM_BASE_URL = "http://127.0.0.1:8000/v1"
+
 
 def _import_yaml():
     try:
@@ -32,7 +34,8 @@ class SelectionConfig:
 
 
 @dataclass
-class OpenAIConfig:
+class LLMConfig:
+    provider: str
     model: str
     temperature: float
     max_output_tokens: int
@@ -40,6 +43,20 @@ class OpenAIConfig:
     max_retries: int
     api_key_env: str
     base_url: str | None
+    tokenizer_name: str | None
+
+
+OpenAIConfig = LLMConfig
+
+
+@dataclass
+class VLLMConfig:
+    tensor_parallel_size: int
+    max_model_len: int
+    reasoning_parser: str | None
+    language_model_only: bool
+    enable_thinking: bool
+    top_k: int | None
 
 
 @dataclass
@@ -66,9 +83,14 @@ class BenchmarkConfig:
     dataset: DatasetConfig
     output: OutputConfig
     selection: SelectionConfig
-    openai: OpenAIConfig
+    llm: LLMConfig
+    vllm: VLLMConfig
     runtime: RuntimeConfig
     paths: PathsConfig
+
+    @property
+    def openai(self) -> LLMConfig:
+        return self.llm
 
 
 def build_default_config(project_dir: Path) -> BenchmarkConfig:
@@ -85,8 +107,25 @@ def build_default_config(project_dir: Path) -> BenchmarkConfig:
     dataset_cfg = raw.get("dataset", {})
     output_cfg = raw.get("output", {})
     selection_cfg = raw.get("selection", {})
+    llm_cfg = raw.get("llm", {})
     openai_cfg = raw.get("openai", {})
+    vllm_cfg = raw.get("vllm", {})
     runtime_cfg = raw.get("runtime", {})
+
+    if not isinstance(dataset_cfg, dict):
+        raise RuntimeError("Config section 'dataset' must be a YAML object.")
+    if not isinstance(output_cfg, dict):
+        raise RuntimeError("Config section 'output' must be a YAML object.")
+    if not isinstance(selection_cfg, dict):
+        raise RuntimeError("Config section 'selection' must be a YAML object.")
+    if not isinstance(llm_cfg, dict):
+        raise RuntimeError("Config section 'llm' must be a YAML object.")
+    if not isinstance(openai_cfg, dict):
+        raise RuntimeError("Config section 'openai' must be a YAML object.")
+    if not isinstance(vllm_cfg, dict):
+        raise RuntimeError("Config section 'vllm' must be a YAML object.")
+    if not isinstance(runtime_cfg, dict):
+        raise RuntimeError("Config section 'runtime' must be a YAML object.")
 
     hosp_path = _resolve_path(
         os.getenv("MIMIC_IV_HOSP_PATH")
@@ -106,6 +145,11 @@ def build_default_config(project_dir: Path) -> BenchmarkConfig:
         os.getenv("MEDBENCH_OUTPUT_ROOT") or output_cfg.get("root") or str(default_output),
         repo_root,
     )
+    llm_provider = str(llm_cfg.get("provider", "openai") or "openai").strip().lower()
+    llm_base_url = resolve_llm_base_url(
+        llm_provider,
+        _coerce_optional_str(llm_cfg.get("base_url", openai_cfg.get("base_url"))),
+    )
 
     return BenchmarkConfig(
         benchmark_name=str(raw.get("benchmark_name", "mimic_longctx")),
@@ -124,14 +168,24 @@ def build_default_config(project_dir: Path) -> BenchmarkConfig:
             subject_id=_coerce_optional_int(selection_cfg.get("subject_id")),
             max_admissions=_coerce_optional_int(selection_cfg.get("max_admissions")),
         ),
-        openai=OpenAIConfig(
-            model=str(openai_cfg.get("model", "gpt-5.2")),
-            temperature=float(openai_cfg.get("temperature", 0.2)),
-            max_output_tokens=int(openai_cfg.get("max_output_tokens", 8000)),
-            timeout_seconds=int(openai_cfg.get("timeout_seconds", 300)),
-            max_retries=int(openai_cfg.get("max_retries", 1)),
-            api_key_env=str(openai_cfg.get("api_key_env", "OPENAI_API_KEY")),
-            base_url=_coerce_optional_str(openai_cfg.get("base_url")),
+        llm=LLMConfig(
+            provider=llm_provider,
+            model=str(llm_cfg.get("model", openai_cfg.get("model", "gpt-5.2"))),
+            temperature=float(llm_cfg.get("temperature", openai_cfg.get("temperature", 0.2))),
+            max_output_tokens=int(llm_cfg.get("max_output_tokens", openai_cfg.get("max_output_tokens", 8000))),
+            timeout_seconds=int(llm_cfg.get("timeout_seconds", openai_cfg.get("timeout_seconds", 300))),
+            max_retries=int(llm_cfg.get("max_retries", openai_cfg.get("max_retries", 1))),
+            api_key_env=str(llm_cfg.get("api_key_env", openai_cfg.get("api_key_env", "OPENAI_API_KEY"))),
+            base_url=llm_base_url,
+            tokenizer_name=_coerce_optional_str(llm_cfg.get("tokenizer_name")),
+        ),
+        vllm=VLLMConfig(
+            tensor_parallel_size=int(vllm_cfg.get("tensor_parallel_size", 4)),
+            max_model_len=int(vllm_cfg.get("max_model_len", 65536)),
+            reasoning_parser=_coerce_optional_str(vllm_cfg.get("reasoning_parser", "qwen3")),
+            language_model_only=bool(vllm_cfg.get("language_model_only", True)),
+            enable_thinking=bool(vllm_cfg.get("enable_thinking", False)),
+            top_k=_coerce_optional_int(vllm_cfg.get("top_k", 20)),
         ),
         runtime=RuntimeConfig(
             use_duckdb=bool(runtime_cfg.get("use_duckdb", True)),
@@ -161,6 +215,13 @@ def _resolve_path(value: str | os.PathLike[str], repo_root: Path) -> Path:
     if not path.is_absolute():
         path = (repo_root / path).resolve()
     return path.resolve()
+
+
+def resolve_llm_base_url(provider: str, base_url: str | None) -> str | None:
+    normalized_provider = str(provider or "openai").strip().lower()
+    if normalized_provider == "vllm":
+        return base_url or DEFAULT_VLLM_BASE_URL
+    return base_url
 
 
 def _normalize_mimiciv_root_env(value: str | None) -> str | None:

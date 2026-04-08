@@ -34,7 +34,9 @@ Rules:
     or outcomes.
 12. Do not mention the dataset, packet, note types, or that the
     conversation is synthetic.
-13. Return output that exactly matches the required JSON schema."""
+13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.
+14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.
+15. Return output that exactly matches the required JSON schema. """
 
 
 OUTPUT_SCHEMA_REQUIREMENT = """Return JSON with this shape:
@@ -134,6 +136,7 @@ def _build_task_message(stay_days: int, recommended_turn_range: list[int]) -> st
             "- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.",
             "- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.",
             "- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.",
+            "- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.",
             "- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.",
         ]
     )

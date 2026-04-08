@@ -24,16 +24,18 @@ class PacketExtractor:
         self.config = config
 
     def list_admissions_for_subject(self, subject_id: int) -> list[dict[str, Any]]:
+        admissions_table = self.store.cached_table_name("hosp_admissions")
+        discharge_table = self.store.cached_table_name("note_discharge")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT
               a.subject_id,
               a.hadm_id,
               a.admittime,
               a.dischtime,
               COUNT(d.note_id) AS discharge_note_count
-            FROM hosp_admissions a
-            LEFT JOIN note_discharge d
+            FROM {admissions_table} a
+            LEFT JOIN {discharge_table} d
               ON a.subject_id = TRY_CAST(d.subject_id AS BIGINT)
              AND a.hadm_id = TRY_CAST(d.hadm_id AS BIGINT)
             WHERE a.subject_id = ?
@@ -96,20 +98,22 @@ class PacketExtractor:
         return PacketExtractionResult(packet=packet)
 
     def _fetch_admission(self, subject_id: int, hadm_id: int) -> dict[str, Any] | None:
+        admissions_table = self.store.cached_table_name("hosp_admissions")
         return self.store.fetch_one(
-            """
+            f"""
             SELECT subject_id, hadm_id, admittime, dischtime
-            FROM hosp_admissions
+            FROM {admissions_table}
             WHERE subject_id = ? AND hadm_id = ?
             """,
             [int(subject_id), int(hadm_id)],
         )
 
     def _fetch_discharge_notes(self, subject_id: int, hadm_id: int) -> list[dict[str, Any]]:
+        discharge_table = self.store.cached_table_name("note_discharge")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT note_id, note_seq, charttime, storetime, text
-            FROM note_discharge
+            FROM {discharge_table}
             WHERE TRY_CAST(subject_id AS BIGINT) = ? AND TRY_CAST(hadm_id AS BIGINT) = ?
             ORDER BY
               TRY_CAST(note_seq AS BIGINT) ASC NULLS LAST,
@@ -134,10 +138,11 @@ class PacketExtractor:
         return dedupe_rows(normalized)
 
     def _fetch_radiology_notes(self, subject_id: int, hadm_id: int) -> list[dict[str, Any]]:
+        radiology_table = self.store.cached_table_name("note_radiology")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT note_id, charttime, storetime, text
-            FROM note_radiology
+            FROM {radiology_table}
             WHERE TRY_CAST(subject_id AS BIGINT) = ? AND TRY_CAST(hadm_id AS BIGINT) = ?
             ORDER BY charttime ASC NULLS LAST, storetime ASC NULLS LAST, note_id ASC
             """,
@@ -163,14 +168,15 @@ class PacketExtractor:
         admission_start_dt: datetime,
         admission_end_dt: datetime,
     ) -> list[dict[str, Any]]:
+        diagnoses_table = self.store.cached_table_name("hosp_diagnoses_icd")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT
               dx.seq_num,
               dx.icd_code,
               dx.icd_version,
               dd.long_title
-            FROM hosp_diagnoses_icd dx
+            FROM {diagnoses_table} dx
             LEFT JOIN main.hosp_d_icd_diagnoses dd
               ON dx.icd_code = dd.icd_code AND dx.icd_version = dd.icd_version
             WHERE dx.subject_id = ? AND dx.hadm_id = ?
@@ -199,15 +205,16 @@ class PacketExtractor:
         return dedupe_rows(diagnoses)
 
     def _fetch_procedures(self, subject_id: int, hadm_id: int) -> list[dict[str, Any]]:
+        procedures_table = self.store.cached_table_name("hosp_procedures_icd")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT
               px.seq_num,
               px.chartdate,
               px.icd_code,
               px.icd_version,
               dp.long_title
-            FROM hosp_procedures_icd px
+            FROM {procedures_table} px
             LEFT JOIN main.hosp_d_icd_procedures dp
               ON px.icd_code = dp.icd_code AND px.icd_version = dp.icd_version
             WHERE px.subject_id = ? AND px.hadm_id = ?
@@ -233,8 +240,9 @@ class PacketExtractor:
         return dedupe_rows(procedures)
 
     def _fetch_microbiology(self, subject_id: int, hadm_id: int) -> list[dict[str, Any]]:
+        microbiology_table = self.store.cached_table_name("hosp_microbiologyevents")
         rows = self.store.fetch_rows(
-            """
+            f"""
             SELECT
               chartdate,
               charttime,
@@ -244,7 +252,7 @@ class PacketExtractor:
               ab_name,
               interpretation,
               comments
-            FROM hosp_microbiologyevents
+            FROM {microbiology_table}
             WHERE subject_id = ? AND hadm_id = ?
             ORDER BY
               COALESCE(charttime, CAST(chartdate AS TIMESTAMP)) ASC NULLS LAST,

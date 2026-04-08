@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import shutil
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -10,13 +12,17 @@ from .extractor import AdmissionSkipError, PacketExtractor
 from .llm_client import LLMCallResult, build_llm_client
 from .prompting import append_repair_message, render_prompt
 from .qa_pipeline import generate_patient_qa
+from .verify_outputs import verify_patient_outputs
 from .utils import conversation_token_render, ensure_dir, round_mean, utc_now_iso
 from .validation import ValidationError, validate_generation
 from .writers import (
     admission_artifact_paths,
+    batch_run_dir,
+    batch_summary_path,
     benchmark_root,
     patient_dir,
     patient_staging_dir,
+    write_batch_summary,
     write_combined_conversation,
     write_conversation,
     write_packet,
@@ -69,9 +75,9 @@ class BenchmarkPipeline:
         assert self.extractor is not None
 
         resolved_subject_id = int(subject_id if subject_id is not None else self._require_subject_id())
-        resolved_model = model_name or self.config.openai.model
+        resolved_model = model_name or self.config.llm.model
         resolved_max_admissions = max_admissions if max_admissions is not None else self.config.selection.max_admissions
-        self.config.openai.model = resolved_model
+        self.config.llm.model = resolved_model
 
         self.store.prepare_subject_cache(resolved_subject_id)
         eligible_admissions = self.extractor.list_admissions_for_subject(resolved_subject_id)
@@ -187,13 +193,92 @@ class BenchmarkPipeline:
         self._promote_staging_dir(resolved_subject_id, staging_dir)
         return patient_summary
 
+    def generate_all(
+        self,
+        *,
+        subject_ids: list[int],
+        model_name: str | None = None,
+        max_admissions: int | None = None,
+        fail_fast: bool = False,
+    ) -> dict[str, Any]:
+        requested_subject_ids = [int(subject_id) for subject_id in subject_ids]
+        if not requested_subject_ids:
+            raise ValueError("generate_all requires at least one subject_id")
+
+        resolved_model = model_name or self.config.llm.model
+        self.config.llm.model = resolved_model
+        resolved_max_admissions = max_admissions if max_admissions is not None else self.config.selection.max_admissions
+
+        start_time = utc_now_iso()
+        run_root = batch_run_dir(self.config, self._build_batch_run_id())
+        results: list[dict[str, Any]] = []
+        succeeded: list[int] = []
+        failed: list[int] = []
+
+        try:
+            for subject_id in requested_subject_ids:
+                try:
+                    patient_summary = self.generate_patient_sample(
+                        subject_id=subject_id,
+                        model_name=resolved_model,
+                        max_admissions=resolved_max_admissions,
+                    )
+                    qa_summary = self.generate_patient_qa(
+                        subject_id=subject_id,
+                        model_name=resolved_model,
+                    )
+                    verification_summary = verify_patient_outputs(
+                        patient_dir(self.config, subject_id),
+                        expect_qa=True,
+                    )
+                    succeeded.append(subject_id)
+                    results.append(
+                        {
+                            "subject_id": subject_id,
+                            "status": "success",
+                            "patient_summary": patient_summary,
+                            "qa_summary": qa_summary,
+                            "verification_summary": verification_summary,
+                        }
+                    )
+                except Exception as exc:
+                    failed.append(subject_id)
+                    results.append(
+                        {
+                            "subject_id": subject_id,
+                            "status": "failed",
+                            "error": str(exc),
+                            "error_type": type(exc).__name__,
+                        }
+                    )
+                    if fail_fast:
+                        break
+        finally:
+            batch_summary = {
+                "provider": self.config.llm.provider,
+                "model": self.config.llm.model,
+                "start_time": start_time,
+                "end_time": utc_now_iso(),
+                "requested_subject_ids": requested_subject_ids,
+                "succeeded": succeeded,
+                "failed": failed,
+                "fail_fast": bool(fail_fast),
+                "max_admissions": resolved_max_admissions,
+                "results": results,
+                "slurm_job_id": os.getenv("SLURM_JOB_ID"),
+                "final_status": "success" if not failed else "failed",
+            }
+            write_batch_summary(run_root, batch_summary)
+            batch_summary["batch_summary_path"] = str(batch_summary_path(run_root))
+
+        return batch_summary
+
     def generate_patient_qa(
         self,
         *,
         subject_id: int | None = None,
         patient_dir: Path | None = None,
         model_name: str | None = None,
-        single_admission_qa_count: int = 12,
     ) -> dict[str, Any]:
         return generate_patient_qa(
             self.config,
@@ -201,7 +286,6 @@ class BenchmarkPipeline:
             subject_id=subject_id,
             patient_dir=patient_dir,
             model_name=model_name,
-            single_admission_qa_count=single_admission_qa_count,
         )
 
     def _require_subject_id(self) -> int:
@@ -235,7 +319,7 @@ class BenchmarkPipeline:
         system_message: str,
         user_message: str,
     ) -> tuple[LLMCallResult, dict[str, Any]]:
-        max_attempts = max(1, int(self.config.openai.max_retries) + 1)
+        max_attempts = max(1, int(self.config.llm.max_retries) + 1)
         current_user_message = user_message
         latest_error: Exception | None = None
 
@@ -264,8 +348,10 @@ class BenchmarkPipeline:
         record = {
             "subject_id": str(subject_id),
             "hadm_id": str(hadm_id),
-            "model": self.config.openai.model,
-            "temperature": self.config.openai.temperature,
+            "provider": self.config.llm.provider,
+            "model": self.config.llm.model,
+            "temperature": self.config.llm.temperature,
+            "base_url": self.config.llm.base_url,
             "request_timestamp": request_timestamp,
             "system_message": rendered_prompt.system_message,
             "task_message": rendered_prompt.task_message,
@@ -322,6 +408,14 @@ class BenchmarkPipeline:
 
     def _count_conversation_tokens(self, model_name: str, conversation_lines: list[dict[str, Any]]) -> tuple[int, str]:
         tiktoken = _import_tiktoken()
+        configured_tokenizer = self.config.llm.tokenizer_name
+        if configured_tokenizer:
+            try:
+                encoding = tiktoken.get_encoding(configured_tokenizer)
+                rendered_text = conversation_token_render(conversation_lines)
+                return len(encoding.encode(rendered_text)), configured_tokenizer
+            except KeyError:
+                pass
         try:
             encoding = tiktoken.encoding_for_model(model_name)
             encoding_name = getattr(encoding, "name", model_name)
@@ -330,3 +424,10 @@ class BenchmarkPipeline:
             encoding_name = "o200k_base"
         rendered_text = conversation_token_render(conversation_lines)
         return len(encoding.encode(rendered_text)), encoding_name
+
+    def _build_batch_run_id(self) -> str:
+        timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+        slurm_job_id = os.getenv("SLURM_JOB_ID")
+        if slurm_job_id:
+            return f"{timestamp}_slurm_{slurm_job_id}"
+        return timestamp

@@ -70,9 +70,17 @@ python main.py generate-qa \
 ```
 
 
-`generate-qa` uses one model call per admission plus one cross-admission call.
+`generate-qa` uses two model calls per admission plus two cross-admission calls.
 It requires that every admission folder already contains both `conversation.json`
 and `summary.json`.
+
+Evaluate one or more existing patient outputs with open-answer scoring:
+
+```bash
+python main.py evaluate --subject-id 10000032
+python main.py evaluate --subject-ids 10000032 10000048 --models Qwen/Qwen3.5-4B
+python main.py evaluate --patient-manifest /path/to/patients.txt --provider vllm --base-url http://127.0.0.1:8000/v1
+```
 
 ## Output Layout
 
@@ -90,11 +98,29 @@ output/
       conversation.json
       summary.json
       qa.json
+    evaluation/
+      config.json
+      context_stats.json
+      benchmark_snapshot.json
+      comparison/
+        leaderboard.csv
+        leaderboard.json
+        summary.md
+      qwen3.5-4b/
+      qwen3.5-9b/
+      qwen3.5-27b/
 ```
 
 Per-patient generation writes to `output/_tmp/<subject_id>/` first and only replaces `output/<subject_id>/` after a successful run.
 QA generation writes to `output/_tmp/qa_<subject_id>/` first and only replaces QA artifacts on success.
 
 ## Notes
-- Admission-level QA writes `12` single-admission questions per admission by default
-- Patient-level QA also writes `50` cross-admission questions and merges everything into `benchmark_qa.json`
+- Admission-level QA now writes exactly `3` questions per admission
+- Each admission-level QA set contains exactly `2` regular short-answer questions and `1` adversarial short-answer question
+- All QA items use the same open-answer schema: `qa_id`, `scope`, `question_type`, `question`, `answer`, and `evidence`
+- The canonical adversarial answer stored in benchmark outputs is `the question is not answerable`
+- Patient-level cross-admission QA count is derived from admission count as `3 * admission_count`
+- Exactly `1/3` of cross-admission QA items are adversarial short-answer questions
+- `qa.json` and `cross_admission_qa.json` keep grouped regular-then-adversarial ordering; `benchmark_qa.json` is the final deterministic shuffle
+- Evaluation reads `combined_conversation.json` plus `benchmark_qa.json`, uses fixed 10-question batches, and writes model-separated outputs under `output/<subject_id>/evaluation/`
+- Evaluation scores answerable questions with normalized token overlap precision/recall/F1 and adversarial questions with abstention accuracy against `the question is not answerable`

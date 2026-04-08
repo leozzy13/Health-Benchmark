@@ -33,6 +33,14 @@ def patient_staging_dir(config: BenchmarkConfig, subject_id: int) -> Path:
     return staging_root(config) / str(subject_id)
 
 
+def runs_root(config: BenchmarkConfig) -> Path:
+    return benchmark_root(config) / "runs"
+
+
+def batch_run_dir(config: BenchmarkConfig, run_id: str) -> Path:
+    return runs_root(config) / run_id
+
+
 def combined_conversation_path(root: Path) -> Path:
     return root / "combined_conversation.json"
 
@@ -51,6 +59,10 @@ def cross_admission_qa_path(root: Path) -> Path:
 
 def benchmark_qa_path(root: Path) -> Path:
     return root / "benchmark_qa.json"
+
+
+def batch_summary_path(root: Path) -> Path:
+    return root / "batch_summary.json"
 
 
 def admission_artifact_paths(root: Path, hadm_id: int) -> AdmissionArtifactPaths:
@@ -107,3 +119,8 @@ def write_cross_admission_qa(root: Path, payload: dict[str, Any]) -> None:
 def write_benchmark_qa(root: Path, payload: dict[str, Any]) -> None:
     ensure_dir(root)
     write_json(benchmark_qa_path(root), payload)
+
+
+def write_batch_summary(root: Path, payload: dict[str, Any]) -> None:
+    ensure_dir(root)
+    write_json(batch_summary_path(root), payload)

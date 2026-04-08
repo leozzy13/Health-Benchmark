@@ -4,6 +4,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+SUBJECT_SCOPED_SOURCE_TABLES = (
+    "hosp_admissions",
+    "hosp_diagnoses_icd",
+    "hosp_procedures_icd",
+    "hosp_microbiologyevents",
+    "note_discharge",
+    "note_radiology",
+)
+
 
 def _import_duckdb():
     try:
@@ -86,24 +95,20 @@ class MimicDuckDBStore:
             return
         sid = int(subject_id)
         conn = self.conn
-        subject_scoped_tables = [
-            "hosp_admissions",
-            "hosp_diagnoses_icd",
-            "hosp_procedures_icd",
-            "hosp_microbiologyevents",
-            "note_discharge",
-            "note_radiology",
-        ]
-        for table_name in subject_scoped_tables:
+        for table_name in SUBJECT_SCOPED_SOURCE_TABLES:
             where_clause = "subject_id = ?"
             if table_name.startswith("note_"):
                 where_clause = "TRY_CAST(subject_id AS BIGINT) = ?"
             conn.execute(
-                f"CREATE OR REPLACE TEMP TABLE {table_name} AS "
+                f"CREATE OR REPLACE TEMP TABLE {self.cached_table_name(table_name)} AS "
                 f"SELECT * FROM main.{table_name} WHERE {where_clause}",
                 [sid],
             )
         self._cached_subject_id = sid
+
+    @staticmethod
+    def cached_table_name(table_name: str) -> str:
+        return f"cached_{table_name}"
 
     def fetch_rows(self, sql: str, params: list[Any] | tuple[Any, ...] | None = None) -> list[dict[str, Any]]:
         cur = self.conn.execute(sql, params or [])
