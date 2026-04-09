@@ -14,6 +14,7 @@ from health_benchmark.temporal_eval.answer_prompting import render_answer_prompt
 from health_benchmark.temporal_eval.answer_runner import run_answer_batches
 from health_benchmark.temporal_eval.batch_builder import build_batches
 from health_benchmark.temporal_eval.config import build_settings
+from health_benchmark.temporal_eval.loader import resolve_patient_targets
 from health_benchmark.temporal_eval.pipeline import TemporalEvaluationPipeline, normalize_benchmark
 from health_benchmark.temporal_eval.scoring import normalize_answer, score_adversarial, score_answerable
 from health_benchmark.temporal_eval.token_budget import build_preflight_record
@@ -230,6 +231,36 @@ class TemporalEvalTestCase(unittest.TestCase):
         )
         self.assertEqual(record["status"], "context_too_long_for_fixed_batch_10")
         self.assertEqual(record["batch_size"], 10)
+
+    def test_resolve_patient_targets_keeps_subject_id_path_order_for_multi_target_inputs(self) -> None:
+        patient_a = self._write_patient_artifacts(11826927)
+        patient_b = self._write_patient_artifacts(17207245)
+        manifest_path = self.root / "patients.txt"
+        manifest_path.write_text("11826927\n17207245\n", encoding="utf-8")
+
+        manifest_targets = resolve_patient_targets(
+            output_root=self.output_root,
+            subject_id=None,
+            subject_ids=None,
+            patient_manifest=manifest_path,
+            patient_dir=None,
+        )
+        self.assertEqual(
+            [(subject_id, patient_root.resolve()) for subject_id, patient_root in manifest_targets],
+            [(11826927, patient_a.resolve()), (17207245, patient_b.resolve())],
+        )
+
+        subject_id_targets = resolve_patient_targets(
+            output_root=self.output_root,
+            subject_id=None,
+            subject_ids=[11826927, 17207245],
+            patient_manifest=None,
+            patient_dir=None,
+        )
+        self.assertEqual(
+            [(subject_id, patient_root.resolve()) for subject_id, patient_root in subject_id_targets],
+            [(11826927, patient_a.resolve()), (17207245, patient_b.resolve())],
+        )
 
     def test_scoring_supports_normalization_adversarial_alias_and_comma_fallback(self) -> None:
         self.assertEqual(normalize_answer("The, Fever!"), "fever")

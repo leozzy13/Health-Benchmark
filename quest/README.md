@@ -173,10 +173,39 @@ The evaluation job:
 - writes patient-level evaluation outputs under `output/<subject_id>/evaluation/`
 - writes a Quest job summary under `medbench-output/quest_job_outputs/<job_id>/`
 
+For a lighter first-pass evaluation with only `Qwen/Qwen3.5-4B` and `Qwen/Qwen3.5-9B`, use the small-model launcher:
+
+```bash
+sbatch --account=p33194 /projects/p33194/health-benchmark/quest/qwen_open_eval_small_models.slurm 11826927 17207245 17072793
+```
+
+The small-model evaluation job:
+
+- requests `1` SXM node with `1` GPU
+- launches only `Qwen/Qwen3.5-4B` and `Qwen/Qwen3.5-9B`
+- writes the same patient-level evaluation outputs under `output/<subject_id>/evaluation/`
+- writes the same Quest job summary under `medbench-output/quest_job_outputs/<job_id>/`
+
+To add `Qwen/Qwen3.5-27B` on top of existing patient evaluation folders without rerunning `Qwen/Qwen3.5-9B`, use the dedicated 2-GPU launcher:
+
+```bash
+sbatch --account=p33194 /projects/p33194/health-benchmark/quest/qwen_open_eval_27b_2gpu.slurm 11826927 17207245 17072793
+```
+
+The 27B-only evaluation job:
+
+- requests `1` SXM node with `2` GPUs
+- launches only `Qwen/Qwen3.5-27B`
+- uses `tensor_parallel_size=2` with `max_model_len=131072`
+- writes `output/<subject_id>/evaluation/qwen3.5-27b/`
+- rebuilds the same `comparison/leaderboard.*` files so existing `qwen3.5-9b` results remain alongside the new `qwen3.5-27b` row
+
 Helper scripts used by the Slurm launcher:
 
 ```text
 quest/qwen_open_eval_multi_patient.slurm
+quest/qwen_open_eval_small_models.slurm
+quest/qwen_open_eval_27b_2gpu.slurm
 quest/run_multi_patient_eval_job.sh
 quest/launch_vllm_server.sh
 quest/stop_vllm_server.sh

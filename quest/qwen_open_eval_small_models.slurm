@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=medbench-qwen-eval
+#SBATCH --job-name=medbench-qwen-eval-small
 #SBATCH --partition=gengpu
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:4
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:1
 #SBATCH --constraint=sxm
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=0
+#SBATCH --mem=256G
 #SBATCH --output=%x-%j.out
 
 set -euo pipefail
@@ -19,7 +19,7 @@ DEFAULT_MAMBA_ROOT="/hpc/software/mamba/24.3.0"
 DEFAULT_ENV_PREFIX="/projects/p33194/envs/medbench-qwen"
 DEFAULT_SINGULARITY_BIN="/software/singularity/3.8.1/bin/singularity"
 DEFAULT_VLLM_IMAGE="/projects/p33194/containers/vllm-openai_latest.sif"
-EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-trio}"
+EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-small}"
 
 normalize_quest_path() {
   local raw_path="$1"

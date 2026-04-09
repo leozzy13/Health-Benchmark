@@ -12,8 +12,36 @@ QUEST_JOB_OUTPUT_ROOT="${QUEST_JOB_OUTPUT_ROOT:-$OUTPUT_ROOT/quest_job_outputs/$
 VLLM_PORT="${VLLM_PORT:-8000}"
 REASONING_PARSER="${REASONING_PARSER:-qwen3}"
 SERVER_READY_TIMEOUT_S="${SERVER_READY_TIMEOUT_S:-1800}"
+EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-trio}"
 
 mkdir -p "$QUEST_JOB_OUTPUT_ROOT"
+
+resolve_model_records() {
+  case "${1:-}" in
+    trio)
+      cat <<'EOF'
+Qwen/Qwen3.5-4B|qwen3.5-4b|1|262144
+Qwen/Qwen3.5-9B|qwen3.5-9b|1|262144
+Qwen/Qwen3.5-27B|qwen3.5-27b|8|262144
+EOF
+      ;;
+    small)
+      cat <<'EOF'
+Qwen/Qwen3.5-4B|qwen3.5-4b|1|262144
+Qwen/Qwen3.5-9B|qwen3.5-9b|1|262144
+EOF
+      ;;
+    27b_2gpu)
+      cat <<'EOF'
+Qwen/Qwen3.5-27B|qwen3.5-27b|2|131072
+EOF
+      ;;
+    *)
+      echo "Unknown EVAL_MODEL_PRESET: ${1:-}" >&2
+      exit 2
+      ;;
+  esac
+}
 
 if [[ -z "$PATIENT_MANIFEST" ]]; then
   if [[ "${1:-}" == "--patient-manifest" ]]; then
@@ -38,11 +66,7 @@ else
   cp "$PATIENT_MANIFEST" "$QUEST_JOB_OUTPUT_ROOT/patient_manifest_snapshot.txt"
 fi
 
-MODELS=(
-  "Qwen/Qwen3.5-4B|qwen3.5-4b|1|262144"
-  "Qwen/Qwen3.5-9B|qwen3.5-9b|1|262144"
-  "Qwen/Qwen3.5-27B|qwen3.5-27b|8|262144"
-)
+mapfile -t MODELS < <(resolve_model_records "$EVAL_MODEL_PRESET")
 
 job_summary_json="$QUEST_JOB_OUTPUT_ROOT/job_summary.json"
 job_summary_csv="$QUEST_JOB_OUTPUT_ROOT/job_summary.csv"
@@ -111,4 +135,5 @@ with summary_csv.open("w", encoding="utf-8", newline="") as handle:
                 "exit_code": row.get("exit_code", ""),
             }
         )
+sys.exit(1 if summary["failed_models"] else 0)
 PY

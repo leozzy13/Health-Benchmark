@@ -45,15 +45,30 @@ def resolve_patient_targets(
         return [(derived_subject_id, resolved_root)]
     if patient_manifest is not None:
         manifest_ids = read_patient_manifest(patient_manifest)
-        return [resolve_patient_root(output_root=output_root, subject_id=value, patient_dir=None) for value in manifest_ids]
+        return [
+            _resolve_target_tuple(output_root=output_root, subject_id=value)
+            for value in manifest_ids
+        ]
     if subject_ids:
-        return [resolve_patient_root(output_root=output_root, subject_id=int(value), patient_dir=None) for value in subject_ids]
+        return [
+            _resolve_target_tuple(output_root=output_root, subject_id=int(value))
+            for value in subject_ids
+        ]
     resolved_root, resolved_subject_id = resolve_patient_root(
         output_root=output_root,
         subject_id=subject_id,
         patient_dir=None,
     )
     return [(resolved_subject_id, resolved_root)]
+
+
+def _resolve_target_tuple(*, output_root: Path, subject_id: int) -> tuple[int, Path]:
+    resolved_root, resolved_subject_id = resolve_patient_root(
+        output_root=output_root,
+        subject_id=subject_id,
+        patient_dir=None,
+    )
+    return resolved_subject_id, resolved_root
 
 
 def read_patient_manifest(path: Path) -> list[int]:
