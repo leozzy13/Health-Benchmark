@@ -10,7 +10,7 @@ from .utils import parse_dt
 
 SINGLE_ADMISSION_QUESTION_TYPES = (
     "medical_reasoning",
-    "temporal_reasoning",
+    "supporting_evidence",
     "care_plan_rationale",
     "adversarial",
 )
@@ -24,7 +24,7 @@ CROSS_ADMISSION_QUESTION_TYPES = (
 
 SINGLE_ADMISSION_REGULAR_QUESTION_TYPES = (
     "medical_reasoning",
-    "temporal_reasoning",
+    "supporting_evidence",
     "care_plan_rationale",
 )
 
@@ -65,7 +65,7 @@ class SingleAdmissionQAItem(BaseModel):
     scope: Literal["single_admission"]
     question_type: Literal[
         "medical_reasoning",
-        "temporal_reasoning",
+        "supporting_evidence",
         "care_plan_rationale",
         "adversarial",
     ]

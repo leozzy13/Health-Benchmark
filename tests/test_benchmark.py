@@ -462,7 +462,7 @@ class BenchmarkTestCase(unittest.TestCase):
         qas: list[dict[str, object]] = []
         regular_types = [
             "medical_reasoning",
-            "temporal_reasoning",
+            "supporting_evidence",
             "care_plan_rationale",
         ]
         for index in range(1, count + 1):
@@ -904,6 +904,32 @@ class BenchmarkTestCase(unittest.TestCase):
             "fever persisted despite antibiotics and blood pressure remained low overnight",
         )
 
+    def test_validate_single_admission_qa_accepts_supporting_evidence_question_type(self) -> None:
+        payload = {
+            "qas": [
+                {
+                    "qa_id": "x",
+                    "scope": "single_admission",
+                    "question_type": "supporting_evidence",
+                    "question": "Which finding supported the diagnosis?",
+                    "answer": "positive blood cultures",
+                    "evidence": {"admissions": ["10"], "turn_ids": [1, 2]},
+                }
+            ]
+        }
+
+        validated = validate_single_admission_qa(
+            payload,
+            subject_id="100",
+            hadm_id="10",
+            admission_start="2020-01-01 08:00:00",
+            admission_end="2020-01-02 10:00:00",
+            valid_turn_ids={1, 2},
+            expected_count=1,
+            expected_adversarial_count=0,
+        )
+        self.assertEqual(validated["qas"][0]["question_type"], "supporting_evidence")
+
     def test_validate_single_admission_qa_rejects_wrong_adversarial_mix(self) -> None:
         payload = self._make_single_qa_payload("10", adversarial_count=0)
 
@@ -1329,7 +1355,7 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn('"conversation_lines"', rendered_single_regular.context_json)
         self.assertIn("Generate exactly 2 hard answerable short-answer question-answer pairs", rendered_single_regular.user_message)
         self.assertIn("- medical_reasoning", rendered_single_regular.user_message)
-        self.assertIn("- temporal_reasoning", rendered_single_regular.user_message)
+        self.assertIn("- supporting_evidence", rendered_single_regular.user_message)
         self.assertIn("- care_plan_rationale", rendered_single_regular.user_message)
         self.assertNotIn("- adversarial", rendered_single_regular.user_message)
         self.assertNotIn("question_class", rendered_single_regular.user_message)
