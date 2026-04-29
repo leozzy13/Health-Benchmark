@@ -1,0 +1,734 @@
+{
+  "subject_id": "19713100",
+  "hadm_id": "27077966",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-24T00:30:01Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 4 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2177-08-12 22:07:00 to 2177-08-16 17:50:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2177-06-30 00:49:00",
+    "admission_end": "2177-07-03 17:22:00",
+    "summary_paragraph": "Mr. ___ was admitted with suprapubic abdominal pain and constipation. He has a chronic indwelling Foley catheter due to hypotonic bladder and a history of multidrug-resistant UTIs. Initial concern for UTI led to a short course of cefepime, but urine culture was negative and findings suggested inflammation from catheter change rather than active infection. Abdominal pain improved after bowel movements following enema use. A CT scan revealed malposition of the Foley catheter balloon in the prostate and a stable right renal mass being monitored for possible renal cell carcinoma. His oxygen saturation remained around 90-93% on room air, consistent with baseline asbestosis. He was discharged home with instructions to continue Macrobid prophylaxis, maintain regular catheter changes, and follow up with urology for ongoing management.",
+    "problems": [
+      "Constipation, unspecified",
+      "Other specified disorders of bladder",
+      "Atony of bladder",
+      "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+      "Aortocoronary bypass status",
+      "Heart valve replaced by transplant",
+      "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+      "Other and unspecified hyperlipidemia",
+      "Anxiety state, unspecified",
+      "Depressive disorder, not elsewhere classified",
+      "Benign essential hypertension",
+      "Do not resuscitate status"
+    ]
+  },
+  "stay_days": 4,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2177-08-16 00:00:00): Name:  ___                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \n___ / Oxybutynin / Bactrim\n \nAttending: ___.\n \nChief Complaint:\nSuprapubic pain\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\n___ yo M w/ hypotonic bladder with incomplete emptying \nnecessitating chronic indwelling foley since ___ c/b frequent \nmultidrug resistent UTIs (MRSA and ESBL E Coli) p/w lower abd \npain, groin discomfort, and malaise consistent with past UTIs. \nPatient was last admitted ___ for concern of UTI, however \ncultures did not grow out any bacteria. He was monitored from \n___ then discharged with Urology follow up. Since then, he \nhas been seen in the ED numerous times for groin pain and foley \nchanges. His foley was changed last on ___. He has been on \nmacrobid and cipro recently for UTI prophylaxis/treatment. Past \n6 weeks has been complaining of lower abd discomfort, finally \ndecided to come in to ED. He comes in today with increasing \nlower abd pain concerning for recurrent UTI. Daughter denies \nfevers at home, chest pain, cough, shortness of breath, but was \ncomplaining of abd/groin pain c/w past infections.  \n  \nIn ED, initial VS: 7 98.8 92 134/78 18 94% RA. Labs were \nunremarkable, UA showed moderate bacetria with WBCs and leuks. \nGiven past microbial sensitivities, he was given a dose of \nmeropenem, had his foley changed, and was admitted for further \nworkup. On transfer, Temp 97.5 p.o, HR 81, BP 107/77, RR 18, o2 \nsat 93% room air.  \n  \nCurrently, the patient feels \"\"disoriented,\"\" but is oriented to \nperson, place, month, and year. Was able to relate events and \ndiscussion that occurred in the ED \n \nPast Medical History:\n1. Hypotonic bladder with incomplete emptying, s/p indwelling  \nfoley since ___ c/b frequent Multidrug resistent UTIs, incl  \nMRSA and ESBL E Coli  \n2. BPH  \n3. CAD s/p CABG x 3 in ___  \n- CABG anatomy: LIMA to LAD, SVG to OM, and SVG to RCA  \n- s/p stenting ___ of mid RCA, PTCA of proximal RCA and PDA  \n- redo single vessel CABG in ___ with Dr. ___.  \n4. Bovine AVR in ___. Type 2 Diabetes Mellitus: diet controlled  \n6. Hypertension  \n7. Hx of Chronic constipation  \n8. Hyperlipidemia  \n9. Depression /Anxiety  \n10. Asbestosis  \n11. Spinal stenosis  \n12. R kidney mass - Followed by urology w/ serial imaging,  \nlikely RCC  \n13. Osteoarthritis  \n14. Carotid stenosis - chronic occlusion of LICA, ___ with 40%  \n\nstenosis  \n \nSocial History:\n___\nFamily History:\nDaughter- died at ___,breast cancer.  \nFather- died from MI in his ___.  \nNo family history of early MI, arrhythmia, cardiomyopathies, or  \n\nsudden cardiac death.  \n \nPhysical Exam:\nAdmission exam:\nVS: Tm 97.8 Tc 97.5 BP 120/78 HR 80 RR 20 SpO2 93/RA  \n___  \nGeneral: NAD, elderly gentleman lying comfortably in bed  \nHEENT: MMM  \nCV: RRR, no m/r/g  \nLungs: Decreased BS over the left lung base  \nAbd: +BS, soft/NT/ND, no pain with palp  \nExtr: 2+ pitting edema of the ___, R>L  \nGU: Foley in place, no discharge. Patchy erythema under foreskin \non head ofpenis.  \nNeuro: A&Ox3, slight facial asummetry on left side of face, \nspeech slightly slurred at baseline\n\nDischarge exam - unchanged from above\n \nPertinent Results:\nAdmission labs:\n___ 07:15PM URINE Color-Yellow Appear-Hazy Sp ___\n___ 07:15PM URINE Blood-TR Nitrite-POS Protein-TR \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-5.0 Leuks-LG\n___ 07:15PM URINE RBC-2 WBC-70* Bacteri-MOD Yeast-NONE \nEpi-0 TransE-<1\n___ 07:15PM BLOOD WBC-6.7 RBC-4.65 Hgb-13.4* Hct-40.8 \nMCV-88 MCH-28.8 MCHC-32.8 RDW-16.9* Plt ___\n___ 07:15PM BLOOD Glucose-142* UreaN-30* Creat-1.1 Na-139 \nK-4.1 Cl-103 HCO3-30 AnGap-10\n\nDischarge labs:\n\nMicro: \n-UCx (___):\nURINE CULTURE (Final ___: \n      ACINETOBACTER BAUMANNII COMPLEX.    >100,000 \nORGANISMS/ML.. \n         \"\"Note, for Amp/sulbactam, higher-than-standard dosing \nneeds to be\n         used, since therapeutic efficacy relies on intrinsic \nactivity of\n         the sulbactam component\"\". \n      ENTEROBACTER CLOACAE COMPLEX.    >100,000 ORGANISMS/ML.. \n         Piperacillin/tazobactam sensitivity testing available \non request. \n         This organism may develop resistance to third \ngeneration\n         cephalosporins during prolonged therapy. Therefore, \nisolates that\n         are initially susceptible may become resistant within \nthree to\n         four days after initiation of therapy.  For serious \ninfections,\n         repeat culture and sensitivity testing may therefore be \nwarranted\n         if third generation cephalosporins were used. \n\n                              SENSITIVITIES: MIC expressed in \nMCG/ML\n                      \n_________________________________________________________\n                             ACINETOBACTER BAUMANNII COMPLEX\n                             |          ENTEROBACTER CLOACAE \nCOMPLEX\n                             |          |   \nAMPICILLIN/SULBACTAM--   <=2 S\nCEFEPIME--------------     2 S       32 R\nCEFTAZIDIME-----------     4 S     =>64 R\nCEFTRIAXONE-----------             =>64 R\nCIPROFLOXACIN---------<=0.25 S        1 S\nGENTAMICIN------------   <=1 S      <=1 S\nIMIPENEM--------------   <=1 S\nLEVOFLOXACIN----------<=0.12 S\nMEROPENEM-------------           <=0.25 S\nNITROFURANTOIN--------              128 R\nTOBRAMYCIN------------   <=1 S      <=1 S\nTRIMETHOPRIM/SULFA----   <=1 S      <=1 S\n\n-BCx (___): No growth\n\nImaging:\n-CXR (___): Worsening left pleural effusion. No clear \nevidence of infection.  Stable right basilar atelectasis and \nelevation of left hemidiaphragm. \n\n \nBrief Hospital Course:\n___ with hypotonic bladder with chronic foley and multiple drug \nresistant UTIs, CAD s/p CABG, s/p bovine AVR, T2DM, and HTN who \npresents with burning and itching at the site of his catheter  \n  \n# UTI: Patient complained of itching/burning starting at the \nsite of his Foley catheter as well as suprapubic pain prior to \nadmission.  UA at admission was suggestive of a UTI.  He was \nstarted empirically on vanc/cefepime given his history of drug \nresistant gram positive and negative infections.  His urine \nculture ultimately grew Acinetobacter and Enterobacter which \nwere both susceptible to Cipro, the latter of which was found to \nbe resistant to cefepime.  His Foley was changed on ___ once \nhe was on appropriate antiobics given the UCx results.  He will \ncomplete a 14 day course of Cipro after discharge to a rehab \nfacility.  He received pyridium for symptom control for a total \nof 3 days, which he will not continue at rehab.  His urologist \nwas contacted regarding his frequent UTIs and chronic foley and \nhe will follow-up with his urologist after discharge.  He should \nalso be referred to infectious disease as an outpatient for \nconsideration of suppressive antibiotics for his recurrent UTIs. \n Of note, his daughter was contacted during this admission and \nstated she was concerned about Mr. ___ poor hygiene at \nhome, which may be in part responsible for his recurrent UTIs \nwith a variety of different organisms.\n  \n# AMS: Patient appeared disoriented and somewhat confused at \nadmission.  This had resolved by the next morning where he was \nfound to be A&Ox3 and alert.  This was thought to be from \nsundowning as his mental status improved after only one dose of \nantibiotics, making this change in mental status unlikely to be \nfrom his UTI.  He often reported feeling unwell but was unable \nto be more specific, which his daughter reports was happening at \nhome as well prior to admission.  His VS were stable at these \ntimes, EKG was normal and there were no concerning objective \nfindings.\n  \n# Hypoxia: He has a chronically elevated left hemidiaphragm and \nO2 sats during prior admissions have been in the low ___ on room \nair.  He remained in the high ___ to low ___ on room air during \nthis admission.  A chest X-ray showed a chronically elevated \nleft hemidiaphragm, small left sided effusion with no evidence \nof infection.\n  \n# Coronary artery disease s/p CABG and stenting: No chest pain \nduring this admission and EKG was at baseline.  He was continued \non his home aspirin, isosorbide mononitrate, metoprolol and \nstatin.\n  \n# Hypertension: He remained normotensive and was continued on \nhis home metoprolol and isosorbide mononitrate.\n\n# Renal mass: Patient has known renal mass which is being \nfollowed with periodic imaging by urology.  Presumed to be renal \ncell carcinoma based on imaging characteristics, but no \naggressive treatment is being pursued per family and outpatient \nproviders.\n\n# HLD: Continued on his home atorvastatin\n  \n# Diabetes: Diet controlled at home, blood sugar remained well \ncontrolled during this admission.  He was covered with an \ninsulin sliding scale as an inpatient.\n\n# Depression: Continued on his home citalopram and trazodone.\n\n#Code status this admission: DNR/DNI (confirmed with daughter at \nadmission)\n\n___ issues:\n-Will continue to receive cipro 500mg q12h PO for a total of 14 \ndays (last day ___\n-He will follow-up with urology and PCP regarding his frequent \nUTIs at home\n-Should be seen in infectious disease clinic after discharge \nregarding consideration of prophylactic antibiotics (has been on \nMacrobid in the past)\n \nMedications on Admission:\n1. atorvastatin 80 mg Tablet Sig: One (1) Tablet PO DAILY  \n(Daily).  \n2. citalopram 20 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily). \n \n3. isosorbide mononitrate 60 mg Tablet Extended Release 24 hr  \nSig: One (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n4. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \n \nOne (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n5. aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable  \n\nPO DAILY (Daily).  \n6. cholecalciferol (vitamin D3) 1,000 unit Tablet Sig: One (1)  \nTablet PO DAILY (Daily).  \n7. polyethylene glycol 3350 17 gram/dose Powder Sig: Seventeen  \n(17) GRAMS PO DAILY (Daily).  \nDisp:*30 DOSES* Refills:*0*  \n8. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a  \nday).  \nDisp:*60 Tablet(s)* Refills:*0*  \n9. calcium carbonate 200 mg calcium (500 mg) Tablet, Chewable  \nSig: One (1) Tablet, Chewable PO BID (2 times a day).  \n10. tolterodine 2 mg Tablet Sig: One (1) Tablet PO BID (2 times  \n\na day).  \n11. bisacodyl 10 mg Suppository Sig: One (1) Suppository Rectal  \n\nDAILY (Daily) as needed for constipation.  \nDisp:*10 Suppository(s)* Refills:*0*  \n12. trazodone 50 mg Tablet Sig: 1.5 Tablets PO HS (at bedtime)  \nas needed for insomnia.  \n \nDischarge Medications:\n1. atorvastatin 80 mg Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n2. citalopram 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n3. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \nOne (1) Tablet Extended Release 24 hr PO once a day.  \n4. isosorbide mononitrate 60 mg Tablet Extended Release 24 hr \nSig: One (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n5. aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable \nPO DAILY (Daily).  \n6. cholecalciferol (vitamin D3) 1,000 unit Tablet Sig: One (1) \nTablet PO once a day.  \n7. polyethylene glycol 3350 17 gram/dose Powder Sig: One (1) \npacket PO DAILY (Daily).  \n8. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a \nday).  \n9. calcium carbonate 200 mg calcium (500 mg) Tablet, Chewable \nSig: One (1) Tablet, Chewable PO BID (2 times a day).  \n10. tolterodine 2 mg Tablet Sig: One (1) Tablet PO BID (2 times \na day).  \n11. bisacodyl 10 mg Suppository Sig: One (1) Suppository Rectal \nHS (at bedtime) as needed for constipation.  \n12. trazodone 50 mg Tablet Sig: 1.5 Tablets PO HS (at bedtime) \nas needed for insomina.  \n13. ciprofloxacin 500 mg Tablet Sig: One (1) Tablet PO every \ntwelve (12) hours for 12 days: Last dose on ___.  \n14. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID \n(2 times a day).  \n\n \nDischarge Disposition:\nExtended Care\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary diagnosis:\nUrinary tract infection\n\n \nDischarge Condition:\nMental Status: Confused - sometimes.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - requires assistance or aid (walker \nor cane).\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking care of you during your admission to \n___ for a UTI.  You were treated with IV antibiotics for the \ninfection.  Your Foley catheter was replaced ___ in the \n___ room and again on ___ prior to discharge.  You will \nreceive 14 days of Cipro, which you will complete at rehab.\n\nThe following changes were made to your medications:\nSTART ciprofloxacin 500mg by mouth every 12 hours for 12 more \ndays (last dose on ___\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Infection and inflammatory reaction due to indwelling urinary catheter\n- Malignant neoplasm of kidney, except pelvis\n- Urinary tract infection, site not specified\n- Urinary catheterization as the cause of abnormal reaction of patient, or of later complication, without mention of misadventure at time of procedure\n- Atony of bladder\n- Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\n- Other and unspecified hyperlipidemia\n- Depressive disorder, not elsewhere classified\n- Anxiety state, unspecified\n- Coronary atherosclerosis of unspecified type of vessel, native or graft\n- Asbestosis\n- Hypertrophy (benign) of prostate with urinary obstruction and other lower urinary tract symptoms (LUTS)\n- Retention of urine, unspecified\n- Constipation, unspecified\n- Hypoxemia\n- Osteoarthrosis, unspecified whether generalized or localized, site unspecified\n- Heart valve replaced by transplant\n- Aortocoronary bypass status\n- Do not resuscitate status\n- Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms\n- Benign essential hypertension",
+  "supporting_context_block": "Radiology:\n- 2177-08-14 13:23:00: INDICATION: ___ male with increased O2 requirement, admitted with urinary tract infection. Study is to evaluate if there is an additional pulmonary component. COMPARISON: Multiple chest radiographs dating back to ___,...\n\nProcedures:\n- None recorded.\n\nMicrobiology:\n- None recorded.",
+  "formed_packet": {
+    "subject_id": "19713100",
+    "hadm_id": "27077966",
+    "admission_start": "2177-08-12 22:07:00",
+    "admission_end": "2177-08-16 17:50:00",
+    "previous_admission_summary": {
+      "admission_start": "2177-06-30 00:49:00",
+      "admission_end": "2177-07-03 17:22:00",
+      "summary_paragraph": "Mr. ___ was admitted with suprapubic abdominal pain and constipation. He has a chronic indwelling Foley catheter due to hypotonic bladder and a history of multidrug-resistant UTIs. Initial concern for UTI led to a short course of cefepime, but urine culture was negative and findings suggested inflammation from catheter change rather than active infection. Abdominal pain improved after bowel movements following enema use. A CT scan revealed malposition of the Foley catheter balloon in the prostate and a stable right renal mass being monitored for possible renal cell carcinoma. His oxygen saturation remained around 90-93% on room air, consistent with baseline asbestosis. He was discharged home with instructions to continue Macrobid prophylaxis, maintain regular catheter changes, and follow up with urology for ongoing management.",
+      "problems": [
+        "Constipation, unspecified",
+        "Other specified disorders of bladder",
+        "Atony of bladder",
+        "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "Aortocoronary bypass status",
+        "Heart valve replaced by transplant",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Other and unspecified hyperlipidemia",
+        "Anxiety state, unspecified",
+        "Depressive disorder, not elsewhere classified",
+        "Benign essential hypertension",
+        "Do not resuscitate status"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "19713100-DS-61",
+        "note_seq": 61,
+        "charttime": "2177-08-16 00:00:00",
+        "storetime": "2177-08-18 20:09:00",
+        "text": " \nName:  ___                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \n___ / Oxybutynin / Bactrim\n \nAttending: ___.\n \nChief Complaint:\nSuprapubic pain\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\n___ yo M w/ hypotonic bladder with incomplete emptying \nnecessitating chronic indwelling foley since ___ c/b frequent \nmultidrug resistent UTIs (MRSA and ESBL E Coli) p/w lower abd \npain, groin discomfort, and malaise consistent with past UTIs. \nPatient was last admitted ___ for concern of UTI, however \ncultures did not grow out any bacteria. He was monitored from \n___ then discharged with Urology follow up. Since then, he \nhas been seen in the ED numerous times for groin pain and foley \nchanges. His foley was changed last on ___. He has been on \nmacrobid and cipro recently for UTI prophylaxis/treatment. Past \n6 weeks has been complaining of lower abd discomfort, finally \ndecided to come in to ED. He comes in today with increasing \nlower abd pain concerning for recurrent UTI. Daughter denies \nfevers at home, chest pain, cough, shortness of breath, but was \ncomplaining of abd/groin pain c/w past infections.  \n  \nIn ED, initial VS: 7 98.8 92 134/78 18 94% RA. Labs were \nunremarkable, UA showed moderate bacetria with WBCs and leuks. \nGiven past microbial sensitivities, he was given a dose of \nmeropenem, had his foley changed, and was admitted for further \nworkup. On transfer, Temp 97.5 p.o, HR 81, BP 107/77, RR 18, o2 \nsat 93% room air.  \n  \nCurrently, the patient feels \"\"disoriented,\"\" but is oriented to \nperson, place, month, and year. Was able to relate events and \ndiscussion that occurred in the ED \n \nPast Medical History:\n1. Hypotonic bladder with incomplete emptying, s/p indwelling  \nfoley since ___ c/b frequent Multidrug resistent UTIs, incl  \nMRSA and ESBL E Coli  \n2. BPH  \n3. CAD s/p CABG x 3 in ___  \n- CABG anatomy: LIMA to LAD, SVG to OM, and SVG to RCA  \n- s/p stenting ___ of mid RCA, PTCA of proximal RCA and PDA  \n- redo single vessel CABG in ___ with Dr. ___.  \n4. Bovine AVR in ___. Type 2 Diabetes Mellitus: diet controlled  \n6. Hypertension  \n7. Hx of Chronic constipation  \n8. Hyperlipidemia  \n9. Depression /Anxiety  \n10. Asbestosis  \n11. Spinal stenosis  \n12. R kidney mass - Followed by urology w/ serial imaging,  \nlikely RCC  \n13. Osteoarthritis  \n14. Carotid stenosis - chronic occlusion of LICA, ___ with 40%  \n\nstenosis  \n \nSocial History:\n___\nFamily History:\nDaughter- died at ___,breast cancer.  \nFather- died from MI in his ___.  \nNo family history of early MI, arrhythmia, cardiomyopathies, or  \n\nsudden cardiac death.  \n \nPhysical Exam:\nAdmission exam:\nVS: Tm 97.8 Tc 97.5 BP 120/78 HR 80 RR 20 SpO2 93/RA  \n___  \nGeneral: NAD, elderly gentleman lying comfortably in bed  \nHEENT: MMM  \nCV: RRR, no m/r/g  \nLungs: Decreased BS over the left lung base  \nAbd: +BS, soft/NT/ND, no pain with palp  \nExtr: 2+ pitting edema of the ___, R>L  \nGU: Foley in place, no discharge. Patchy erythema under foreskin \non head ofpenis.  \nNeuro: A&Ox3, slight facial asummetry on left side of face, \nspeech slightly slurred at baseline\n\nDischarge exam - unchanged from above\n \nPertinent Results:\nAdmission labs:\n___ 07:15PM URINE Color-Yellow Appear-Hazy Sp ___\n___ 07:15PM URINE Blood-TR Nitrite-POS Protein-TR \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-5.0 Leuks-LG\n___ 07:15PM URINE RBC-2 WBC-70* Bacteri-MOD Yeast-NONE \nEpi-0 TransE-<1\n___ 07:15PM BLOOD WBC-6.7 RBC-4.65 Hgb-13.4* Hct-40.8 \nMCV-88 MCH-28.8 MCHC-32.8 RDW-16.9* Plt ___\n___ 07:15PM BLOOD Glucose-142* UreaN-30* Creat-1.1 Na-139 \nK-4.1 Cl-103 HCO3-30 AnGap-10\n\nDischarge labs:\n\nMicro: \n-UCx (___):\nURINE CULTURE (Final ___: \n      ACINETOBACTER BAUMANNII COMPLEX.    >100,000 \nORGANISMS/ML.. \n         \"\"Note, for Amp/sulbactam, higher-than-standard dosing \nneeds to be\n         used, since therapeutic efficacy relies on intrinsic \nactivity of\n         the sulbactam component\"\". \n      ENTEROBACTER CLOACAE COMPLEX.    >100,000 ORGANISMS/ML.. \n         Piperacillin/tazobactam sensitivity testing available \non request. \n         This organism may develop resistance to third \ngeneration\n         cephalosporins during prolonged therapy. Therefore, \nisolates that\n         are initially susceptible may become resistant within \nthree to\n         four days after initiation of therapy.  For serious \ninfections,\n         repeat culture and sensitivity testing may therefore be \nwarranted\n         if third generation cephalosporins were used. \n\n                              SENSITIVITIES: MIC expressed in \nMCG/ML\n                      \n_________________________________________________________\n                             ACINETOBACTER BAUMANNII COMPLEX\n                             |          ENTEROBACTER CLOACAE \nCOMPLEX\n                             |          |   \nAMPICILLIN/SULBACTAM--   <=2 S\nCEFEPIME--------------     2 S       32 R\nCEFTAZIDIME-----------     4 S     =>64 R\nCEFTRIAXONE-----------             =>64 R\nCIPROFLOXACIN---------<=0.25 S        1 S\nGENTAMICIN------------   <=1 S      <=1 S\nIMIPENEM--------------   <=1 S\nLEVOFLOXACIN----------<=0.12 S\nMEROPENEM-------------           <=0.25 S\nNITROFURANTOIN--------              128 R\nTOBRAMYCIN------------   <=1 S      <=1 S\nTRIMETHOPRIM/SULFA----   <=1 S      <=1 S\n\n-BCx (___): No growth\n\nImaging:\n-CXR (___): Worsening left pleural effusion. No clear \nevidence of infection.  Stable right basilar atelectasis and \nelevation of left hemidiaphragm. \n\n \nBrief Hospital Course:\n___ with hypotonic bladder with chronic foley and multiple drug \nresistant UTIs, CAD s/p CABG, s/p bovine AVR, T2DM, and HTN who \npresents with burning and itching at the site of his catheter  \n  \n# UTI: Patient complained of itching/burning starting at the \nsite of his Foley catheter as well as suprapubic pain prior to \nadmission.  UA at admission was suggestive of a UTI.  He was \nstarted empirically on vanc/cefepime given his history of drug \nresistant gram positive and negative infections.  His urine \nculture ultimately grew Acinetobacter and Enterobacter which \nwere both susceptible to Cipro, the latter of which was found to \nbe resistant to cefepime.  His Foley was changed on ___ once \nhe was on appropriate antiobics given the UCx results.  He will \ncomplete a 14 day course of Cipro after discharge to a rehab \nfacility.  He received pyridium for symptom control for a total \nof 3 days, which he will not continue at rehab.  His urologist \nwas contacted regarding his frequent UTIs and chronic foley and \nhe will follow-up with his urologist after discharge.  He should \nalso be referred to infectious disease as an outpatient for \nconsideration of suppressive antibiotics for his recurrent UTIs. \n Of note, his daughter was contacted during this admission and \nstated she was concerned about Mr. ___ poor hygiene at \nhome, which may be in part responsible for his recurrent UTIs \nwith a variety of different organisms.\n  \n# AMS: Patient appeared disoriented and somewhat confused at \nadmission.  This had resolved by the next morning where he was \nfound to be A&Ox3 and alert.  This was thought to be from \nsundowning as his mental status improved after only one dose of \nantibiotics, making this change in mental status unlikely to be \nfrom his UTI.  He often reported feeling unwell but was unable \nto be more specific, which his daughter reports was happening at \nhome as well prior to admission.  His VS were stable at these \ntimes, EKG was normal and there were no concerning objective \nfindings.\n  \n# Hypoxia: He has a chronically elevated left hemidiaphragm and \nO2 sats during prior admissions have been in the low ___ on room \nair.  He remained in the high ___ to low ___ on room air during \nthis admission.  A chest X-ray showed a chronically elevated \nleft hemidiaphragm, small left sided effusion with no evidence \nof infection.\n  \n# Coronary artery disease s/p CABG and stenting: No chest pain \nduring this admission and EKG was at baseline.  He was continued \non his home aspirin, isosorbide mononitrate, metoprolol and \nstatin.\n  \n# Hypertension: He remained normotensive and was continued on \nhis home metoprolol and isosorbide mononitrate.\n\n# Renal mass: Patient has known renal mass which is being \nfollowed with periodic imaging by urology.  Presumed to be renal \ncell carcinoma based on imaging characteristics, but no \naggressive treatment is being pursued per family and outpatient \nproviders.\n\n# HLD: Continued on his home atorvastatin\n  \n# Diabetes: Diet controlled at home, blood sugar remained well \ncontrolled during this admission.  He was covered with an \ninsulin sliding scale as an inpatient.\n\n# Depression: Continued on his home citalopram and trazodone.\n\n#Code status this admission: DNR/DNI (confirmed with daughter at \nadmission)\n\n___ issues:\n-Will continue to receive cipro 500mg q12h PO for a total of 14 \ndays (last day ___\n-He will follow-up with urology and PCP regarding his frequent \nUTIs at home\n-Should be seen in infectious disease clinic after discharge \nregarding consideration of prophylactic antibiotics (has been on \nMacrobid in the past)\n \nMedications on Admission:\n1. atorvastatin 80 mg Tablet Sig: One (1) Tablet PO DAILY  \n(Daily).  \n2. citalopram 20 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily). \n \n3. isosorbide mononitrate 60 mg Tablet Extended Release 24 hr  \nSig: One (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n4. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \n \nOne (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n5. aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable  \n\nPO DAILY (Daily).  \n6. cholecalciferol (vitamin D3) 1,000 unit Tablet Sig: One (1)  \nTablet PO DAILY (Daily).  \n7. polyethylene glycol 3350 17 gram/dose Powder Sig: Seventeen  \n(17) GRAMS PO DAILY (Daily).  \nDisp:*30 DOSES* Refills:*0*  \n8. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a  \nday).  \nDisp:*60 Tablet(s)* Refills:*0*  \n9. calcium carbonate 200 mg calcium (500 mg) Tablet, Chewable  \nSig: One (1) Tablet, Chewable PO BID (2 times a day).  \n10. tolterodine 2 mg Tablet Sig: One (1) Tablet PO BID (2 times  \n\na day).  \n11. bisacodyl 10 mg Suppository Sig: One (1) Suppository Rectal  \n\nDAILY (Daily) as needed for constipation.  \nDisp:*10 Suppository(s)* Refills:*0*  \n12. trazodone 50 mg Tablet Sig: 1.5 Tablets PO HS (at bedtime)  \nas needed for insomnia.  \n \nDischarge Medications:\n1. atorvastatin 80 mg Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n2. citalopram 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n3. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \nOne (1) Tablet Extended Release 24 hr PO once a day.  \n4. isosorbide mononitrate 60 mg Tablet Extended Release 24 hr \nSig: One (1) Tablet Extended Release 24 hr PO DAILY (Daily).  \n5. aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable \nPO DAILY (Daily).  \n6. cholecalciferol (vitamin D3) 1,000 unit Tablet Sig: One (1) \nTablet PO once a day.  \n7. polyethylene glycol 3350 17 gram/dose Powder Sig: One (1) \npacket PO DAILY (Daily).  \n8. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a \nday).  \n9. calcium carbonate 200 mg calcium (500 mg) Tablet, Chewable \nSig: One (1) Tablet, Chewable PO BID (2 times a day).  \n10. tolterodine 2 mg Tablet Sig: One (1) Tablet PO BID (2 times \na day).  \n11. bisacodyl 10 mg Suppository Sig: One (1) Suppository Rectal \nHS (at bedtime) as needed for constipation.  \n12. trazodone 50 mg Tablet Sig: 1.5 Tablets PO HS (at bedtime) \nas needed for insomina.  \n13. ciprofloxacin 500 mg Tablet Sig: One (1) Tablet PO every \ntwelve (12) hours for 12 days: Last dose on ___.  \n14. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID \n(2 times a day).  \n\n \nDischarge Disposition:\nExtended Care\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary diagnosis:\nUrinary tract infection\n\n \nDischarge Condition:\nMental Status: Confused - sometimes.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - requires assistance or aid (walker \nor cane).\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking care of you during your admission to \n___ for a UTI.  You were treated with IV antibiotics for the \ninfection.  Your Foley catheter was replaced ___ in the \n___ room and again on ___ prior to discharge.  You will \nreceive 14 days of Cipro, which you will complete at rehab.\n\nThe following changes were made to your medications:\nSTART ciprofloxacin 500mg by mouth every 12 hours for 12 more \ndays (last dose on ___\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "19713100-RR-256",
+        "charttime": "2177-08-14 13:23:00",
+        "storetime": "2177-08-14 18:12:00",
+        "text": "INDICATION:  ___ male with increased O2 requirement, admitted with\nurinary tract infection.  Study is to evaluate if there is an additional\npulmonary component.\n\nCOMPARISON:  Multiple chest radiographs dating back to ___, most\nrecent ___.\n\nTECHNIQUE:  AP upright and lateral chest radiographs.\n\nFINDINGS:  There is stable elevation of left hemidiaphragm with a\ncorresponding left lower lobe atelectasis.  There is mild right lower lobe\natelectasis.  There has been interval increase in left pleural effusion. \nCardiomediastinal silhouette is obscured by pleural effusion.  Moderate\nmultilevel degenerative changes of the thoracic spine are noted.  Patient is\nstatus post sternotomy with sternotomy wires in unchanged vertical alignment\nwith no obvious hardware complications.\n\nIMPRESSION:  Worsening left pleural effusion. No clear evidence of infection. \nStable right basilar atelectasis and elevation of left hemidiaphragm.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "99664",
+        "icd_version": 9,
+        "long_title": "Infection and inflammatory reaction due to indwelling urinary catheter",
+        "normalized_time": "2177-08-16 16:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "1890",
+        "icd_version": 9,
+        "long_title": "Malignant neoplasm of kidney, except pelvis",
+        "normalized_time": "2177-08-16 16:53:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "5990",
+        "icd_version": 9,
+        "long_title": "Urinary tract infection, site not specified",
+        "normalized_time": "2177-08-16 16:56:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "E8796",
+        "icd_version": 9,
+        "long_title": "Urinary catheterization as the cause of abnormal reaction of patient, or of later complication, without mention of misadventure at time of procedure",
+        "normalized_time": "2177-08-16 16:59:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "5964",
+        "icd_version": 9,
+        "long_title": "Atony of bladder",
+        "normalized_time": "2177-08-16 17:02:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "25000",
+        "icd_version": 9,
+        "long_title": "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2177-08-16 17:05:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2177-08-16 17:08:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "311",
+        "icd_version": 9,
+        "long_title": "Depressive disorder, not elsewhere classified",
+        "normalized_time": "2177-08-16 17:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "30000",
+        "icd_version": 9,
+        "long_title": "Anxiety state, unspecified",
+        "normalized_time": "2177-08-16 17:14:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "41400",
+        "icd_version": 9,
+        "long_title": "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "normalized_time": "2177-08-16 17:17:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "501",
+        "icd_version": 9,
+        "long_title": "Asbestosis",
+        "normalized_time": "2177-08-16 17:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "60001",
+        "icd_version": 9,
+        "long_title": "Hypertrophy (benign) of prostate with urinary obstruction and other lower urinary tract symptoms (LUTS)",
+        "normalized_time": "2177-08-16 17:23:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "78820",
+        "icd_version": 9,
+        "long_title": "Retention of urine, unspecified",
+        "normalized_time": "2177-08-16 17:26:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "56400",
+        "icd_version": 9,
+        "long_title": "Constipation, unspecified",
+        "normalized_time": "2177-08-16 17:29:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "79902",
+        "icd_version": 9,
+        "long_title": "Hypoxemia",
+        "normalized_time": "2177-08-16 17:32:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "71590",
+        "icd_version": 9,
+        "long_title": "Osteoarthrosis, unspecified whether generalized or localized, site unspecified",
+        "normalized_time": "2177-08-16 17:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "V422",
+        "icd_version": 9,
+        "long_title": "Heart valve replaced by transplant",
+        "normalized_time": "2177-08-16 17:38:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "V4581",
+        "icd_version": 9,
+        "long_title": "Aortocoronary bypass status",
+        "normalized_time": "2177-08-16 17:41:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "V4986",
+        "icd_version": 9,
+        "long_title": "Do not resuscitate status",
+        "normalized_time": "2177-08-16 17:44:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "04185",
+        "icd_version": 9,
+        "long_title": "Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms",
+        "normalized_time": "2177-08-16 17:47:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "4011",
+        "icd_version": 9,
+        "long_title": "Benign essential hypertension",
+        "normalized_time": "2177-08-16 17:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [],
+    "microbiology": [],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 11632,
+    "output_tokens": 5295,
+    "total_tokens": 16927
+  },
+  "response_id": "chatcmpl-bb487f2ca4470221",
+  "latency_ms": 92284,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2177-08-12 22:07:00",
+        "speaker": "Doctor",
+        "text": "Hello Mr. ___, I'm Dr. ___. You're in the hospital now after coming in with lower abdominal and groin pain. Can you tell me more about what’s been going on?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2177-08-12 22:08:30",
+        "speaker": "Patient",
+        "text": "Yes, doctor. The pain’s been getting worse over the past few weeks. It starts near my belly button and goes down to my groin. It burns, especially around the catheter."
+      },
+      {
+        "turn_number": 3,
+        "time": "2177-08-12 22:09:15",
+        "speaker": "Doctor",
+        "text": "I see. And have you had fevers, chills, or feeling more tired than usual?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2177-08-12 22:10:00",
+        "speaker": "Patient",
+        "text": "No fevers at home, but I’ve felt kind of off—just not myself. My daughter said I seemed confused earlier today."
+      },
+      {
+        "turn_number": 5,
+        "time": "2177-08-12 22:11:00",
+        "speaker": "Doctor",
+        "text": "Okay. We checked your urine in the ER and it showed signs of infection—white blood cells and bacteria. Given your history of resistant infections, we started you on strong antibiotics through the IV."
+      },
+      {
+        "turn_number": 6,
+        "time": "2177-08-12 22:12:15",
+        "speaker": "Patient",
+        "text": "I’ve had these infections before. They always say it’s resistant. Is this one different?"
+      },
+      {
+        "turn_number": 7,
+        "time": "2177-08-12 22:13:00",
+        "speaker": "Doctor",
+        "text": "We won’t know exactly until the culture comes back in a few days. But we’re covering all bases with the antibiotics we gave you."
+      },
+      {
+        "turn_number": 8,
+        "time": "2177-08-12 22:14:00",
+        "speaker": "Patient",
+        "text": "They changed my catheter in the ER. Did that help?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2177-08-12 22:15:00",
+        "speaker": "Doctor",
+        "text": "Yes, it was changed as a precaution. Sometimes irritation from the catheter can mimic infection. But your symptoms and urine test suggest a real infection this time."
+      },
+      {
+        "turn_number": 10,
+        "time": "2177-08-12 22:16:15",
+        "speaker": "Patient",
+        "text": "I’ve been on Macrobid and Cipro before. Do I need something stronger?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2177-08-12 22:17:00",
+        "speaker": "Doctor",
+        "text": "Right now, you’re on IV antibiotics—vancomycin and cefepime—because of your history with MRSA and ESBL bacteria. We’ll adjust once we know which bacteria are growing."
+      },
+      {
+        "turn_number": 12,
+        "time": "2177-08-12 22:18:00",
+        "speaker": "Patient",
+        "text": "I feel a little foggy. Is that from the infection?"
+      },
+      {
+        "turn_number": 13,
+        "time": "2177-08-12 22:19:00",
+        "speaker": "Doctor",
+        "text": "Possibly, but your mental status was already improving by the time you got here. Your daughter mentioned this happens at home too. We think it might be sundowning, not from the infection itself."
+      },
+      {
+        "turn_number": 14,
+        "time": "2177-08-12 22:20:15",
+        "speaker": "Patient",
+        "text": "Oh, okay. I just don’t want to be confused all the time."
+      },
+      {
+        "turn_number": 15,
+        "time": "2177-08-12 22:21:00",
+        "speaker": "Doctor",
+        "text": "We’ll keep an eye on it. For now, your vital signs are stable, and your oxygen level is 93% on room air, which matches your baseline."
+      },
+      {
+        "turn_number": 16,
+        "time": "2177-08-13 08:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. I reviewed your labs. Your blood work is stable, no signs of sepsis. The urine culture is still growing, but we’ll have results soon."
+      },
+      {
+        "turn_number": 17,
+        "time": "2177-08-13 08:16:30",
+        "speaker": "Patient",
+        "text": "Any change in the antibiotics?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2177-08-13 08:17:15",
+        "speaker": "Doctor",
+        "text": "Not yet. We’re waiting for the culture to tell us exactly what we’re dealing with. But you’re responding well—pain is less, right?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2177-08-13 08:18:00",
+        "speaker": "Patient",
+        "text": "Yes, a little better since the new catheter and meds."
+      },
+      {
+        "turn_number": 20,
+        "time": "2177-08-13 08:19:00",
+        "speaker": "Doctor",
+        "text": "Good. We also ordered a chest X-ray yesterday because your oxygen was a bit lower than usual."
+      },
+      {
+        "turn_number": 21,
+        "time": "2177-08-13 08:20:15",
+        "speaker": "Patient",
+        "text": "My lungs? I thought this was about my bladder."
+      },
+      {
+        "turn_number": 22,
+        "time": "2177-08-13 08:21:00",
+        "speaker": "Doctor",
+        "text": "It is. But with your history of asbestosis, we want to make sure there’s no lung infection or fluid buildup. The X-ray showed a small increase in fluid on the left side, but no pneumonia."
+      },
+      {
+        "turn_number": 23,
+        "time": "2177-08-13 08:22:00",
+        "speaker": "Patient",
+        "text": "So nothing to worry about?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2177-08-13 08:23:00",
+        "speaker": "Doctor",
+        "text": "Not right now. We’ll monitor it. Your heart and blood pressure are stable, and your EKG was normal."
+      },
+      {
+        "turn_number": 25,
+        "time": "2177-08-14 09:00:00",
+        "speaker": "Doctor",
+        "text": "The urine culture is back. You’re growing two bacteria: Acinetobacter and Enterobacter. Both are resistant to some antibiotics, but sensitive to ciprofloxacin."
+      },
+      {
+        "turn_number": 26,
+        "time": "2177-08-14 09:01:15",
+        "speaker": "Patient",
+        "text": "Cipro? I’ve taken that before. Is it safe?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2177-08-14 09:02:00",
+        "speaker": "Doctor",
+        "text": "Yes. In fact, both bacteria respond well to it. We’re switching from IV antibiotics to oral ciprofloxacin. You’ll take it twice a day."
+      },
+      {
+        "turn_number": 28,
+        "time": "2177-08-14 09:03:00",
+        "speaker": "Patient",
+        "text": "So I can go home soon?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2177-08-14 09:04:00",
+        "speaker": "Doctor",
+        "text": "We’re planning for you to go to a rehab facility. You’ll finish a 14-day course of cipro there. You’ll also need follow-up with urology and infectious disease."
+      },
+      {
+        "turn_number": 30,
+        "time": "2177-08-14 09:05:15",
+        "speaker": "Patient",
+        "text": "Why infectious disease? I thought the antibiotics would fix it."
+      },
+      {
+        "turn_number": 31,
+        "time": "2177-08-14 09:06:00",
+        "speaker": "Doctor",
+        "text": "Because you’ve had so many UTIs with different bacteria, they may want to consider long-term preventive antibiotics. Your daughter mentioned hygiene at home might be a factor."
+      },
+      {
+        "turn_number": 32,
+        "time": "2177-08-14 09:07:00",
+        "speaker": "Patient",
+        "text": "She worries too much. But I do have trouble cleaning around the catheter."
+      },
+      {
+        "turn_number": 33,
+        "time": "2177-08-14 09:08:00",
+        "speaker": "Doctor",
+        "text": "That’s understandable. The rehab team can help train you and any caregivers on proper catheter care to reduce infections."
+      },
+      {
+        "turn_number": 34,
+        "time": "2177-08-14 09:09:15",
+        "speaker": "Patient",
+        "text": "That would help. What about my kidney mass? Was that checked?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2177-08-14 09:10:00",
+        "speaker": "Doctor",
+        "text": "It’s still being followed by urology. No changes noted recently. It’s likely renal cell carcinoma, but since it’s not causing symptoms, they’re monitoring it with scans."
+      },
+      {
+        "turn_number": 36,
+        "time": "2177-08-14 09:11:00",
+        "speaker": "Patient",
+        "text": "I’d rather not have surgery. My heart’s been through enough."
+      },
+      {
+        "turn_number": 37,
+        "time": "2177-08-14 09:12:00",
+        "speaker": "Doctor",
+        "text": "That’s completely fine. The plan is to continue monitoring it, especially since you’re seeing urology regularly."
+      },
+      {
+        "turn_number": 38,
+        "time": "2177-08-15 10:00:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. We changed your catheter again yesterday as a precaution after starting the right antibiotics. Your pain is much better, right?"
+      },
+      {
+        "turn_number": 39,
+        "time": "2177-08-15 10:01:00",
+        "speaker": "Patient",
+        "text": "Yes, the burning is gone. I feel more like myself."
+      },
+      {
+        "turn_number": 40,
+        "time": "2177-08-15 10:02:00",
+        "speaker": "Doctor",
+        "text": "Great. We also added docusate to help with your constipation. You’re still on your usual stool softeners and senna."
+      },
+      {
+        "turn_number": 41,
+        "time": "2177-08-15 10:03:15",
+        "speaker": "Patient",
+        "text": "I’ve had that for years. Does it affect my bladder?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2177-08-15 10:04:00",
+        "speaker": "Doctor",
+        "text": "Not directly, but being constipated can press on the bladder and make emptying harder. Keeping your bowels regular helps your bladder work better."
+      },
+      {
+        "turn_number": 43,
+        "time": "2177-08-15 10:05:00",
+        "speaker": "Patient",
+        "text": "That makes sense. I’ll keep up with the laxatives."
+      },
+      {
+        "turn_number": 44,
+        "time": "2177-08-15 10:06:00",
+        "speaker": "Doctor",
+        "text": "Good. Your heart medications—metoprolol, aspirin, isosorbide—are unchanged. Blood sugars are well controlled, so no insulin needed."
+      },
+      {
+        "turn_number": 45,
+        "time": "2177-08-15 10:07:15",
+        "speaker": "Patient",
+        "text": "And my mood pills? I’ve been on citalopram for years."
+      },
+      {
+        "turn_number": 46,
+        "time": "2177-08-15 10:08:00",
+        "speaker": "Doctor",
+        "text": "Yes, we increased your citalopram to 40 mg daily. It was 20 mg as two tablets before. Now it’s one 40 mg tablet. Helps with both depression and anxiety."
+      },
+      {
+        "turn_number": 47,
+        "time": "2177-08-15 10:09:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll watch for any side effects."
+      },
+      {
+        "turn_number": 48,
+        "time": "2177-08-16 08:00:00",
+        "speaker": "Doctor",
+        "text": "Today’s the day. You’re being discharged to rehab. You’ll take ciprofloxacin for 12 more days, finish the course there."
+      },
+      {
+        "turn_number": 49,
+        "time": "2177-08-16 08:01:00",
+        "speaker": "Patient",
+        "text": "And I’ll see my urologist after?"
+      },
+      {
+        "turn_number": 50,
+        "time": "2177-08-16 08:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, and infectious disease too. They’ll discuss whether you need long-term preventive antibiotics like Macrobid again."
+      },
+      {
+        "turn_number": 51,
+        "time": "2177-08-16 08:03:00",
+        "speaker": "Patient",
+        "text": "I’ll try to keep everything clean. I don’t want to keep coming back."
+      },
+      {
+        "turn_number": 52,
+        "time": "2177-08-16 08:04:00",
+        "speaker": "Doctor",
+        "text": "That’s the goal. The rehab team will help. And remember, your code status is DNR/DNI, which we confirmed with your daughter. That’s still correct?"
+      },
+      {
+        "turn_number": 53,
+        "time": "2177-08-16 08:05:00",
+        "speaker": "Patient",
+        "text": "Yes, that’s right. No resuscitation."
+      },
+      {
+        "turn_number": 54,
+        "time": "2177-08-16 08:06:00",
+        "speaker": "Doctor",
+        "text": "Understood. You’re alert and doing well. You’ll use a walker for support, which you’re already used to."
+      },
+      {
+        "turn_number": 55,
+        "time": "2177-08-16 08:07:00",
+        "speaker": "Patient",
+        "text": "Yes, I’ve had it for years. I’m ready to go."
+      },
+      {
+        "turn_number": 56,
+        "time": "2177-08-16 08:08:00",
+        "speaker": "Doctor",
+        "text": "One last thing—your catheter was changed again this morning. That makes two changes during this stay, both done safely."
+      },
+      {
+        "turn_number": 57,
+        "time": "2177-08-16 08:09:00",
+        "speaker": "Patient",
+        "text": "I didn’t even feel it. That’s good."
+      },
+      {
+        "turn_number": 58,
+        "time": "2177-08-16 08:10:00",
+        "speaker": "Doctor",
+        "text": "We aim to keep it that way. You’re all set. The transport team will take you to rehab in about an hour."
+      },
+      {
+        "turn_number": 59,
+        "time": "2177-08-16 08:11:00",
+        "speaker": "Patient",
+        "text": "Thank you, doctor. I feel much better."
+      },
+      {
+        "turn_number": 60,
+        "time": "2177-08-16 08:12:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Take care, and we’ll make sure your doctors at rehab have all the details."
+      },
+      {
+        "turn_number": 61,
+        "time": "2177-08-16 08:13:00",
+        "speaker": "Patient",
+        "text": "I’ll follow up like you said."
+      },
+      {
+        "turn_number": 62,
+        "time": "2177-08-16 08:14:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Have a safe transfer."
+      },
+      {
+        "turn_number": 63,
+        "time": "2177-08-16 08:15:00",
+        "speaker": "Patient",
+        "text": "Thanks again."
+      },
+      {
+        "turn_number": 64,
+        "time": "2177-08-16 08:16:00",
+        "speaker": "Doctor",
+        "text": "You're doing great. Rest up at rehab."
+      },
+      {
+        "turn_number": 65,
+        "time": "2177-08-16 08:17:00",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 66,
+        "time": "2177-08-16 08:18:00",
+        "speaker": "Doctor",
+        "text": "Take care, Mr. ___."
+      },
+      {
+        "turn_number": 67,
+        "time": "2177-08-16 08:19:00",
+        "speaker": "Patient",
+        "text": "You too, doctor."
+      }
+    ],
+    "summary": {
+      "admission_start": "2177-08-12 22:07:00",
+      "admission_end": "2177-08-16 17:50:00",
+      "summary_paragraph": "Mr. ___ was admitted with suprapubic and groin pain, burning at the catheter site, and malaise, concerning for recurrent urinary tract infection. He has a chronic indwelling Foley catheter due to hypotonic bladder and a history of multidrug-resistant UTIs. Urinalysis showed infection, and he was started on empiric IV antibiotics. Urine culture grew Acinetobacter baumannii and Enterobacter cloacae, both sensitive to ciprofloxacin. He transitioned to oral ciprofloxacin and completed a catheter change during treatment. His mental confusion on admission resolved quickly and was attributed to sundowning rather than infection. A chest X-ray showed a worsening left pleural effusion but no pneumonia, consistent with his chronic asbestosis. He was discharged to a rehab facility to complete a 14-day course of ciprofloxacin, with plans to follow up with urology and infectious disease for recurrent UTI prevention. His chronic conditions, including CAD, diabetes, hypertension, and a monitored renal mass, remained stable.",
+      "problems": [
+        "Infection and inflammatory reaction due to indwelling urinary catheter",
+        "Urinary tract infection, site not specified",
+        "Atony of bladder",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Other and unspecified hyperlipidemia",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "Asbestosis",
+        "Hypertrophy (benign) of prostate with urinary obstruction and other lower urinary tract symptoms (LUTS)",
+        "Constipation, unspecified",
+        "Hypoxemia",
+        "Heart valve replaced by transplant",
+        "Aortocoronary bypass status",
+        "Do not resuscitate status",
+        "Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms",
+        "Benign essential hypertension"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-bb487f2ca4470221",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2177-08-12 22:07:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hello Mr. ___, I'm Dr. ___. You're in the hospital now after coming in with lower abdominal and groin pain. Can you tell me more about what’s been going on?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2177-08-12 22:08:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, doctor. The pain’s been getting worse over the past few weeks. It starts near my belly button and goes down to my groin. It burns, especially around the catheter.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2177-08-12 22:09:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And have you had fevers, chills, or feeling more tired than usual?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2177-08-12 22:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No fevers at home, but I’ve felt kind of off—just not myself. My daughter said I seemed confused earlier today.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2177-08-12 22:11:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. We checked your urine in the ER and it showed signs of infection—white blood cells and bacteria. Given your history of resistant infections, we started you on strong antibiotics through the IV.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2177-08-12 22:12:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had these infections before. They always say it’s resistant. Is this one different?\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2177-08-12 22:13:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We won’t know exactly until the culture comes back in a few days. But we’re covering all bases with the antibiotics we gave you.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2177-08-12 22:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"They changed my catheter in the ER. Did that help?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2177-08-12 22:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, it was changed as a precaution. Sometimes irritation from the catheter can mimic infection. But your symptoms and urine test suggest a real infection this time.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2177-08-12 22:16:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been on Macrobid and Cipro before. Do I need something stronger?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2177-08-12 22:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Right now, you’re on IV antibiotics—vancomycin and cefepime—because of your history with MRSA and ESBL bacteria. We’ll adjust once we know which bacteria are growing.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2177-08-12 22:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I feel a little foggy. Is that from the infection?\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2177-08-12 22:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly, but your mental status was already improving by the time you got here. Your daughter mentioned this happens at home too. We think it might be sundowning, not from the infection itself.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2177-08-12 22:20:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh, okay. I just don’t want to be confused all the time.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2177-08-12 22:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll keep an eye on it. For now, your vital signs are stable, and your oxygen level is 93% on room air, which matches your baseline.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2177-08-13 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. I reviewed your labs. Your blood work is stable, no signs of sepsis. The urine culture is still growing, but we’ll have results soon.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2177-08-13 08:16:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Any change in the antibiotics?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2177-08-13 08:17:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not yet. We’re waiting for the culture to tell us exactly what we’re dealing with. But you’re responding well—pain is less, right?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2177-08-13 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, a little better since the new catheter and meds.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2177-08-13 08:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. We also ordered a chest X-ray yesterday because your oxygen was a bit lower than usual.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2177-08-13 08:20:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"My lungs? I thought this was about my bladder.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2177-08-13 08:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It is. But with your history of asbestosis, we want to make sure there’s no lung infection or fluid buildup. The X-ray showed a small increase in fluid on the left side, but no pneumonia.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2177-08-13 08:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So nothing to worry about?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2177-08-13 08:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not right now. We’ll monitor it. Your heart and blood pressure are stable, and your EKG was normal.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2177-08-14 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The urine culture is back. You’re growing two bacteria: Acinetobacter and Enterobacter. Both are resistant to some antibiotics, but sensitive to ciprofloxacin.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2177-08-14 09:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Cipro? I’ve taken that before. Is it safe?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2177-08-14 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. In fact, both bacteria respond well to it. We’re switching from IV antibiotics to oral ciprofloxacin. You’ll take it twice a day.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2177-08-14 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I can go home soon?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2177-08-14 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re planning for you to go to a rehab facility. You’ll finish a 14-day course of cipro there. You’ll also need follow-up with urology and infectious disease.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2177-08-14 09:05:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Why infectious disease? I thought the antibiotics would fix it.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2177-08-14 09:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Because you’ve had so many UTIs with different bacteria, they may want to consider long-term preventive antibiotics. Your daughter mentioned hygiene at home might be a factor.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2177-08-14 09:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"She worries too much. But I do have trouble cleaning around the catheter.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2177-08-14 09:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s understandable. The rehab team can help train you and any caregivers on proper catheter care to reduce infections.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2177-08-14 09:09:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That would help. What about my kidney mass? Was that checked?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2177-08-14 09:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s still being followed by urology. No changes noted recently. It’s likely renal cell carcinoma, but since it’s not causing symptoms, they’re monitoring it with scans.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2177-08-14 09:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’d rather not have surgery. My heart’s been through enough.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2177-08-14 09:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s completely fine. The plan is to continue monitoring it, especially since you’re seeing urology regularly.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2177-08-15 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. We changed your catheter again yesterday as a precaution after starting the right antibiotics. Your pain is much better, right?\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2177-08-15 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, the burning is gone. I feel more like myself.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2177-08-15 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Great. We also added docusate to help with your constipation. You’re still on your usual stool softeners and senna.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2177-08-15 10:03:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had that for years. Does it affect my bladder?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2177-08-15 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not directly, but being constipated can press on the bladder and make emptying harder. Keeping your bowels regular helps your bladder work better.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2177-08-15 10:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That makes sense. I’ll keep up with the laxatives.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2177-08-15 10:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. Your heart medications—metoprolol, aspirin, isosorbide—are unchanged. Blood sugars are well controlled, so no insulin needed.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2177-08-15 10:07:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my mood pills? I’ve been on citalopram for years.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2177-08-15 10:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we increased your citalopram to 40 mg daily. It was 20 mg as two tablets before. Now it’s one 40 mg tablet. Helps with both depression and anxiety.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2177-08-15 10:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll watch for any side effects.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2177-08-16 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Today’s the day. You’re being discharged to rehab. You’ll take ciprofloxacin for 12 more days, finish the course there.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2177-08-16 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And I’ll see my urologist after?\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2177-08-16 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, and infectious disease too. They’ll discuss whether you need long-term preventive antibiotics like Macrobid again.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2177-08-16 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll try to keep everything clean. I don’t want to keep coming back.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2177-08-16 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s the goal. The rehab team will help. And remember, your code status is DNR/DNI, which we confirmed with your daughter. That’s still correct?\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2177-08-16 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, that’s right. No resuscitation.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2177-08-16 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Understood. You’re alert and doing well. You’ll use a walker for support, which you’re already used to.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2177-08-16 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I’ve had it for years. I’m ready to go.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2177-08-16 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—your catheter was changed again this morning. That makes two changes during this stay, both done safely.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2177-08-16 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I didn’t even feel it. That’s good.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2177-08-16 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We aim to keep it that way. You’re all set. The transport team will take you to rehab in about an hour.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2177-08-16 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, doctor. I feel much better.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2177-08-16 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Take care, and we’ll make sure your doctors at rehab have all the details.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2177-08-16 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll follow up like you said.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2177-08-16 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Have a safe transfer.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2177-08-16 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks again.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2177-08-16 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You're doing great. Rest up at rehab.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2177-08-16 08:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2177-08-16 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care, Mr. ___.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2177-08-16 08:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"You too, doctor.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2177-08-12 22:07:00\",\n    \"admission_end\": \"2177-08-16 17:50:00\",\n    \"summary_paragraph\": \"Mr. ___ was admitted with suprapubic and groin pain, burning at the catheter site, and malaise, concerning for recurrent urinary tract infection. He has a chronic indwelling Foley catheter due to hypotonic bladder and a history of multidrug-resistant UTIs. Urinalysis showed infection, and he was started on empiric IV antibiotics. Urine culture grew Acinetobacter baumannii and Enterobacter cloacae, both sensitive to ciprofloxacin. He transitioned to oral ciprofloxacin and completed a catheter change during treatment. His mental confusion on admission resolved quickly and was attributed to sundowning rather than infection. A chest X-ray showed a worsening left pleural effusion but no pneumonia, consistent with his chronic asbestosis. He was discharged to a rehab facility to complete a 14-day course of ciprofloxacin, with plans to follow up with urology and infectious disease for recurrent UTI prevention. His chronic conditions, including CAD, diabetes, hypertension, and a monitored renal mass, remained stable.\",\n    \"problems\": [\n      \"Infection and inflammatory reaction due to indwelling urinary catheter\",\n      \"Urinary tract infection, site not specified\",\n      \"Atony of bladder\",\n      \"Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\",\n      \"Other and unspecified hyperlipidemia\",\n      \"Depressive disorder, not elsewhere classified\",\n      \"Anxiety state, unspecified\",\n      \"Coronary atherosclerosis of unspecified type of vessel, native or graft\",\n      \"Asbestosis\",\n      \"Hypertrophy (benign) of prostate with urinary obstruction and other lower urinary tract symptoms (LUTS)\",\n      \"Constipation, unspecified\",\n      \"Hypoxemia\",\n      \"Heart valve replaced by transplant\",\n      \"Aortocoronary bypass status\",\n      \"Do not resuscitate status\",\n      \"Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms\",\n      \"Benign essential hypertension\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776990601,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5295,
+      "prompt_tokens": 11632,
+      "total_tokens": 16927,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

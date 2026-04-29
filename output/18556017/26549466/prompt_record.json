@@ -1,0 +1,683 @@
+{
+  "subject_id": "18556017",
+  "hadm_id": "26549466",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T15:04:16Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 3 day(s).\n- Recommended turn range: 40-60 turns.\n- Exact admission window: 2189-05-17 01:47:00 to 2189-05-19 14:12:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2188-08-06 21:57:00",
+    "admission_end": "2188-08-09 16:45:00",
+    "summary_paragraph": "A woman with a history of type 1 diabetes, kidney transplantation, and breast cancer was admitted for acute onset of nausea, vomiting, diarrhea, fever, and myalgias after eating a chicken-Asian salad. Initial evaluation showed no bacterial source, with negative urinalysis, negative flu swab, and normal chest X-ray. Blood and urine cultures were obtained, with urine showing gram-positive bacteria but no definitive pathogen. CMV viral load was negative. She was managed supportively with IV fluids and symptom control. Her symptoms improved over 3 days, and she was discharged home on her baseline immunosuppressive and diabetes medications with a prescription for ondansetron for breakthrough nausea. The clinical course was consistent with viral gastroenteritis.",
+    "problems": [
+      "Intestinal infection due to other organism, not elsewhere classified",
+      "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+      "Diabetes with ophthalmic manifestations, type I [juvenile type], uncontrolled",
+      "Kidney replaced by transplant",
+      "Fever, unspecified",
+      "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+      "Background diabetic retinopathy",
+      "Constipation, unspecified",
+      "Other and unspecified hyperlipidemia",
+      "Unspecified acquired hypothyroidism",
+      "Osteoporosis, unspecified",
+      "Benign essential hypertension",
+      "Peripheral vascular disease, unspecified",
+      "Insulin pump status",
+      "Personal history of malignant neoplasm of breast",
+      "Personal history of irradiation, presenting hazards to health",
+      "Long-term (current) use of steroids"
+    ]
+  },
+  "stay_days": 3,
+  "recommended_turn_range": [
+    40,
+    60
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2189-05-19 00:00:00): Name:  ___.                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nAmoxicillin / Biaxin / Morphine / Doxycycline / Erythromycin \nBase / Penicillins / Percocet / Flagyl / fluconazole\n \nAttending: ___.\n \nChief Complaint:\ncough\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\n___ year-old woman with renal transplant ___ and ___ for \ndiabetic nephropathy, left breast DCIS s/p lumpectomy ___ f/b \nXRT, and DM1 on insulin pump, who presented to the ED with \nproductive cough, myalgias and malaise for the last several \nweeks.  \n She had been on cefpodoxime for dysuria since ___, which \nwas then switched to levofloxacin around ___ after \ndevelopment of current cough, however she's had no improvement \nin her symptoms. Denies fevers. Cough initially productive of \nwhite sputum, now less productive. Endorses concurrent fatigue \nand myalgias. Of note, has ___ yo at home, who was recently \ndiagnosed with PNA, started on azithromycin.  \n In the ED:  \n Initial VS: 98.9 86 121/53 14 100% RA  \n Labs notable for: lactate 2.3, K 5, WBC 7.0, Hgb 12.9, glucose \n429  \n Renal U/S: Slight interval increase in the resistive indices of \nthe intrarenal arteries  \n CT chest: Stable left upper lobe and lingular subpleural \nfibrosis, likely related to prior radiation therapy.  \n Consult: renal transplant, who recommended continueing home \nmedications, admitting to medicine for further management  \n Received nebs  \n Vitals prior to transfer: 98.1 80 127/71 15 100% RA  \n On arrival to the floor, patient reports persistent cough, \nfatigue. \n \nPast Medical History:\n- Diabetes mellitus, type 1\n  * Since age ___\n  * On insulin pump\n  * C/b nephropathy\n  * C/b retinopathy\n- Diabetic nephropathy\n  * Originally in ___\n  * Repeat LURT in ___\n- Hypothyroidism\n- Dyslipidemia\n- Peripheral vascular disease\n- Osteoporosis\n- PJP pneumonia (___)\n- Sepsis of urinary origin (___)\n- Primary varicella zoster infection (___)\n- History of left breast cancer:  Infiltrating ductal carcinoma \nin ___ cores, grade 1, ER and PR positive, and HER-2/neu \nnegative by  immunohistochemistry and FISH. She had a lumpectomy \nin ___ followed by radiation therapy, now on tamoxifen\n \nSocial History:\n___\nFamily History:\n- Grandmother with kidney disease\n- No family history of DM\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM:  \n 97.7 107/70 84 96% RA  \n 69.4kg  \n GENERAL: NAD  \n HEENT: PERRL, dry MM  \n NECK: nontender supple neck, no LAD, no JVD  \n CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  \n LUNG: diffusely rhoncorous, deep inhalation prompts coughing  \n ABDOMEN: nondistended, +BS, nontender in all quadrants, no \nrebound/guarding, no hepatosplenomegaly  \n EXTREMITIES: no cyanosis, clubbing or edema, moving all 4 \nextremities with purpose  \n PULSES: 2+ DP pulses bilaterally  \n NEURO: CN II-XII intact  \n SKIN: warm and well perfused, no excoriations or lesions, no \nrashes  \n\nDISCHARGE PHYSICAL EXAM:\n98 124/53 88 18 98%RA\n GENERAL: NAD  \n HEENT: PERRL \n NECK: nontender supple neck, no LAD, no JVD  \n CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  \n LUNG: CTAB, rhonchi with cough\n ABDOMEN: nondistended, +BS, nontender in all quadrants, no \nrebound/guarding, no hepatosplenomegaly  \n EXTREMITIES: no cyanosis, clubbing or edema, moving all 4 \nextremities with purpose  \n PULSES: 2+ DP pulses bilaterally   \n SKIN: warm and well perfused, no excoriations or lesions, no \nrashes \n \nPertinent Results:\n___ 07:30PM BLOOD WBC-7.0 RBC-4.85 Hgb-12.9 Hct-41.6 MCV-86 \nMCH-26.6 MCHC-31.0* RDW-13.5 RDWSD-42.2 Plt ___\n___ 06:50AM BLOOD WBC-7.0 RBC-4.70 Hgb-12.5 Hct-40.3 MCV-86 \nMCH-26.6 MCHC-31.0* RDW-13.7 RDWSD-42.5 Plt ___\n___ 07:30PM BLOOD Glucose-429* UreaN-27* Creat-0.9 Na-133 \nK-5.3* Cl-98 HCO3-26 AnGap-14\n___ 06:50AM BLOOD Glucose-379* UreaN-22* Creat-0.9 Na-136 \nK-4.3 Cl-103 HCO3-22 AnGap-15\n___ 07:30PM BLOOD ALT-22 AST-33 AlkPhos-124* TotBili-0.3\n___ 06:50AM BLOOD Calcium-8.9 Phos-3.8 Mg-1.6\n___ 06:50AM BLOOD Cortsol-11.8\n___ 06:50AM BLOOD Cyclspr-142\n___ 07:36AM BLOOD Lactate-1.___ woman with renal transplant x2 (last in ___ and T1 \nDM, admitted with several weeks of productive cough, myalgias \nand malaise.\n\n#Viral illness: 2 weeks of cough and malaise. Patient's symptoms \nimproved with symptomatic therapy and IVF alone. EBV and CMV \npending at discharge.\n\n#orthostatic hypotension: some concern for adrenal insufficiency \nbut cortisol was 10.6. Given 3 days of stress dose pred at \n20mg/day.\n\n# s/p live donor kidney transplant x 2: Cr at baseline; \ncyclosporine and MMF and prednisone continued\n # type 1 diabetes: Poorly controlled. Last A1c in ___ system \n11.5 ___. On lantus for baseline and uses the pump for bolus \ntherapy  \n - continued home lantus and insulin pump  \n - ___ consulted (given pump use)  \n # HLD:  \n - continued home atorvastatin  \n # Osteoporosis:  \n - continued home vitamin D and calcium  \n\nTransitional Issue:\n-Prednisone 20mg daily x 3 days (last day ___ then back to \nhome dose of 3 mg\nPlease follow up EBV and CMV tests.\n \nMedications on Admission:\nThe Preadmission Medication list may be inaccurate and requires \nfuther investigation.\n1. Aspirin 81 mg PO DAILY \n2. Calcium Carbonate 500 mg PO DAILY \n3. CycloSPORINE (Neoral) MODIFIED 75 mg PO Q12H \n4. Lactulose 30 mL PO DAILY:PRN Constipation \n5. Levothyroxine Sodium 112 mcg PO DAILY \n6. Mycophenolate Mofetil 500 mg PO BID \n7. PredniSONE 3 mg PO DAILY \n8. Sulfameth/Trimethoprim SS 1 TAB PO DAILY \n9. Tamoxifen Citrate 20 mg PO DAILY \n10. Vitamin D 1000 UNIT PO DAILY \n11. Acetaminophen 650 mg PO Q6H:PRN Pain \n12. Atorvastatin 60 mg PO DAILY \n13. Lubiprostone 24 mcg PO BID \n14. Ondansetron 4 mg PO Q8H:PRN nausea/vomiting \n15. Insulin  Pump SC (Self Administering Medication)Insulin \nAspart (Novolog) (non-formulary)\nBasal rate minimum: 0.1 units/hr\nBasal rate maximum: 0.3 units/hr\nBolus minimum: 0 units\nBolus maximum: 10 units\nTarget glucose: ___\nFingersticks: QAC and HS, Q6H, if NPO\n\n \nDischarge Medications:\n1. Aspirin 81 mg PO DAILY \n2. Atorvastatin 60 mg PO DAILY \n3. Calcium Carbonate 500 mg PO DAILY \n4. CycloSPORINE (Neoral) MODIFIED 75 mg PO Q12H \n5. Insulin  Pump SC (Self Administering Medication)Insulin \nAspart (Novolog) (non-formulary)\nBasal rate minimum: 0.1 units/hr\nBasal rate maximum: 0.3 units/hr\nBolus minimum: 0 units\nBolus maximum: 10 units\nTarget glucose: ___\nFingersticks: QAC and HS, Q6H, if NPO\n\n6. Lactulose 30 mL PO DAILY:PRN Constipation \n7. Levothyroxine Sodium 112 mcg PO DAILY \n8. Lubiprostone 24 mcg PO BID \n9. Mycophenolate Mofetil 500 mg PO BID \n10. PredniSONE 3 mg PO DAILY \nRX *prednisone 20 mg 1 tablet(s) by mouth daily Disp #*2 Tablet \nRefills:*0\n11. Sulfameth/Trimethoprim SS 1 TAB PO DAILY \n12. Tamoxifen Citrate 20 mg PO DAILY \n13. Vitamin D 1000 UNIT PO DAILY \n14. Guaifenesin ___ mL PO Q6H \nRX *guaifenesin 100 mg/5 mL ___ mL by mouth every 6 hours \nRefills:*0\n15. Acetaminophen 650 mg PO Q6H:PRN Pain \n16. Ondansetron 4 mg PO Q8H:PRN nausea/vomiting \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nViral Illness\nStatus Post Kidney Transplant \nDiabetes\nadrenal insufficiency\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted with a viral illness. We monitored you to make \nsure that you were safe to go home. You also had low blood \npressure so we gave you extra prednisone to help with your blood \npressure. Please follow up with your PCP and your kidney doctor.\n\nSincerely,\nYour ___ Team\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Acute upper respiratory infection, unspecified\n- Type 1 diabetes mellitus with diabetic nephropathy\n- Type 1 diabetes mellitus with diabetic neuropathy, unspecified\n- Kidney transplant status\n- Unspecified adrenocortical insufficiency\n- Chronic and other pulmonary manifestations due to radiation\n- Long term (current) use of insulin\n- Hypothyroidism, unspecified\n- Hyperlipidemia, unspecified\n- Age-related osteoporosis without current pathological fracture\n- Malignant neoplasm of unspecified site of left female breast\n- Estrogen receptor positive status [ER+]\n- Essential (primary) hypertension\n- Type 1 diabetes mellitus with unspecified diabetic retinopathy without macular edema\n- Pain in unspecified hip\n- Atherosclerotic heart disease of native coronary artery without angina pectoris",
+  "supporting_context_block": "Radiology:\n- 2189-05-17 19:03:00: INDICATION: ___ year old woman with hip pain // eval for AVN/fracture TECHNIQUE: AP view of the pelvis and two views of the right hip. COMPARISON: CT of the abdomen and pelvis on ___. FINDINGS: No acute fracture or di...\n\nProcedures:\n- None recorded.\n\nMicrobiology:\n- 2189-05-17 11:33:00: SPUTUM (<10 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.)\n- 2189-05-17 11:33:00: SPUTUM (TEST CANCELLED, PATIENT CREDITED.)\n- 2189-05-17 11:33:00: SPUTUM (NO LEGIONELLA ISOLATED.)\n- 2189-05-17 11:33:00: SPUTUM (NEGATIVE for Pneumocystis jirovecii (carinii).)\n- 2189-05-17 17:13:00: Rapid Respiratory Viral Screen & Culture (No respiratory viruses isolated.  Culture screened for Adenovirus, Influenza A & B, Parainfluenza type 1,2 & 3, and Respiratory Syncytial Virus.  Detection of viruses other than those listed above will only be performed on specific request. Please call Virology at ___ within 1 week if additional testing is needed.)\n- 2189-05-17 17:13:00: Rapid Respiratory Viral Screen & Culture (Negative for Respiratory Viral Antigen.  Specimen screened for: Adeno, Parainfluenza 1, 2, 3, Influenza A, B, and RSV by immunofluorescence.  Refer to respiratory viral culture and/or Influenza PCR (results listed under \"OTHER\" tab) for further information.)\n- 2189-05-18 22:33:00: URINE (NEGATIVE FOR LEGIONELLA SEROGROUP 1 ANTIGEN.            (Reference Range-Negative).  Performed by Immunochromogenic assay.  A negative result does not rule out infection due to other L. pneumophila serogroups or other Legionella species. Furthermore, in infected patients the excretion of antigen in urine may vary.)",
+  "formed_packet": {
+    "subject_id": "18556017",
+    "hadm_id": "26549466",
+    "admission_start": "2189-05-17 01:47:00",
+    "admission_end": "2189-05-19 14:12:00",
+    "previous_admission_summary": {
+      "admission_start": "2188-08-06 21:57:00",
+      "admission_end": "2188-08-09 16:45:00",
+      "summary_paragraph": "A woman with a history of type 1 diabetes, kidney transplantation, and breast cancer was admitted for acute onset of nausea, vomiting, diarrhea, fever, and myalgias after eating a chicken-Asian salad. Initial evaluation showed no bacterial source, with negative urinalysis, negative flu swab, and normal chest X-ray. Blood and urine cultures were obtained, with urine showing gram-positive bacteria but no definitive pathogen. CMV viral load was negative. She was managed supportively with IV fluids and symptom control. Her symptoms improved over 3 days, and she was discharged home on her baseline immunosuppressive and diabetes medications with a prescription for ondansetron for breakthrough nausea. The clinical course was consistent with viral gastroenteritis.",
+      "problems": [
+        "Intestinal infection due to other organism, not elsewhere classified",
+        "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+        "Diabetes with ophthalmic manifestations, type I [juvenile type], uncontrolled",
+        "Kidney replaced by transplant",
+        "Fever, unspecified",
+        "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+        "Background diabetic retinopathy",
+        "Constipation, unspecified",
+        "Other and unspecified hyperlipidemia",
+        "Unspecified acquired hypothyroidism",
+        "Osteoporosis, unspecified",
+        "Benign essential hypertension",
+        "Peripheral vascular disease, unspecified",
+        "Insulin pump status",
+        "Personal history of malignant neoplasm of breast",
+        "Personal history of irradiation, presenting hazards to health",
+        "Long-term (current) use of steroids"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "18556017-DS-35",
+        "note_seq": 35,
+        "charttime": "2189-05-19 00:00:00",
+        "storetime": "2189-05-19 15:25:00",
+        "text": " \nName:  ___.                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nAmoxicillin / Biaxin / Morphine / Doxycycline / Erythromycin \nBase / Penicillins / Percocet / Flagyl / fluconazole\n \nAttending: ___.\n \nChief Complaint:\ncough\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\n___ year-old woman with renal transplant ___ and ___ for \ndiabetic nephropathy, left breast DCIS s/p lumpectomy ___ f/b \nXRT, and DM1 on insulin pump, who presented to the ED with \nproductive cough, myalgias and malaise for the last several \nweeks.  \n She had been on cefpodoxime for dysuria since ___, which \nwas then switched to levofloxacin around ___ after \ndevelopment of current cough, however she's had no improvement \nin her symptoms. Denies fevers. Cough initially productive of \nwhite sputum, now less productive. Endorses concurrent fatigue \nand myalgias. Of note, has ___ yo at home, who was recently \ndiagnosed with PNA, started on azithromycin.  \n In the ED:  \n Initial VS: 98.9 86 121/53 14 100% RA  \n Labs notable for: lactate 2.3, K 5, WBC 7.0, Hgb 12.9, glucose \n429  \n Renal U/S: Slight interval increase in the resistive indices of \nthe intrarenal arteries  \n CT chest: Stable left upper lobe and lingular subpleural \nfibrosis, likely related to prior radiation therapy.  \n Consult: renal transplant, who recommended continueing home \nmedications, admitting to medicine for further management  \n Received nebs  \n Vitals prior to transfer: 98.1 80 127/71 15 100% RA  \n On arrival to the floor, patient reports persistent cough, \nfatigue. \n \nPast Medical History:\n- Diabetes mellitus, type 1\n  * Since age ___\n  * On insulin pump\n  * C/b nephropathy\n  * C/b retinopathy\n- Diabetic nephropathy\n  * Originally in ___\n  * Repeat LURT in ___\n- Hypothyroidism\n- Dyslipidemia\n- Peripheral vascular disease\n- Osteoporosis\n- PJP pneumonia (___)\n- Sepsis of urinary origin (___)\n- Primary varicella zoster infection (___)\n- History of left breast cancer:  Infiltrating ductal carcinoma \nin ___ cores, grade 1, ER and PR positive, and HER-2/neu \nnegative by  immunohistochemistry and FISH. She had a lumpectomy \nin ___ followed by radiation therapy, now on tamoxifen\n \nSocial History:\n___\nFamily History:\n- Grandmother with kidney disease\n- No family history of DM\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM:  \n 97.7 107/70 84 96% RA  \n 69.4kg  \n GENERAL: NAD  \n HEENT: PERRL, dry MM  \n NECK: nontender supple neck, no LAD, no JVD  \n CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  \n LUNG: diffusely rhoncorous, deep inhalation prompts coughing  \n ABDOMEN: nondistended, +BS, nontender in all quadrants, no \nrebound/guarding, no hepatosplenomegaly  \n EXTREMITIES: no cyanosis, clubbing or edema, moving all 4 \nextremities with purpose  \n PULSES: 2+ DP pulses bilaterally  \n NEURO: CN II-XII intact  \n SKIN: warm and well perfused, no excoriations or lesions, no \nrashes  \n\nDISCHARGE PHYSICAL EXAM:\n98 124/53 88 18 98%RA\n GENERAL: NAD  \n HEENT: PERRL \n NECK: nontender supple neck, no LAD, no JVD  \n CARDIAC: RRR, S1/S2, no murmurs, gallops, or rubs  \n LUNG: CTAB, rhonchi with cough\n ABDOMEN: nondistended, +BS, nontender in all quadrants, no \nrebound/guarding, no hepatosplenomegaly  \n EXTREMITIES: no cyanosis, clubbing or edema, moving all 4 \nextremities with purpose  \n PULSES: 2+ DP pulses bilaterally   \n SKIN: warm and well perfused, no excoriations or lesions, no \nrashes \n \nPertinent Results:\n___ 07:30PM BLOOD WBC-7.0 RBC-4.85 Hgb-12.9 Hct-41.6 MCV-86 \nMCH-26.6 MCHC-31.0* RDW-13.5 RDWSD-42.2 Plt ___\n___ 06:50AM BLOOD WBC-7.0 RBC-4.70 Hgb-12.5 Hct-40.3 MCV-86 \nMCH-26.6 MCHC-31.0* RDW-13.7 RDWSD-42.5 Plt ___\n___ 07:30PM BLOOD Glucose-429* UreaN-27* Creat-0.9 Na-133 \nK-5.3* Cl-98 HCO3-26 AnGap-14\n___ 06:50AM BLOOD Glucose-379* UreaN-22* Creat-0.9 Na-136 \nK-4.3 Cl-103 HCO3-22 AnGap-15\n___ 07:30PM BLOOD ALT-22 AST-33 AlkPhos-124* TotBili-0.3\n___ 06:50AM BLOOD Calcium-8.9 Phos-3.8 Mg-1.6\n___ 06:50AM BLOOD Cortsol-11.8\n___ 06:50AM BLOOD Cyclspr-142\n___ 07:36AM BLOOD Lactate-1.___ woman with renal transplant x2 (last in ___ and T1 \nDM, admitted with several weeks of productive cough, myalgias \nand malaise.\n\n#Viral illness: 2 weeks of cough and malaise. Patient's symptoms \nimproved with symptomatic therapy and IVF alone. EBV and CMV \npending at discharge.\n\n#orthostatic hypotension: some concern for adrenal insufficiency \nbut cortisol was 10.6. Given 3 days of stress dose pred at \n20mg/day.\n\n# s/p live donor kidney transplant x 2: Cr at baseline; \ncyclosporine and MMF and prednisone continued\n # type 1 diabetes: Poorly controlled. Last A1c in ___ system \n11.5 ___. On lantus for baseline and uses the pump for bolus \ntherapy  \n - continued home lantus and insulin pump  \n - ___ consulted (given pump use)  \n # HLD:  \n - continued home atorvastatin  \n # Osteoporosis:  \n - continued home vitamin D and calcium  \n\nTransitional Issue:\n-Prednisone 20mg daily x 3 days (last day ___ then back to \nhome dose of 3 mg\nPlease follow up EBV and CMV tests.\n \nMedications on Admission:\nThe Preadmission Medication list may be inaccurate and requires \nfuther investigation.\n1. Aspirin 81 mg PO DAILY \n2. Calcium Carbonate 500 mg PO DAILY \n3. CycloSPORINE (Neoral) MODIFIED 75 mg PO Q12H \n4. Lactulose 30 mL PO DAILY:PRN Constipation \n5. Levothyroxine Sodium 112 mcg PO DAILY \n6. Mycophenolate Mofetil 500 mg PO BID \n7. PredniSONE 3 mg PO DAILY \n8. Sulfameth/Trimethoprim SS 1 TAB PO DAILY \n9. Tamoxifen Citrate 20 mg PO DAILY \n10. Vitamin D 1000 UNIT PO DAILY \n11. Acetaminophen 650 mg PO Q6H:PRN Pain \n12. Atorvastatin 60 mg PO DAILY \n13. Lubiprostone 24 mcg PO BID \n14. Ondansetron 4 mg PO Q8H:PRN nausea/vomiting \n15. Insulin  Pump SC (Self Administering Medication)Insulin \nAspart (Novolog) (non-formulary)\nBasal rate minimum: 0.1 units/hr\nBasal rate maximum: 0.3 units/hr\nBolus minimum: 0 units\nBolus maximum: 10 units\nTarget glucose: ___\nFingersticks: QAC and HS, Q6H, if NPO\n\n \nDischarge Medications:\n1. Aspirin 81 mg PO DAILY \n2. Atorvastatin 60 mg PO DAILY \n3. Calcium Carbonate 500 mg PO DAILY \n4. CycloSPORINE (Neoral) MODIFIED 75 mg PO Q12H \n5. Insulin  Pump SC (Self Administering Medication)Insulin \nAspart (Novolog) (non-formulary)\nBasal rate minimum: 0.1 units/hr\nBasal rate maximum: 0.3 units/hr\nBolus minimum: 0 units\nBolus maximum: 10 units\nTarget glucose: ___\nFingersticks: QAC and HS, Q6H, if NPO\n\n6. Lactulose 30 mL PO DAILY:PRN Constipation \n7. Levothyroxine Sodium 112 mcg PO DAILY \n8. Lubiprostone 24 mcg PO BID \n9. Mycophenolate Mofetil 500 mg PO BID \n10. PredniSONE 3 mg PO DAILY \nRX *prednisone 20 mg 1 tablet(s) by mouth daily Disp #*2 Tablet \nRefills:*0\n11. Sulfameth/Trimethoprim SS 1 TAB PO DAILY \n12. Tamoxifen Citrate 20 mg PO DAILY \n13. Vitamin D 1000 UNIT PO DAILY \n14. Guaifenesin ___ mL PO Q6H \nRX *guaifenesin 100 mg/5 mL ___ mL by mouth every 6 hours \nRefills:*0\n15. Acetaminophen 650 mg PO Q6H:PRN Pain \n16. Ondansetron 4 mg PO Q8H:PRN nausea/vomiting \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nViral Illness\nStatus Post Kidney Transplant \nDiabetes\nadrenal insufficiency\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted with a viral illness. We monitored you to make \nsure that you were safe to go home. You also had low blood \npressure so we gave you extra prednisone to help with your blood \npressure. Please follow up with your PCP and your kidney doctor.\n\nSincerely,\nYour ___ Team\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "18556017-RR-243",
+        "charttime": "2189-05-17 19:03:00",
+        "storetime": "2189-05-17 20:43:00",
+        "text": "INDICATION:  ___ year old woman with hip pain  // eval for AVN/fracture\n\nTECHNIQUE:  AP view of the pelvis and two views of the right hip.\n\nCOMPARISON:  CT of the abdomen and pelvis on ___.\n\nFINDINGS: \n\nNo acute fracture or dislocation is detected.  There is no focal lytic or\nsclerotic lesion detected .  There are mild degenerative changes of the hips\nbilaterally.  There is no radiographic evidence of avascular necrosis. \nSuspect diffuse osteopenia.  Surgical clips are noted in the left pelvis. \nVascular calcifications are noted.  There are probable mild degenerative\nchanges of the lower lumbar spin, not fully evaluated on this exam e.\n\nIMPRESSION: \n\nNo radiographic evidence of fracture or avascular necrosis.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "J069",
+        "icd_version": 10,
+        "long_title": "Acute upper respiratory infection, unspecified",
+        "normalized_time": "2189-05-19 13:12:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "E1021",
+        "icd_version": 10,
+        "long_title": "Type 1 diabetes mellitus with diabetic nephropathy",
+        "normalized_time": "2189-05-19 13:16:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "E1040",
+        "icd_version": 10,
+        "long_title": "Type 1 diabetes mellitus with diabetic neuropathy, unspecified",
+        "normalized_time": "2189-05-19 13:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "Z940",
+        "icd_version": 10,
+        "long_title": "Kidney transplant status",
+        "normalized_time": "2189-05-19 13:24:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "E2740",
+        "icd_version": 10,
+        "long_title": "Unspecified adrenocortical insufficiency",
+        "normalized_time": "2189-05-19 13:28:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "J701",
+        "icd_version": 10,
+        "long_title": "Chronic and other pulmonary manifestations due to radiation",
+        "normalized_time": "2189-05-19 13:32:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "Z794",
+        "icd_version": 10,
+        "long_title": "Long term (current) use of insulin",
+        "normalized_time": "2189-05-19 13:36:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "E039",
+        "icd_version": 10,
+        "long_title": "Hypothyroidism, unspecified",
+        "normalized_time": "2189-05-19 13:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "E785",
+        "icd_version": 10,
+        "long_title": "Hyperlipidemia, unspecified",
+        "normalized_time": "2189-05-19 13:44:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "M810",
+        "icd_version": 10,
+        "long_title": "Age-related osteoporosis without current pathological fracture",
+        "normalized_time": "2189-05-19 13:48:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "C50912",
+        "icd_version": 10,
+        "long_title": "Malignant neoplasm of unspecified site of left female breast",
+        "normalized_time": "2189-05-19 13:52:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "Z170",
+        "icd_version": 10,
+        "long_title": "Estrogen receptor positive status [ER+]",
+        "normalized_time": "2189-05-19 13:56:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "I10",
+        "icd_version": 10,
+        "long_title": "Essential (primary) hypertension",
+        "normalized_time": "2189-05-19 14:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "E10319",
+        "icd_version": 10,
+        "long_title": "Type 1 diabetes mellitus with unspecified diabetic retinopathy without macular edema",
+        "normalized_time": "2189-05-19 14:04:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "M25559",
+        "icd_version": 10,
+        "long_title": "Pain in unspecified hip",
+        "normalized_time": "2189-05-19 14:08:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "I2510",
+        "icd_version": 10,
+        "long_title": "Atherosclerotic heart disease of native coronary artery without angina pectoris",
+        "normalized_time": "2189-05-19 14:12:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [],
+    "microbiology": [
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 11:33:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "<10 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.  "
+      },
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 11:33:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "RESPIRATORY CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "TEST CANCELLED, PATIENT CREDITED.  "
+      },
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 11:33:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "LEGIONELLA CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO LEGIONELLA ISOLATED.  "
+      },
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 11:33:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "Immunofluorescent test for Pneumocystis jirovecii (carinii)",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NEGATIVE for Pneumocystis jirovecii (carinii).  "
+      },
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 17:13:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "Rapid Respiratory Viral Screen & Culture",
+        "test_name": "Respiratory Viral Culture",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "No respiratory viruses isolated.  Culture screened for Adenovirus, Influenza A & B, Parainfluenza type 1,2 & 3, and Respiratory Syncytial Virus.  Detection of viruses other than those listed above will only be performed on specific request. Please call Virology at ___ within 1 week if additional testing is needed.  "
+      },
+      {
+        "chartdate": "2189-05-17 00:00:00",
+        "charttime": "2189-05-17 17:13:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "Rapid Respiratory Viral Screen & Culture",
+        "test_name": "Respiratory Viral Antigen Screen",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Negative for Respiratory Viral Antigen.  Specimen screened for: Adeno, Parainfluenza 1, 2, 3, Influenza A, B, and RSV by immunofluorescence.  Refer to respiratory viral culture and/or Influenza PCR (results listed under \"OTHER\" tab) for further information.  "
+      },
+      {
+        "chartdate": "2189-05-18 00:00:00",
+        "charttime": "2189-05-18 22:33:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "Legionella Urinary Antigen ",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NEGATIVE FOR LEGIONELLA SEROGROUP 1 ANTIGEN.            (Reference Range-Negative).  Performed by Immunochromogenic assay.  A negative result does not rule out infection due to other L. pneumophila serogroups or other Legionella species. Furthermore, in infected patients the excretion of antigen in urine may vary.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 10462,
+    "output_tokens": 3985,
+    "total_tokens": 14447
+  },
+  "response_id": "chatcmpl-9169565fe9c5f58f",
+  "latency_ms": 70069,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2189-05-17 02:15:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I’ll be your doctor during your stay. You came in with a cough and fatigue—can you tell me more about that?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2189-05-17 02:17:00",
+        "speaker": "Patient",
+        "text": "Yes, I’ve had this cough for about two weeks now. It started with white phlegm, but it’s getting drier. I also feel really tired and achy all over."
+      },
+      {
+        "turn_number": 3,
+        "time": "2189-05-17 02:19:00",
+        "speaker": "Doctor",
+        "text": "Any fevers or chills?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2189-05-17 02:20:00",
+        "speaker": "Patient",
+        "text": "No, I haven’t had a fever. But I’ve been on antibiotics—first for a urinary issue, then switched to levofloxacin when the cough started. It hasn’t helped."
+      },
+      {
+        "turn_number": 5,
+        "time": "2189-05-17 02:22:00",
+        "speaker": "Doctor",
+        "text": "I see. And your grandson was recently diagnosed with pneumonia—is that right?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2189-05-17 02:23:00",
+        "speaker": "Patient",
+        "text": "Yes, he’s on azithromycin. I thought maybe I caught something from him."
+      },
+      {
+        "turn_number": 7,
+        "time": "2189-05-17 02:25:00",
+        "speaker": "Doctor",
+        "text": "That’s possible. We’re going to run some tests to check for infections. Given your transplant history, we need to be careful."
+      },
+      {
+        "turn_number": 8,
+        "time": "2189-05-17 02:26:00",
+        "speaker": "Patient",
+        "text": "Okay. My cough is annoying, but I’m more worried about my blood pressure. I’ve been feeling lightheaded when I stand up."
+      },
+      {
+        "turn_number": 9,
+        "time": "2189-05-17 02:28:00",
+        "speaker": "Doctor",
+        "text": "We noticed your blood pressure was low earlier. We’re checking your cortisol level to see if your adrenal glands are keeping up, especially since you’re on prednisone."
+      },
+      {
+        "turn_number": 10,
+        "time": "2189-05-17 02:30:00",
+        "speaker": "Patient",
+        "text": "Oh, I didn’t know that could be related. Should I be worried?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2189-05-17 02:32:00",
+        "speaker": "Doctor",
+        "text": "Not necessarily. We just want to make sure you’re not having adrenal insufficiency. If the level is low, we’ll give you a short course of higher-dose steroids to help."
+      },
+      {
+        "turn_number": 12,
+        "time": "2189-05-17 08:45:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your labs came back. Your white blood cell count is normal, and the chest CT shows stable scarring from your past radiation—no new pneumonia."
+      },
+      {
+        "turn_number": 13,
+        "time": "2189-05-17 08:47:00",
+        "speaker": "Patient",
+        "text": "So it’s not a bacterial infection?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2189-05-17 08:49:00",
+        "speaker": "Doctor",
+        "text": "Unlikely. The sputum test was contaminated, so we can’t trust it. But the viral panel came back negative for flu, RSV, and others. We’re still waiting on EBV and CMV, but right now, this looks like a viral illness."
+      },
+      {
+        "turn_number": 15,
+        "time": "2189-05-17 08:51:00",
+        "speaker": "Patient",
+        "text": "So it’s just going to run its course?"
+      },
+      {
+        "turn_number": 16,
+        "time": "2189-05-17 08:53:00",
+        "speaker": "Doctor",
+        "text": "Yes. We’ll support you with fluids and symptom control. Your kidney function is stable, and your transplant team says to keep your usual medications."
+      },
+      {
+        "turn_number": 17,
+        "time": "2189-05-17 08:55:00",
+        "speaker": "Patient",
+        "text": "What about my blood sugar? It’s been high since I’ve been here."
+      },
+      {
+        "turn_number": 18,
+        "time": "2189-05-17 08:57:00",
+        "speaker": "Doctor",
+        "text": "Yes, your glucose was 429 on arrival. We’ve continued your insulin pump and basal insulin. We’ll monitor it closely. Stress and illness can make it harder to control."
+      },
+      {
+        "turn_number": 19,
+        "time": "2189-05-17 08:59:00",
+        "speaker": "Patient",
+        "text": "I know. My A1c was 11.5 last time. I’m trying, but it’s tough."
+      },
+      {
+        "turn_number": 20,
+        "time": "2189-05-17 09:01:00",
+        "speaker": "Doctor",
+        "text": "We’ll work with you on that. For now, we’re focused on getting through this illness safely."
+      },
+      {
+        "turn_number": 21,
+        "time": "2189-05-17 19:10:00",
+        "speaker": "Doctor",
+        "text": "We also did an X-ray for your hip pain. It shows mild arthritis and some bone thinning, but no fracture or avascular necrosis."
+      },
+      {
+        "turn_number": 22,
+        "time": "2189-05-17 19:12:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. I was worried it might be something serious."
+      },
+      {
+        "turn_number": 23,
+        "time": "2189-05-17 19:14:00",
+        "speaker": "Doctor",
+        "text": "Yes, nothing acute. We’ll keep managing your osteoporosis with calcium and vitamin D."
+      },
+      {
+        "turn_number": 24,
+        "time": "2189-05-18 07:30:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your cortisol level came back at 11.8—normal range. But because you had low blood pressure and symptoms, we’re giving you 20 mg of prednisone daily for three days as a precaution."
+      },
+      {
+        "turn_number": 25,
+        "time": "2189-05-18 07:32:00",
+        "speaker": "Patient",
+        "text": "So I’m not actually deficient?"
+      },
+      {
+        "turn_number": 26,
+        "time": "2189-05-18 07:34:00",
+        "speaker": "Doctor",
+        "text": "Not based on the number, but sometimes the test doesn’t catch mild insufficiency under stress. This short course will help support your body while you recover."
+      },
+      {
+        "turn_number": 27,
+        "time": "2189-05-18 07:36:00",
+        "speaker": "Patient",
+        "text": "Okay, that makes sense. How’s my kidney doing?"
+      },
+      {
+        "turn_number": 28,
+        "time": "2189-05-18 07:38:00",
+        "speaker": "Doctor",
+        "text": "Your creatinine is stable at 0.9, and your cyclosporine level is therapeutic. The ultrasound showed a slight change in blood flow, but it’s not concerning. Your transplant team is comfortable with your current meds."
+      },
+      {
+        "turn_number": 29,
+        "time": "2189-05-18 07:40:00",
+        "speaker": "Patient",
+        "text": "Good. And the cough?"
+      },
+      {
+        "turn_number": 30,
+        "time": "2189-05-18 07:42:00",
+        "speaker": "Doctor",
+        "text": "It’s improving. Lungs are clearer today. We’re adding guaifenesin to help loosen any remaining mucus."
+      },
+      {
+        "turn_number": 31,
+        "time": "2189-05-18 07:44:00",
+        "speaker": "Patient",
+        "text": "That might help. I still feel tired."
+      },
+      {
+        "turn_number": 32,
+        "time": "2189-05-18 07:46:00",
+        "speaker": "Doctor",
+        "text": "Fatigue is common with viral illnesses, especially with your medical history. Rest is important. You’re making progress."
+      },
+      {
+        "turn_number": 33,
+        "time": "2189-05-19 08:00:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. We’re planning to discharge you today. Your symptoms have improved, and you’re stable."
+      },
+      {
+        "turn_number": 34,
+        "time": "2189-05-19 08:02:00",
+        "speaker": "Patient",
+        "text": "That’s great. What about the prednisone?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2189-05-19 08:04:00",
+        "speaker": "Doctor",
+        "text": "You’ll finish the 20 mg dose today, then go back to your usual 3 mg tomorrow. We’ll put that in your discharge instructions."
+      },
+      {
+        "turn_number": 36,
+        "time": "2189-05-19 08:06:00",
+        "speaker": "Patient",
+        "text": "And the EBV and CMV tests?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2189-05-19 08:08:00",
+        "speaker": "Doctor",
+        "text": "Still pending. Please follow up with your primary doctor and kidney specialist to check the results."
+      },
+      {
+        "turn_number": 38,
+        "time": "2189-05-19 08:10:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you for explaining everything."
+      },
+      {
+        "turn_number": 39,
+        "time": "2189-05-19 08:12:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Keep using your insulin pump as usual, take your medications, and rest. Call your doctor if the cough worsens or you develop a fever."
+      },
+      {
+        "turn_number": 40,
+        "time": "2189-05-19 08:14:00",
+        "speaker": "Patient",
+        "text": "I’ll do that. I’m glad I’m on the mend."
+      },
+      {
+        "turn_number": 41,
+        "time": "2189-05-19 08:16:00",
+        "speaker": "Doctor",
+        "text": "We’re glad too. You’ll be going home with guaifenesin for the cough and your usual medications. Take care."
+      },
+      {
+        "turn_number": 42,
+        "time": "2189-05-19 08:18:00",
+        "speaker": "Patient",
+        "text": "Thank you, Dr. Lee."
+      },
+      {
+        "turn_number": 43,
+        "time": "2189-05-19 08:20:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. The nurse will go over your discharge papers, and you should be ready to leave by midday."
+      },
+      {
+        "turn_number": 44,
+        "time": "2189-05-19 08:22:00",
+        "speaker": "Patient",
+        "text": "Perfect. I’m looking forward to being home."
+      },
+      {
+        "turn_number": 45,
+        "time": "2189-05-19 08:24:00",
+        "speaker": "Doctor",
+        "text": "Make sure to follow up with your PCP and transplant team. Rest and hydration are key right now."
+      },
+      {
+        "turn_number": 46,
+        "time": "2189-05-19 08:26:00",
+        "speaker": "Patient",
+        "text": "I’ll schedule those appointments right away."
+      },
+      {
+        "turn_number": 47,
+        "time": "2189-05-19 08:28:00",
+        "speaker": "Doctor",
+        "text": "Great. We’ll see you in follow-up if needed. Take care and feel better soon."
+      },
+      {
+        "turn_number": 48,
+        "time": "2189-05-19 08:30:00",
+        "speaker": "Patient",
+        "text": "Thank you again for all your help."
+      },
+      {
+        "turn_number": 49,
+        "time": "2189-05-19 08:32:00",
+        "speaker": "Doctor",
+        "text": "You’re very welcome. Have a safe trip home."
+      },
+      {
+        "turn_number": 50,
+        "time": "2189-05-19 08:34:00",
+        "speaker": "Patient",
+        "text": "I will. Bye for now."
+      }
+    ],
+    "summary": {
+      "admission_start": "2189-05-17 01:47:00",
+      "admission_end": "2189-05-19 14:12:00",
+      "summary_paragraph": "A woman with a history of type 1 diabetes, kidney transplantation, and breast cancer was admitted for a persistent cough, fatigue, and myalgias lasting several weeks, initially treated with antibiotics without improvement. Evaluation revealed normal white blood cell count, stable chronic lung changes on CT, and negative respiratory viral panels. A sputum culture was invalid due to contamination. Given her immunocompromised status and orthostatic symptoms, concern for adrenal insufficiency prompted a short course of stress-dose prednisone despite a normal cortisol level. Her condition improved with supportive care, including IV fluids and symptom management. She was discharged home when stable, with instructions to follow up on pending EBV and CMV tests and resume her baseline medications, including returning to her home prednisone dose.",
+      "problems": [
+        "Acute upper respiratory infection, unspecified",
+        "Type 1 diabetes mellitus with diabetic nephropathy",
+        "Kidney transplant status",
+        "Unspecified adrenocortical insufficiency",
+        "Chronic and other pulmonary manifestations due to radiation",
+        "Long term (current) use of insulin",
+        "Hypothyroidism, unspecified",
+        "Hyperlipidemia, unspecified",
+        "Age-related osteoporosis without current pathological fracture",
+        "Malignant neoplasm of unspecified site of left female breast",
+        "Essential (primary) hypertension",
+        "Type 1 diabetes mellitus with unspecified diabetic retinopathy without macular edema",
+        "Pain in unspecified hip"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-9169565fe9c5f58f",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2189-05-17 02:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I’ll be your doctor during your stay. You came in with a cough and fatigue—can you tell me more about that?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2189-05-17 02:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I’ve had this cough for about two weeks now. It started with white phlegm, but it’s getting drier. I also feel really tired and achy all over.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2189-05-17 02:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Any fevers or chills?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2189-05-17 02:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, I haven’t had a fever. But I’ve been on antibiotics—first for a urinary issue, then switched to levofloxacin when the cough started. It hasn’t helped.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2189-05-17 02:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And your grandson was recently diagnosed with pneumonia—is that right?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2189-05-17 02:23:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, he’s on azithromycin. I thought maybe I caught something from him.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2189-05-17 02:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s possible. We’re going to run some tests to check for infections. Given your transplant history, we need to be careful.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2189-05-17 02:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. My cough is annoying, but I’m more worried about my blood pressure. I’ve been feeling lightheaded when I stand up.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2189-05-17 02:28:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noticed your blood pressure was low earlier. We’re checking your cortisol level to see if your adrenal glands are keeping up, especially since you’re on prednisone.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2189-05-17 02:30:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh, I didn’t know that could be related. Should I be worried?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2189-05-17 02:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not necessarily. We just want to make sure you’re not having adrenal insufficiency. If the level is low, we’ll give you a short course of higher-dose steroids to help.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2189-05-17 08:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your labs came back. Your white blood cell count is normal, and the chest CT shows stable scarring from your past radiation—no new pneumonia.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2189-05-17 08:47:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s not a bacterial infection?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2189-05-17 08:49:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Unlikely. The sputum test was contaminated, so we can’t trust it. But the viral panel came back negative for flu, RSV, and others. We’re still waiting on EBV and CMV, but right now, this looks like a viral illness.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2189-05-17 08:51:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s just going to run its course?\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2189-05-17 08:53:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. We’ll support you with fluids and symptom control. Your kidney function is stable, and your transplant team says to keep your usual medications.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2189-05-17 08:55:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about my blood sugar? It’s been high since I’ve been here.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2189-05-17 08:57:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your glucose was 429 on arrival. We’ve continued your insulin pump and basal insulin. We’ll monitor it closely. Stress and illness can make it harder to control.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2189-05-17 08:59:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know. My A1c was 11.5 last time. I’m trying, but it’s tough.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2189-05-17 09:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll work with you on that. For now, we’re focused on getting through this illness safely.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2189-05-17 19:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We also did an X-ray for your hip pain. It shows mild arthritis and some bone thinning, but no fracture or avascular necrosis.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2189-05-17 19:12:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. I was worried it might be something serious.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2189-05-17 19:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, nothing acute. We’ll keep managing your osteoporosis with calcium and vitamin D.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2189-05-18 07:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your cortisol level came back at 11.8—normal range. But because you had low blood pressure and symptoms, we’re giving you 20 mg of prednisone daily for three days as a precaution.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2189-05-18 07:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I’m not actually deficient?\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2189-05-18 07:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not based on the number, but sometimes the test doesn’t catch mild insufficiency under stress. This short course will help support your body while you recover.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2189-05-18 07:36:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, that makes sense. How’s my kidney doing?\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2189-05-18 07:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your creatinine is stable at 0.9, and your cyclosporine level is therapeutic. The ultrasound showed a slight change in blood flow, but it’s not concerning. Your transplant team is comfortable with your current meds.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2189-05-18 07:40:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. And the cough?\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2189-05-18 07:42:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s improving. Lungs are clearer today. We’re adding guaifenesin to help loosen any remaining mucus.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2189-05-18 07:44:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That might help. I still feel tired.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2189-05-18 07:46:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Fatigue is common with viral illnesses, especially with your medical history. Rest is important. You’re making progress.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2189-05-19 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. We’re planning to discharge you today. Your symptoms have improved, and you’re stable.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2189-05-19 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great. What about the prednisone?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2189-05-19 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll finish the 20 mg dose today, then go back to your usual 3 mg tomorrow. We’ll put that in your discharge instructions.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2189-05-19 08:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the EBV and CMV tests?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2189-05-19 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Still pending. Please follow up with your primary doctor and kidney specialist to check the results.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2189-05-19 08:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you for explaining everything.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2189-05-19 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Keep using your insulin pump as usual, take your medications, and rest. Call your doctor if the cough worsens or you develop a fever.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2189-05-19 08:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll do that. I’m glad I’m on the mend.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2189-05-19 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re glad too. You’ll be going home with guaifenesin for the cough and your usual medications. Take care.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2189-05-19 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Dr. Lee.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2189-05-19 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. The nurse will go over your discharge papers, and you should be ready to leave by midday.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2189-05-19 08:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Perfect. I’m looking forward to being home.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2189-05-19 08:24:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Make sure to follow up with your PCP and transplant team. Rest and hydration are key right now.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2189-05-19 08:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll schedule those appointments right away.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2189-05-19 08:28:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Great. We’ll see you in follow-up if needed. Take care and feel better soon.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2189-05-19 08:30:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you again for all your help.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2189-05-19 08:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re very welcome. Have a safe trip home.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2189-05-19 08:34:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Bye for now.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2189-05-17 01:47:00\",\n    \"admission_end\": \"2189-05-19 14:12:00\",\n    \"summary_paragraph\": \"A woman with a history of type 1 diabetes, kidney transplantation, and breast cancer was admitted for a persistent cough, fatigue, and myalgias lasting several weeks, initially treated with antibiotics without improvement. Evaluation revealed normal white blood cell count, stable chronic lung changes on CT, and negative respiratory viral panels. A sputum culture was invalid due to contamination. Given her immunocompromised status and orthostatic symptoms, concern for adrenal insufficiency prompted a short course of stress-dose prednisone despite a normal cortisol level. Her condition improved with supportive care, including IV fluids and symptom management. She was discharged home when stable, with instructions to follow up on pending EBV and CMV tests and resume her baseline medications, including returning to her home prednisone dose.\",\n    \"problems\": [\n      \"Acute upper respiratory infection, unspecified\",\n      \"Type 1 diabetes mellitus with diabetic nephropathy\",\n      \"Kidney transplant status\",\n      \"Unspecified adrenocortical insufficiency\",\n      \"Chronic and other pulmonary manifestations due to radiation\",\n      \"Long term (current) use of insulin\",\n      \"Hypothyroidism, unspecified\",\n      \"Hyperlipidemia, unspecified\",\n      \"Age-related osteoporosis without current pathological fracture\",\n      \"Malignant neoplasm of unspecified site of left female breast\",\n      \"Essential (primary) hypertension\",\n      \"Type 1 diabetes mellitus with unspecified diabetic retinopathy without macular edema\",\n      \"Pain in unspecified hip\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776956656,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3985,
+      "prompt_tokens": 10462,
+      "total_tokens": 14447,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

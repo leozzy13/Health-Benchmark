@@ -1,0 +1,705 @@
+{
+  "subject_id": "17517983",
+  "hadm_id": "23113691",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-19T16:21:21Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 5 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2128-11-03 16:54:00 to 2128-11-07 20:00:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2127-04-05 14:08:00",
+    "admission_end": "2127-04-09 15:50:00",
+    "summary_paragraph": "A woman with brittle type 1 diabetes, recurrent gastroparesis, chronic kidney disease stage II, and a history of anxiety and depression was readmitted within 24 hours of discharge due to persistent abdominal pain, nausea, and vomiting, consistent with a gastroparesis flare. Her symptoms were exacerbated by uncontrolled diabetes and possible gastroesophageal reflux. Chest tightness was evaluated with a normal chest X-ray, ruling out acute cardiopulmonary causes. She was managed with IV fluids, insulin adjustment to her home NPH regimen, and anti-nausea medications while avoiding contraindicated drugs due to allergies. She gradually advanced to a soft diet, with improvement in symptoms and stable renal function. Omeprazole was continued for acid suppression. A coordinated discharge plan included follow-up with her primary care provider, mental health support, and ophthalmology for background diabetic retinopathy. She was discharged home in stable condition with instructions for ongoing diabetes and gastroparesis management.",
+    "problems": [
+      "Diabetes with neurological manifestations, type I [juvenile type], uncontrolled",
+      "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+      "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+      "Gastroparesis",
+      "Long-term (current) use of insulin",
+      "Diabetes with ophthalmic manifestations, type I [juvenile type], uncontrolled",
+      "Background diabetic retinopathy",
+      "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+      "Other and unspecified hyperlipidemia",
+      "Chronic kidney disease, Stage II (mild)",
+      "Personal history of tobacco use",
+      "Depressive disorder, not elsewhere classified",
+      "Anxiety state, unspecified"
+    ]
+  },
+  "stay_days": 5,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2128-11-07 00:00:00): Name:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Prochlorperazine / Tramadol\n \nAttending: ___.\n \nChief Complaint:\nabdominal pain\n \nMajor Surgical or Invasive Procedure:\nHemodialysis\n\n \nHistory of Present Illness:\nMs. ___ is a ___ year old woman with a past medical history \nof Type 1 diabetes on insulin, ESRD on HD (___), and \ngastroparesis with history ___ tears who presents \nwith epigastric pain for two days with nausea and vomiting.  Of \nnote, the patient has been admitted numerous times in the past \nyear with similar presentation for gastroparesis flairs with \nhematemesis. The pain has been waxing and waning but gradually \nworsening. She thinks that her symptoms may have been set off by \nhot and humid weather last week, but does not note any other \nchanges last week that might have precipitated this episode. \nHowever, she does note that she ran out of percocet on ___ \nand was not able to refill script because she was in too much \npain. She describes the pain as cramping and burning, ___ at \nits most severe, and radiating to the back but not the shoulder \nor lower abdomen. The pain is not better or worse with eating \nand improves with home percocet.  She notes intolerance of any \nfood or fluids with vomiting that was on one occasion \nblood-tinged. Because she has not been eating she stopped taking \nher sliding scale humalog, but continued her basal glargine \ndose. She has had some ___ in the 200s but mostly in the ___. No \nflatus or bowel movements for one day, but describes usual \npattern as one BM every three days.  Otherwise no \nfever/chills/HA/CP/SOB/new back pain.  \n\nIn ED, initial VS were 98.0 ___ 20 100% RA.  Initial \nlabs were notable for glucose in the 700s. She was not acidemic \non blood gas but did have mild anion gap of 19, with trace \nketones on U/A and normal lactate.  Labs were otherwise notable \nfor Cr of 7.0, normal WBC, and largely normal LFTs (mildly \nelevated ALT and AlkP, normal lipase and tbili). She had a KUB \nwhich showed a non-obstructive pattern.\n\nShe recieved 1L NS and 10U regular insulin x 2, with repeat FSBG \nof 368. She was started on her home BP meds with additional \nlabetolol, with improvement of BP to the 180s/110s. She recieved \ndilaudid for pain and ativan for nausea and was able to take \nsome oral intake.  \n\n \nPast Medical History:\n- DM1 complicated by nephropathy, gastroparesis  \n- ESRD, started HD ___\n- Severe anxiety and panic attacks  \n- Depression with psychotic features followed by Dr. ___  \n- Hyperlipidemia  \n- Esophagitis due to H. pylori s/p triple therapy in ___  \n- Chronic low back pain s/p MVA in ___ \n \nSocial History:\n___\nFamily History:\nGrandmother (deceased) with DM\n\n \nPhysical Exam:\n===============\nADMISSION EXAM:\n===============  \nVitals: 98.1  154/95  95  18  100% RA\nGENERAL: In mild distress and somewhat tearful, awake and alert  \n\nHEENT: AT/NC, EOMI, PERRLA, anicteric sclera, pink conjunctiva, \npatent nares, MMM, good dentition  \nNECK: nontender and supple, no LAD  \nCARDIAC: Tachycardic, nl S1 S2, no MRG  \nLUNG: CTAB, no rales wheezes or rhonchi, no accessory muscle use \n \nABDOMEN: +BS, soft, tenderness to palpation in the epigastrum \nbut not lower quadrants, no tap tenderness, non-distended, no \nrebound or guarding, well healed lower midline scar\nBACK: No CVA tenderness. No spinal tenderness. No TTP.  \nEXT: Warm and well-perfused, no cyanosis, clubbing or edema \nRUE fistula with palpable thrill and auscultated bruit \nPULSES: 2+ DP pulses bilaterally  \n\n===============\nDISCHARGE EXAM:\n=============== \nVitals:  98.2 (afebrile), 151/84 (100s-150s/70s-80s), 93 \n(80s-90s), 18, 100% on RA \nFSBGs: ___ yesterday while NPO.  Overnight 234-409 overnight. \n461 this AM.\nGENERAL: Sitting up, in no apparent distress but somewhat upset \nand tearful, awake and alert    \nCARDIAC: nl S1 S2, no MRG  \nLUNG: CTAB, no rales wheezes or rhonchi\nABDOMEN: +BS, soft, non-distended, minimal tenderness to \npalpation in the epigastrium\nEXT: Warm and well-perfused, no cyanosis, clubbing or edema \nRUE fistula with palpable thrill and auscultated bruit \n  \n\n \nPertinent Results:\n===============\nADMISSION LABS:\n===============\n___ 12:00PM URINE  COLOR-Yellow APPEAR-Clear SP ___\n___ 12:00PM URINE  BLOOD-TR NITRITE-NEG PROTEIN->600 \nGLUCOSE-1000 KETONE-TR BILIRUBIN-NEG UROBILNGN-NEG PH-8.0 \nLEUK-NEG\n___ 12:00PM URINE  RBC-2 WBC-8* BACTERIA-FEW YEAST-NONE \nEPI-8\n___ 11:46AM   ___ PO2-41* PCO2-43 PH-7.40 TOTAL CO2-28 \nBASE XS-0 INTUBATED-NOT INTUBA COMMENTS-PERIPHERAL\n___ 11:46AM   GLUCOSE-GREATER TH\n___ 11:46AM   O2 SAT-66\n___ 10:03AM   LACTATE-1.2\n___ 09:55AM   GLUCOSE-742* UREA N-58* CREAT-7.0*# \nSODIUM-128* POTASSIUM-4.7 CHLORIDE-84* TOTAL CO2-25 ANION \nGAP-24*\n___ 09:55AM   estGFR-Using this\n___ 09:55AM   ALT(SGPT)-56* AST(SGOT)-23 ALK PHOS-283* TOT \nBILI-0.7\n___ 09:55AM   LIPASE-46\n___ 09:55AM   ALBUMIN-3.8\n___ 09:55AM   WBC-10.9 RBC-3.60* HGB-10.2* HCT-33.6* \nMCV-93# MCH-28.4 MCHC-30.4* RDW-17.5*\n___ 09:55AM   NEUTS-83.0* LYMPHS-11.8* MONOS-4.3 EOS-0.7 \nBASOS-0.2\n___ 09:55AM   PLT COUNT-265\n\n=============\nIMAGING:\n=============\n___ GASTRIC EMPTYING \nFINDINGS:    \nResidual tracer activity in the stomach is as follows: \nAt 45 mins 98% of the ingested activity remains in the stomach \nAt 2 hours 93% of the ingested activity remains in the stomach \nAt 3 hours 70% of the ingested activity remains in the stomach \nAt 4 hours 62% of the ingested activity remains in the stomach \n  \nA prior study on ___ was normal.  A study on ___ \nwas abnormal with 25% of the meal remaining in the stomach at 4 \nhours; the patient was taking Reglan. She was NOT taking \noxycodone or lorazepam as noted in the initial report (she was \nordered for these medications, but had not received either for \n24 hours prior to the gastric emptying study). \n  \nIMPRESSION:  Delayed gastric emptying at 2, 3, and 4 hours.\n\n===============\nDISCHARGE LABS:\n===============\n___ 07:16AM BLOOD WBC-6.3 RBC-3.52* Hgb-9.8* Hct-32.5* \nMCV-92 MCH-27.9 MCHC-30.2* RDW-16.1* Plt ___\n___ 01:31PM BLOOD Glucose-486* UreaN-80* Creat-9.5* Na-127* \nK-5.3* Cl-89* HCO___ AnGap-20\n___ 07:16AM BLOOD Calcium-9.1 Phos-6.8* Mg-2.___ year old woman with poorly controlled Type 1 diabetes, end \nstage renal disease on ___, and gastroparesis \nwith multiple admissions in the past year for abdominal pain and \npoor glycemic control, who presented with gastroparesis flair \nand hyperglycemia.\n\n================\nACTIVE PROBLEMS:\n================\n# Gastroparesis flare: Likely related to known gastroparesis, \nwith symptoms similar to prior gastroparesis flares. Unclear \nreason for acute worsening of her gastroparesis, but likely due \nto hyperglycemia. Her abominal pain improved during the \nadmission, nausea and vomiting resolved, and she was able to \ntake medications and food by mouth.  She was advised that \nnarcotics and hyperglycemia can worsen gastroparesis, which she \nwas already aware.  Because the patient had previously had a \nsub-optimal gastric emptying study while on narcotics, the \nemptying study was repeated.  The patient was able to refrain \nfrom narcotics, zofran, and laxatives for almost 48 hours prior \nto the exam, with the exception of one dose oxycodone that was \ntaken 16 hours prior to the study.  The exam was still \nsub-optimal as the patient was on metoclopramide and still had \npoor glycemic control, but confirmed delayed gastric emptying at \n2, 3, and 4 hours. She was again educated and understood that \nshe should eat smaller more frequent meals as well as avoiding \nnarcotics to help control her symptoms.\n\n# Hyperglycemia/T1DM: Hyperglycemia may have occurred in the \nsetting of medication non-compliance, as the patient reported \nnot taking recommended insulin doses in the setting of poor \nintake, because she was afraid of hypoglycemic episodes. She did \nnot have evidence of DKA on admission.  ___ was \nconsulted for adjustement of insulin regimen, and changed her \nQHS lantus to 14U (from 10U).  Her sliding scale and AM dose of \nlantus (6U) remained unchanged.  At the time she left the \nhospital her sugars were still poorly controlled (generally \nranging between 200-450). She wished to return home to her son \nprior to having her FSBGs under better control. She understood \nthe risks of her decision and follow up with ___ was arranged \nthe day after discharge.  \n\n# Hypertensive urgency: At the time of admission the patient was \nhypertensive with systolic blood pressures in the 200s, but was \nasymptomatic.  She was started on her home furosemide, \nlabetalol, and amlodipine, and blood pressures improved and \nremained in the 130s-150s for the remainder of her admission. \nHer hypertension was most likely secondary to noncompliance as \nrestarting her home medications improved her pressures.\n\n# Difficult Access: The patient was scheduled for port placement \nprior to this hospitalization, and the decision was made to try \nto have port placed during this admission because of difficulty \nmaintaining good IV access.  The patient decided to leave prior \nto port placement, so a plan was made for port placement in the \noutpatient setting.\n\n# Pseudohyponatremia: Sodium 128 on admission but corrected \nsodium 138. This improved during her admission with better \nglycemic control. \n\n===================\nCHRONIC PROBLEMS:\n===================\n# End stage renal disease on hemodialysis: The patient has Stage \nV chronic kidney disease and is on dialysis ___.  She \ncontinued on this dialysis schedule while in the hospital.  Her \nlast dialysis session was delayed in order to obtain the gastric \nemptying study.  She was continued on nephrocaps and sevelamer. \nPTH was checked and >600, so she was started on vitamin D and \ncalcium.\n\n# Back Pain: Patient has chronic back pain following a motor \nvehicle accident and take percocet at home.  She was continued \non her home pain regimen except prior to her gastric emptying \nstudy, when she was encouraged to use alternative means of pain \ncontrol (tylenol, lidocaine patch).\ns/p MVA\n\n# Anemia: Patient has anemia likely secondary to chronic disease \nand decreased erythropoetin production.  Her anemia was at her \nbaseline from prior admission and remained similar.\n\n# H/o depression: Patient has history of depression not on \nmedications.  Social work followed during this admission to help \nwith coping skills.\n\n=====================\nTRANSITIONAL ISSUES:\n=====================\n# Follow up with ___ on ___ (day after discharge)\n# Difficult access: Patient wished to leave prior to port \nplacement. It should be scheduled as an outpatient.\n# HCP ___ (Mother) ___  \n# Code: Full Code \n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Amlodipine 10 mg PO DAILY \n2. Docusate Sodium 100 mg PO BID:PRN constipation \n3. Labetalol 400 mg PO TID \n4. Lorazepam 0.5 mg PO DAILY:PRN anxiety \n5. Metoclopramide 5 mg PO QIDACHS \n6. Nephrocaps 1 CAP PO DAILY \n7. Ondansetron 4 mg PO Q8H:PRN nausea \n8. Oxycodone-Acetaminophen (5mg-325mg) 1 TAB PO Q8H:PRN pain \n9. Pantoprazole 40 mg PO Q12H \n10. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n11. Furosemide 40 mg PO DAILY \n12. Glargine 6 Units Breakfast\nGlargine 10 Units Bedtime\n13. Insulin Humalog sliding scale\n\n \nDischarge Medications:\n1. Amlodipine 10 mg PO DAILY \n2. Docusate Sodium 100 mg PO BID:PRN constipation \n3. Furosemide 40 mg PO DAILY \n4. Labetalol 400 mg PO TID \n5. Lorazepam 0.5 mg PO DAILY:PRN anxiety \n6. Metoclopramide 5 mg PO QIDACHS \n7. Nephrocaps 1 CAP PO DAILY \n8. Pantoprazole 40 mg PO Q12H \n9. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n10. Ondansetron 4 mg PO Q8H:PRN nausea \n11. Oxycodone-Acetaminophen (5mg-325mg) 1 TAB PO Q8H:PRN pain \n12. Glargine 6 Units Breakfast\nGlargine 14 Units Bedtime\nInsulin SC Sliding Scale using HUM Insulin\n13. Vitamin D 400 UNIT PO DAILY \nRX *ergocalciferol (vitamin D2) 2,000 unit 1 tablet(s) by mouth \ndaily Disp #*30 Tablet Refills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPRIMARY DIAGNOSES:\n-abdominal pain\n-gastroparesis\n-hyperglycemia without evidence of diabetic ketoacidosis\n\nSECONDARY DIAGNOSES:\n-type 1 diabetes mellitus\n-end stage renal disease on hemodialysis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure taking care of you while you were at ___.\n\nYou were admitted because you were having severe abdominal pain \nwith nausea and vomiting at home as well as very high blood \nsugars.  This is a problem that you have had many times and \nlikely represents worsening of your gastroparesis (poor stomach \nemptying) from your diabetes.  As you know, many things can \nworsen your problems with gastric emptying including having high \nblood sugar as well as certain medications (narcotics, zofran). \nYou were continued on Reglan (medication to help with stomach \nemptying) and given pain medications to help with your acute \nabdominal pain.  Your pain improved while you were admitted and \nyou were able to start eating again without further vomiting.  \nWe had you get a gastric emptying study to evaluate your \ngastroparesis, and the results of this study are still pending \nand will need follow up. We had you avoid taking narcotics and \nother medications that interfere with the results of this study.\n\nYou also had high blood sugars, with at blood sugar of more than \n700 when you were admitted.  The diabetes team saw you and made \nadjustments to your insulin medication doses.  Your sugars \nimproved but not as much as we would like. You wanted to be \ndischarged with high blood sugars still because you wanted to \ntake care of your son. You understood the risks of leaving the \nhospital with high blood sugars. We would like for you to be \nseen in the ___ Diabetes clinic so that they can adjust your \ninsulin once you are at home.  The high sugar levels can also \nworsen your problems with abdominal pain and poor stomach \nemptying.\n\nYou continued your usual dialysis and medications for your \nkidney failure while you were in the hospital.  We checked a \nhormone called PTH (parathyroid) which becomes elevated when you \nhave kidney failure, and because it was high we started you on \nVitamin D with calcium.  You should continue this medication at \nhome.\n  \nWe spoke with your kidney doctor, ___ agreed with \nour plan to place a port for better intravenous access (to give \nmedications by IVs and draw blood).  However, your port \nplacement was delayed before your were discharged.  You will \nneed to arrange to come in to the hospital to get the port \nplaced at another time.\n\nAt the end of your stay here, your medical team felt that you \nshould stay to improve your blood sugar control.  You felt that \nyour abdominal pain had improved and that you no longer wanted \nto stay in the hospital.  We explained that your sugars were not \nwell controlled and that it was our medical opinion that you \nwere not ready to leave the hospital.  You expressed \nunderstanding of our medical advice, and wished to be \ndischarged.  We have set up a follow up appointment for you to \nbe seen at ___ tomorrow ___.\n\nWe wish you all the best,\nYour ___ Team\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled\n- End stage renal disease\n- Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease\n- Hyposmolality and/or hyponatremia\n- Renal dialysis status\n- Gastroparesis\n- Personal history of noncompliance with medical treatment, presenting hazards to health\n- Other and unspecified hyperlipidemia\n- Personal history of tobacco use\n- Backache, unspecified\n- Other chronic pain\n- Anemia in chronic kidney disease\n- Depressive disorder, not elsewhere classified\n- Diabetes with ophthalmic manifestations, type I [juvenile type], not stated as uncontrolled\n- Background diabetic retinopathy",
+  "supporting_context_block": "Radiology:\n- 2128-11-03 08:44:00: EXAMINATION: CHEST RADIOGRAPH INDICATION: Epigastric pain. Question acute cardiopulmonary disease. TECHNIQUE: PA and lateral views of the chest. COMPARISON: Chest radiographs from ___ and ___. FINDINGS: Lung volumes a...\n- 2128-11-03 11:47:00: EXAMINATION: ABDOMEN (SUPINE AND ERECT) INDICATION: History: ___ with hx gastroparesis, epigastric pain/N/V // Evidence of gastric distension, SBO TECHNIQUE: Supine and erect radiographs of the abdomen. COMPARISON: Ab...\n\nProcedures:\n- 2128-11-05 12:00:00: Hemodialysis\n\nMicrobiology:\n- None recorded.",
+  "formed_packet": {
+    "subject_id": "17517983",
+    "hadm_id": "23113691",
+    "admission_start": "2128-11-03 16:54:00",
+    "admission_end": "2128-11-07 20:00:00",
+    "previous_admission_summary": {
+      "admission_start": "2127-04-05 14:08:00",
+      "admission_end": "2127-04-09 15:50:00",
+      "summary_paragraph": "A woman with brittle type 1 diabetes, recurrent gastroparesis, chronic kidney disease stage II, and a history of anxiety and depression was readmitted within 24 hours of discharge due to persistent abdominal pain, nausea, and vomiting, consistent with a gastroparesis flare. Her symptoms were exacerbated by uncontrolled diabetes and possible gastroesophageal reflux. Chest tightness was evaluated with a normal chest X-ray, ruling out acute cardiopulmonary causes. She was managed with IV fluids, insulin adjustment to her home NPH regimen, and anti-nausea medications while avoiding contraindicated drugs due to allergies. She gradually advanced to a soft diet, with improvement in symptoms and stable renal function. Omeprazole was continued for acid suppression. A coordinated discharge plan included follow-up with her primary care provider, mental health support, and ophthalmology for background diabetic retinopathy. She was discharged home in stable condition with instructions for ongoing diabetes and gastroparesis management.",
+      "problems": [
+        "Diabetes with neurological manifestations, type I [juvenile type], uncontrolled",
+        "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+        "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "Gastroparesis",
+        "Long-term (current) use of insulin",
+        "Diabetes with ophthalmic manifestations, type I [juvenile type], uncontrolled",
+        "Background diabetic retinopathy",
+        "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+        "Other and unspecified hyperlipidemia",
+        "Chronic kidney disease, Stage II (mild)",
+        "Personal history of tobacco use",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "17517983-DS-106",
+        "note_seq": 106,
+        "charttime": "2128-11-07 00:00:00",
+        "storetime": "2128-11-08 08:18:00",
+        "text": " \nName:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Prochlorperazine / Tramadol\n \nAttending: ___.\n \nChief Complaint:\nabdominal pain\n \nMajor Surgical or Invasive Procedure:\nHemodialysis\n\n \nHistory of Present Illness:\nMs. ___ is a ___ year old woman with a past medical history \nof Type 1 diabetes on insulin, ESRD on HD (___), and \ngastroparesis with history ___ tears who presents \nwith epigastric pain for two days with nausea and vomiting.  Of \nnote, the patient has been admitted numerous times in the past \nyear with similar presentation for gastroparesis flairs with \nhematemesis. The pain has been waxing and waning but gradually \nworsening. She thinks that her symptoms may have been set off by \nhot and humid weather last week, but does not note any other \nchanges last week that might have precipitated this episode. \nHowever, she does note that she ran out of percocet on ___ \nand was not able to refill script because she was in too much \npain. She describes the pain as cramping and burning, ___ at \nits most severe, and radiating to the back but not the shoulder \nor lower abdomen. The pain is not better or worse with eating \nand improves with home percocet.  She notes intolerance of any \nfood or fluids with vomiting that was on one occasion \nblood-tinged. Because she has not been eating she stopped taking \nher sliding scale humalog, but continued her basal glargine \ndose. She has had some ___ in the 200s but mostly in the ___. No \nflatus or bowel movements for one day, but describes usual \npattern as one BM every three days.  Otherwise no \nfever/chills/HA/CP/SOB/new back pain.  \n\nIn ED, initial VS were 98.0 ___ 20 100% RA.  Initial \nlabs were notable for glucose in the 700s. She was not acidemic \non blood gas but did have mild anion gap of 19, with trace \nketones on U/A and normal lactate.  Labs were otherwise notable \nfor Cr of 7.0, normal WBC, and largely normal LFTs (mildly \nelevated ALT and AlkP, normal lipase and tbili). She had a KUB \nwhich showed a non-obstructive pattern.\n\nShe recieved 1L NS and 10U regular insulin x 2, with repeat FSBG \nof 368. She was started on her home BP meds with additional \nlabetolol, with improvement of BP to the 180s/110s. She recieved \ndilaudid for pain and ativan for nausea and was able to take \nsome oral intake.  \n\n \nPast Medical History:\n- DM1 complicated by nephropathy, gastroparesis  \n- ESRD, started HD ___\n- Severe anxiety and panic attacks  \n- Depression with psychotic features followed by Dr. ___  \n- Hyperlipidemia  \n- Esophagitis due to H. pylori s/p triple therapy in ___  \n- Chronic low back pain s/p MVA in ___ \n \nSocial History:\n___\nFamily History:\nGrandmother (deceased) with DM\n\n \nPhysical Exam:\n===============\nADMISSION EXAM:\n===============  \nVitals: 98.1  154/95  95  18  100% RA\nGENERAL: In mild distress and somewhat tearful, awake and alert  \n\nHEENT: AT/NC, EOMI, PERRLA, anicteric sclera, pink conjunctiva, \npatent nares, MMM, good dentition  \nNECK: nontender and supple, no LAD  \nCARDIAC: Tachycardic, nl S1 S2, no MRG  \nLUNG: CTAB, no rales wheezes or rhonchi, no accessory muscle use \n \nABDOMEN: +BS, soft, tenderness to palpation in the epigastrum \nbut not lower quadrants, no tap tenderness, non-distended, no \nrebound or guarding, well healed lower midline scar\nBACK: No CVA tenderness. No spinal tenderness. No TTP.  \nEXT: Warm and well-perfused, no cyanosis, clubbing or edema \nRUE fistula with palpable thrill and auscultated bruit \nPULSES: 2+ DP pulses bilaterally  \n\n===============\nDISCHARGE EXAM:\n=============== \nVitals:  98.2 (afebrile), 151/84 (100s-150s/70s-80s), 93 \n(80s-90s), 18, 100% on RA \nFSBGs: ___ yesterday while NPO.  Overnight 234-409 overnight. \n461 this AM.\nGENERAL: Sitting up, in no apparent distress but somewhat upset \nand tearful, awake and alert    \nCARDIAC: nl S1 S2, no MRG  \nLUNG: CTAB, no rales wheezes or rhonchi\nABDOMEN: +BS, soft, non-distended, minimal tenderness to \npalpation in the epigastrium\nEXT: Warm and well-perfused, no cyanosis, clubbing or edema \nRUE fistula with palpable thrill and auscultated bruit \n  \n\n \nPertinent Results:\n===============\nADMISSION LABS:\n===============\n___ 12:00PM URINE  COLOR-Yellow APPEAR-Clear SP ___\n___ 12:00PM URINE  BLOOD-TR NITRITE-NEG PROTEIN->600 \nGLUCOSE-1000 KETONE-TR BILIRUBIN-NEG UROBILNGN-NEG PH-8.0 \nLEUK-NEG\n___ 12:00PM URINE  RBC-2 WBC-8* BACTERIA-FEW YEAST-NONE \nEPI-8\n___ 11:46AM   ___ PO2-41* PCO2-43 PH-7.40 TOTAL CO2-28 \nBASE XS-0 INTUBATED-NOT INTUBA COMMENTS-PERIPHERAL\n___ 11:46AM   GLUCOSE-GREATER TH\n___ 11:46AM   O2 SAT-66\n___ 10:03AM   LACTATE-1.2\n___ 09:55AM   GLUCOSE-742* UREA N-58* CREAT-7.0*# \nSODIUM-128* POTASSIUM-4.7 CHLORIDE-84* TOTAL CO2-25 ANION \nGAP-24*\n___ 09:55AM   estGFR-Using this\n___ 09:55AM   ALT(SGPT)-56* AST(SGOT)-23 ALK PHOS-283* TOT \nBILI-0.7\n___ 09:55AM   LIPASE-46\n___ 09:55AM   ALBUMIN-3.8\n___ 09:55AM   WBC-10.9 RBC-3.60* HGB-10.2* HCT-33.6* \nMCV-93# MCH-28.4 MCHC-30.4* RDW-17.5*\n___ 09:55AM   NEUTS-83.0* LYMPHS-11.8* MONOS-4.3 EOS-0.7 \nBASOS-0.2\n___ 09:55AM   PLT COUNT-265\n\n=============\nIMAGING:\n=============\n___ GASTRIC EMPTYING \nFINDINGS:    \nResidual tracer activity in the stomach is as follows: \nAt 45 mins 98% of the ingested activity remains in the stomach \nAt 2 hours 93% of the ingested activity remains in the stomach \nAt 3 hours 70% of the ingested activity remains in the stomach \nAt 4 hours 62% of the ingested activity remains in the stomach \n  \nA prior study on ___ was normal.  A study on ___ \nwas abnormal with 25% of the meal remaining in the stomach at 4 \nhours; the patient was taking Reglan. She was NOT taking \noxycodone or lorazepam as noted in the initial report (she was \nordered for these medications, but had not received either for \n24 hours prior to the gastric emptying study). \n  \nIMPRESSION:  Delayed gastric emptying at 2, 3, and 4 hours.\n\n===============\nDISCHARGE LABS:\n===============\n___ 07:16AM BLOOD WBC-6.3 RBC-3.52* Hgb-9.8* Hct-32.5* \nMCV-92 MCH-27.9 MCHC-30.2* RDW-16.1* Plt ___\n___ 01:31PM BLOOD Glucose-486* UreaN-80* Creat-9.5* Na-127* \nK-5.3* Cl-89* HCO___ AnGap-20\n___ 07:16AM BLOOD Calcium-9.1 Phos-6.8* Mg-2.___ year old woman with poorly controlled Type 1 diabetes, end \nstage renal disease on ___, and gastroparesis \nwith multiple admissions in the past year for abdominal pain and \npoor glycemic control, who presented with gastroparesis flair \nand hyperglycemia.\n\n================\nACTIVE PROBLEMS:\n================\n# Gastroparesis flare: Likely related to known gastroparesis, \nwith symptoms similar to prior gastroparesis flares. Unclear \nreason for acute worsening of her gastroparesis, but likely due \nto hyperglycemia. Her abominal pain improved during the \nadmission, nausea and vomiting resolved, and she was able to \ntake medications and food by mouth.  She was advised that \nnarcotics and hyperglycemia can worsen gastroparesis, which she \nwas already aware.  Because the patient had previously had a \nsub-optimal gastric emptying study while on narcotics, the \nemptying study was repeated.  The patient was able to refrain \nfrom narcotics, zofran, and laxatives for almost 48 hours prior \nto the exam, with the exception of one dose oxycodone that was \ntaken 16 hours prior to the study.  The exam was still \nsub-optimal as the patient was on metoclopramide and still had \npoor glycemic control, but confirmed delayed gastric emptying at \n2, 3, and 4 hours. She was again educated and understood that \nshe should eat smaller more frequent meals as well as avoiding \nnarcotics to help control her symptoms.\n\n# Hyperglycemia/T1DM: Hyperglycemia may have occurred in the \nsetting of medication non-compliance, as the patient reported \nnot taking recommended insulin doses in the setting of poor \nintake, because she was afraid of hypoglycemic episodes. She did \nnot have evidence of DKA on admission.  ___ was \nconsulted for adjustement of insulin regimen, and changed her \nQHS lantus to 14U (from 10U).  Her sliding scale and AM dose of \nlantus (6U) remained unchanged.  At the time she left the \nhospital her sugars were still poorly controlled (generally \nranging between 200-450). She wished to return home to her son \nprior to having her FSBGs under better control. She understood \nthe risks of her decision and follow up with ___ was arranged \nthe day after discharge.  \n\n# Hypertensive urgency: At the time of admission the patient was \nhypertensive with systolic blood pressures in the 200s, but was \nasymptomatic.  She was started on her home furosemide, \nlabetalol, and amlodipine, and blood pressures improved and \nremained in the 130s-150s for the remainder of her admission. \nHer hypertension was most likely secondary to noncompliance as \nrestarting her home medications improved her pressures.\n\n# Difficult Access: The patient was scheduled for port placement \nprior to this hospitalization, and the decision was made to try \nto have port placed during this admission because of difficulty \nmaintaining good IV access.  The patient decided to leave prior \nto port placement, so a plan was made for port placement in the \noutpatient setting.\n\n# Pseudohyponatremia: Sodium 128 on admission but corrected \nsodium 138. This improved during her admission with better \nglycemic control. \n\n===================\nCHRONIC PROBLEMS:\n===================\n# End stage renal disease on hemodialysis: The patient has Stage \nV chronic kidney disease and is on dialysis ___.  She \ncontinued on this dialysis schedule while in the hospital.  Her \nlast dialysis session was delayed in order to obtain the gastric \nemptying study.  She was continued on nephrocaps and sevelamer. \nPTH was checked and >600, so she was started on vitamin D and \ncalcium.\n\n# Back Pain: Patient has chronic back pain following a motor \nvehicle accident and take percocet at home.  She was continued \non her home pain regimen except prior to her gastric emptying \nstudy, when she was encouraged to use alternative means of pain \ncontrol (tylenol, lidocaine patch).\ns/p MVA\n\n# Anemia: Patient has anemia likely secondary to chronic disease \nand decreased erythropoetin production.  Her anemia was at her \nbaseline from prior admission and remained similar.\n\n# H/o depression: Patient has history of depression not on \nmedications.  Social work followed during this admission to help \nwith coping skills.\n\n=====================\nTRANSITIONAL ISSUES:\n=====================\n# Follow up with ___ on ___ (day after discharge)\n# Difficult access: Patient wished to leave prior to port \nplacement. It should be scheduled as an outpatient.\n# HCP ___ (Mother) ___  \n# Code: Full Code \n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Amlodipine 10 mg PO DAILY \n2. Docusate Sodium 100 mg PO BID:PRN constipation \n3. Labetalol 400 mg PO TID \n4. Lorazepam 0.5 mg PO DAILY:PRN anxiety \n5. Metoclopramide 5 mg PO QIDACHS \n6. Nephrocaps 1 CAP PO DAILY \n7. Ondansetron 4 mg PO Q8H:PRN nausea \n8. Oxycodone-Acetaminophen (5mg-325mg) 1 TAB PO Q8H:PRN pain \n9. Pantoprazole 40 mg PO Q12H \n10. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n11. Furosemide 40 mg PO DAILY \n12. Glargine 6 Units Breakfast\nGlargine 10 Units Bedtime\n13. Insulin Humalog sliding scale\n\n \nDischarge Medications:\n1. Amlodipine 10 mg PO DAILY \n2. Docusate Sodium 100 mg PO BID:PRN constipation \n3. Furosemide 40 mg PO DAILY \n4. Labetalol 400 mg PO TID \n5. Lorazepam 0.5 mg PO DAILY:PRN anxiety \n6. Metoclopramide 5 mg PO QIDACHS \n7. Nephrocaps 1 CAP PO DAILY \n8. Pantoprazole 40 mg PO Q12H \n9. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n10. Ondansetron 4 mg PO Q8H:PRN nausea \n11. Oxycodone-Acetaminophen (5mg-325mg) 1 TAB PO Q8H:PRN pain \n12. Glargine 6 Units Breakfast\nGlargine 14 Units Bedtime\nInsulin SC Sliding Scale using HUM Insulin\n13. Vitamin D 400 UNIT PO DAILY \nRX *ergocalciferol (vitamin D2) 2,000 unit 1 tablet(s) by mouth \ndaily Disp #*30 Tablet Refills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPRIMARY DIAGNOSES:\n-abdominal pain\n-gastroparesis\n-hyperglycemia without evidence of diabetic ketoacidosis\n\nSECONDARY DIAGNOSES:\n-type 1 diabetes mellitus\n-end stage renal disease on hemodialysis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure taking care of you while you were at ___.\n\nYou were admitted because you were having severe abdominal pain \nwith nausea and vomiting at home as well as very high blood \nsugars.  This is a problem that you have had many times and \nlikely represents worsening of your gastroparesis (poor stomach \nemptying) from your diabetes.  As you know, many things can \nworsen your problems with gastric emptying including having high \nblood sugar as well as certain medications (narcotics, zofran). \nYou were continued on Reglan (medication to help with stomach \nemptying) and given pain medications to help with your acute \nabdominal pain.  Your pain improved while you were admitted and \nyou were able to start eating again without further vomiting.  \nWe had you get a gastric emptying study to evaluate your \ngastroparesis, and the results of this study are still pending \nand will need follow up. We had you avoid taking narcotics and \nother medications that interfere with the results of this study.\n\nYou also had high blood sugars, with at blood sugar of more than \n700 when you were admitted.  The diabetes team saw you and made \nadjustments to your insulin medication doses.  Your sugars \nimproved but not as much as we would like. You wanted to be \ndischarged with high blood sugars still because you wanted to \ntake care of your son. You understood the risks of leaving the \nhospital with high blood sugars. We would like for you to be \nseen in the ___ Diabetes clinic so that they can adjust your \ninsulin once you are at home.  The high sugar levels can also \nworsen your problems with abdominal pain and poor stomach \nemptying.\n\nYou continued your usual dialysis and medications for your \nkidney failure while you were in the hospital.  We checked a \nhormone called PTH (parathyroid) which becomes elevated when you \nhave kidney failure, and because it was high we started you on \nVitamin D with calcium.  You should continue this medication at \nhome.\n  \nWe spoke with your kidney doctor, ___ agreed with \nour plan to place a port for better intravenous access (to give \nmedications by IVs and draw blood).  However, your port \nplacement was delayed before your were discharged.  You will \nneed to arrange to come in to the hospital to get the port \nplaced at another time.\n\nAt the end of your stay here, your medical team felt that you \nshould stay to improve your blood sugar control.  You felt that \nyour abdominal pain had improved and that you no longer wanted \nto stay in the hospital.  We explained that your sugars were not \nwell controlled and that it was our medical opinion that you \nwere not ready to leave the hospital.  You expressed \nunderstanding of our medical advice, and wished to be \ndischarged.  We have set up a follow up appointment for you to \nbe seen at ___ tomorrow ___.\n\nWe wish you all the best,\nYour ___ Team\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "17517983-RR-198",
+        "charttime": "2128-11-03 08:44:00",
+        "storetime": "2128-11-03 09:07:00",
+        "text": "EXAMINATION:  CHEST RADIOGRAPH\n\nINDICATION:  Epigastric pain. Question acute cardiopulmonary disease.\n\nTECHNIQUE:  PA and lateral views of the chest.\n\nCOMPARISON:  Chest radiographs from ___ and ___.\n\nFINDINGS: \n\nLung volumes are decreased. There is moderate cardiomegaly. There is\natelectasis at the lung bases bilaterally. No definite focal consolidation\nconcerning for pneumonia identified. There is no large pleural effusion. There\nis no pneumothorax. There is mild pulmonary vascular congestion.\n\nIMPRESSION: \n\nMild pulmonary vascular congestion. No focal consolidation concerning for\npneumonia.\n"
+      },
+      {
+        "note_id": "17517983-RR-199",
+        "charttime": "2128-11-03 11:47:00",
+        "storetime": "2128-11-03 12:33:00",
+        "text": "EXAMINATION:  ABDOMEN (SUPINE AND ERECT)\n\nINDICATION:  History: ___ with hx gastroparesis, epigastric pain/N/V  //\nEvidence of gastric distension, SBO\n\nTECHNIQUE:  Supine and erect radiographs of the abdomen.\n\nCOMPARISON:  Abdominal radiograph from ___.\n\nFINDINGS: \n\nThere are no air-fluid levels identified, and there are no abnormally dilated\nloops of small or large bowel. There is no evidence of pneumatosis or\npneumoperitoneum. The visualized osseous structures are unremarkable.No\nradiopaque foreign bodies are detected.  Phleboliths are seen within the\npelvis.\n\nIMPRESSION: \n\nNonobstructive bowel gas pattern.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "25061",
+        "icd_version": 9,
+        "long_title": "Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled",
+        "normalized_time": "2128-11-07 19:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "5856",
+        "icd_version": 9,
+        "long_title": "End stage renal disease",
+        "normalized_time": "2128-11-07 19:04:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "25041",
+        "icd_version": 9,
+        "long_title": "Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled",
+        "normalized_time": "2128-11-07 19:08:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "40391",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease",
+        "normalized_time": "2128-11-07 19:12:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "2761",
+        "icd_version": 9,
+        "long_title": "Hyposmolality and/or hyponatremia",
+        "normalized_time": "2128-11-07 19:16:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "V4511",
+        "icd_version": 9,
+        "long_title": "Renal dialysis status",
+        "normalized_time": "2128-11-07 19:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "5363",
+        "icd_version": 9,
+        "long_title": "Gastroparesis",
+        "normalized_time": "2128-11-07 19:24:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "V1581",
+        "icd_version": 9,
+        "long_title": "Personal history of noncompliance with medical treatment, presenting hazards to health",
+        "normalized_time": "2128-11-07 19:28:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2128-11-07 19:32:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "V1582",
+        "icd_version": 9,
+        "long_title": "Personal history of tobacco use",
+        "normalized_time": "2128-11-07 19:36:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "7245",
+        "icd_version": 9,
+        "long_title": "Backache, unspecified",
+        "normalized_time": "2128-11-07 19:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "33829",
+        "icd_version": 9,
+        "long_title": "Other chronic pain",
+        "normalized_time": "2128-11-07 19:44:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "28521",
+        "icd_version": 9,
+        "long_title": "Anemia in chronic kidney disease",
+        "normalized_time": "2128-11-07 19:48:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "311",
+        "icd_version": 9,
+        "long_title": "Depressive disorder, not elsewhere classified",
+        "normalized_time": "2128-11-07 19:52:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "25051",
+        "icd_version": 9,
+        "long_title": "Diabetes with ophthalmic manifestations, type I [juvenile type], not stated as uncontrolled",
+        "normalized_time": "2128-11-07 19:56:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "36201",
+        "icd_version": 9,
+        "long_title": "Background diabetic retinopathy",
+        "normalized_time": "2128-11-07 20:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2128-11-05",
+        "icd_code": "3995",
+        "icd_version": 9,
+        "long_title": "Hemodialysis",
+        "normalized_time": "2128-11-05 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 13295,
+    "output_tokens": 5117,
+    "total_tokens": 18412
+  },
+  "response_id": "chatcmpl-afa906f8309c26f8",
+  "latency_ms": 90826,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2128-11-03 17:00:00",
+        "speaker": "Doctor",
+        "text": "Hi, I’m Dr. Lee. I’ll be taking care of you during your stay. Can you tell me what brought you to the hospital today?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2128-11-03 17:01:00",
+        "speaker": "Patient",
+        "text": "Hi… I’ve had this awful stomach pain for two days. It’s in my upper belly, crampy and burning. I’ve been vomiting, and once it had a little blood in it."
+      },
+      {
+        "turn_number": 3,
+        "time": "2128-11-03 17:02:00",
+        "speaker": "Doctor",
+        "text": "I see. And have you been able to keep anything down—food or fluids?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2128-11-03 17:03:00",
+        "speaker": "Patient",
+        "text": "No, nothing. I can’t eat or drink without feeling sick. The pain goes into my back too."
+      },
+      {
+        "turn_number": 5,
+        "time": "2128-11-03 17:04:00",
+        "speaker": "Doctor",
+        "text": "Okay. I see you have a history of gastroparesis and diabetes. Did anything seem to trigger this episode?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2128-11-03 17:05:00",
+        "speaker": "Patient",
+        "text": "Maybe the hot weather last week? But honestly, I ran out of my Percocet and couldn’t refill it. The pain’s been worse without it."
+      },
+      {
+        "turn_number": 7,
+        "time": "2128-11-03 17:06:00",
+        "speaker": "Doctor",
+        "text": "I understand. We’ll help manage your pain. Your blood sugar was very high when you arrived—over 700. Were you taking your insulin?"
+      },
+      {
+        "turn_number": 8,
+        "time": "2128-11-03 17:07:00",
+        "speaker": "Patient",
+        "text": "I stopped my sliding scale because I wasn’t eating. I was scared of going too low."
+      },
+      {
+        "turn_number": 9,
+        "time": "2128-11-03 17:08:00",
+        "speaker": "Doctor",
+        "text": "That makes sense, but high sugars can actually make your stomach empty even slower. We’ll adjust your insulin to keep you safer."
+      },
+      {
+        "turn_number": 10,
+        "time": "2128-11-03 17:09:00",
+        "speaker": "Patient",
+        "text": "Oh… I didn’t know that. So my pain might be worse because of the high sugar?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2128-11-03 17:10:00",
+        "speaker": "Doctor",
+        "text": "Exactly. High blood sugar slows stomach emptying, and so can narcotics like Percocet. We’ll work on both."
+      },
+      {
+        "turn_number": 12,
+        "time": "2128-11-03 17:11:00",
+        "speaker": "Patient",
+        "text": "Okay, I get that. But I need something for the pain. Tylenol doesn’t touch it."
+      },
+      {
+        "turn_number": 13,
+        "time": "2128-11-03 17:12:00",
+        "speaker": "Doctor",
+        "text": "We’ll give you Dilaudid, which is safe for you, and a lidocaine patch for your back. But we’ll avoid certain meds that can worsen your stomach."
+      },
+      {
+        "turn_number": 14,
+        "time": "2128-11-03 17:13:00",
+        "speaker": "Patient",
+        "text": "That’s fine. I just want to feel better."
+      },
+      {
+        "turn_number": 15,
+        "time": "2128-11-03 18:30:00",
+        "speaker": "Doctor",
+        "text": "Your chest X-ray shows mild fluid in the lungs, but no pneumonia. Your belly X-ray looks non-obstructed, so no blockage."
+      },
+      {
+        "turn_number": 16,
+        "time": "2128-11-03 18:31:00",
+        "speaker": "Patient",
+        "text": "Is that from my heart or kidneys?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2128-11-03 18:32:00",
+        "speaker": "Doctor",
+        "text": "Possibly related to your blood pressure and kidney function. Your BP was high when you came in—154 over 95. We’ve restarted your usual meds."
+      },
+      {
+        "turn_number": 18,
+        "time": "2128-11-03 18:33:00",
+        "speaker": "Patient",
+        "text": "I know I missed a few doses. I’ve been so sick."
+      },
+      {
+        "turn_number": 19,
+        "time": "2128-11-03 18:34:00",
+        "speaker": "Doctor",
+        "text": "That’s okay. We’re getting things back on track. Your labs show your kidney function is stable for now, though your creatinine is high at 7.0."
+      },
+      {
+        "turn_number": 20,
+        "time": "2128-11-04 09:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your nausea seems better. We’d like to do a gastric emptying study to check how your stomach is working."
+      },
+      {
+        "turn_number": 21,
+        "time": "2128-11-04 09:01:00",
+        "speaker": "Patient",
+        "text": "I’ve had that before. But I heard I can’t take my pain meds before it?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2128-11-04 09:02:00",
+        "speaker": "Doctor",
+        "text": "Right. We need you off narcotics, Zofran, and laxatives for about 48 hours so the test is accurate. You took one Percocet 16 hours ago, which is close enough."
+      },
+      {
+        "turn_number": 23,
+        "time": "2128-11-04 09:03:00",
+        "speaker": "Patient",
+        "text": "I’m scared the pain will come back."
+      },
+      {
+        "turn_number": 24,
+        "time": "2128-11-04 09:04:00",
+        "speaker": "Doctor",
+        "text": "We’ll use Tylenol and the lidocaine patch. And we’ll monitor you closely. The test is important to guide your treatment."
+      },
+      {
+        "turn_number": 25,
+        "time": "2128-11-04 09:05:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll do it."
+      },
+      {
+        "turn_number": 26,
+        "time": "2128-11-05 10:00:00",
+        "speaker": "Doctor",
+        "text": "The gastric emptying study shows delayed emptying—62% of food still in your stomach after 4 hours. Normal is less than 10%."
+      },
+      {
+        "turn_number": 27,
+        "time": "2128-11-05 10:01:00",
+        "speaker": "Patient",
+        "text": "So it’s definitely gastroparesis again?"
+      },
+      {
+        "turn_number": 28,
+        "time": "2128-11-05 10:02:00",
+        "speaker": "Doctor",
+        "text": "Yes. And being on Reglan helps, but high sugars and narcotics can still slow it down. We’re keeping you on Reglan and adjusting your insulin."
+      },
+      {
+        "turn_number": 29,
+        "time": "2128-11-05 10:03:00",
+        "speaker": "Patient",
+        "text": "I’ve been trying to eat small meals, but I just feel full so fast."
+      },
+      {
+        "turn_number": 30,
+        "time": "2128-11-05 10:04:00",
+        "speaker": "Doctor",
+        "text": "That’s common. We’ll keep you on soft foods and encourage small, frequent meals when you go home."
+      },
+      {
+        "turn_number": 31,
+        "time": "2128-11-05 14:00:00",
+        "speaker": "Doctor",
+        "text": "You’re scheduled for dialysis today. We delayed it yesterday to do the stomach test."
+      },
+      {
+        "turn_number": 32,
+        "time": "2128-11-05 14:01:00",
+        "speaker": "Patient",
+        "text": "That’s fine. I know it’s part of the plan."
+      },
+      {
+        "turn_number": 33,
+        "time": "2128-11-06 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your blood sugars are still high—around 400. The diabetes team increased your nighttime Lantus from 10 to 14 units."
+      },
+      {
+        "turn_number": 34,
+        "time": "2128-11-06 09:01:00",
+        "speaker": "Patient",
+        "text": "But I’m not eating much. Won’t that make me low at night?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2128-11-06 09:02:00",
+        "speaker": "Doctor",
+        "text": "We’re balancing it. Basal insulin keeps your baseline sugar down, even when you’re not eating. We’ll monitor and adjust at home."
+      },
+      {
+        "turn_number": 36,
+        "time": "2128-11-06 09:03:00",
+        "speaker": "Patient",
+        "text": "I just want to go home. My son needs me."
+      },
+      {
+        "turn_number": 37,
+        "time": "2128-11-06 09:04:00",
+        "speaker": "Doctor",
+        "text": "I understand. But we’re concerned your sugars aren’t stable yet. We’d like you to stay a bit longer."
+      },
+      {
+        "turn_number": 38,
+        "time": "2128-11-06 09:05:00",
+        "speaker": "Patient",
+        "text": "I know, but I feel better. The pain’s gone, and I’m not vomiting. I’ll follow up with my doctor."
+      },
+      {
+        "turn_number": 39,
+        "time": "2128-11-06 09:06:00",
+        "speaker": "Doctor",
+        "text": "We’ll support your decision, but we want you to know it’s not ideal. We’re setting up a diabetes clinic visit for tomorrow."
+      },
+      {
+        "turn_number": 40,
+        "time": "2128-11-06 09:07:00",
+        "speaker": "Patient",
+        "text": "Thank you. I’ll go, I promise."
+      },
+      {
+        "turn_number": 41,
+        "time": "2128-11-06 10:00:00",
+        "speaker": "Doctor",
+        "text": "We also checked your PTH—it’s high, which is common in kidney disease. We’re starting vitamin D to help."
+      },
+      {
+        "turn_number": 42,
+        "time": "2128-11-06 10:01:00",
+        "speaker": "Patient",
+        "text": "Is that why my bones hurt sometimes?"
+      },
+      {
+        "turn_number": 43,
+        "time": "2128-11-06 10:02:00",
+        "speaker": "Doctor",
+        "text": "It can contribute. We’ll keep an eye on it. Also, your port placement was delayed. You’ll need to schedule that as an outpatient."
+      },
+      {
+        "turn_number": 44,
+        "time": "2128-11-06 10:03:00",
+        "speaker": "Patient",
+        "text": "I know. I just want to get home now."
+      },
+      {
+        "turn_number": 45,
+        "time": "2128-11-07 08:00:00",
+        "speaker": "Doctor",
+        "text": "Your exam looks good—vitals stable, belly soft. You’re tolerating food. We’re ready to discharge you."
+      },
+      {
+        "turn_number": 46,
+        "time": "2128-11-07 08:01:00",
+        "speaker": "Patient",
+        "text": "Thank you. What do I need to do at home?"
+      },
+      {
+        "turn_number": 47,
+        "time": "2128-11-07 08:02:00",
+        "speaker": "Doctor",
+        "text": "Continue all your meds, including the new vitamin D. Take your insulin as adjusted. Eat small, frequent meals. Avoid narcotics when possible."
+      },
+      {
+        "turn_number": 48,
+        "time": "2128-11-07 08:03:00",
+        "speaker": "Patient",
+        "text": "And my Percocet?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2128-11-07 08:04:00",
+        "speaker": "Doctor",
+        "text": "You can take it as needed, but know it may slow your stomach. Use the lowest dose for the shortest time."
+      },
+      {
+        "turn_number": 50,
+        "time": "2128-11-07 08:05:00",
+        "speaker": "Patient",
+        "text": "Got it. And I have my appointment tomorrow?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2128-11-07 08:06:00",
+        "speaker": "Doctor",
+        "text": "Yes, at the diabetes clinic. Call us if you vomit, can’t keep fluids down, or your sugars go over 500."
+      },
+      {
+        "turn_number": 52,
+        "time": "2128-11-07 08:07:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you for everything."
+      },
+      {
+        "turn_number": 53,
+        "time": "2128-11-07 08:08:00",
+        "speaker": "Doctor",
+        "text": "Take care. We’re here if you need us."
+      },
+      {
+        "turn_number": 54,
+        "time": "2128-11-07 08:09:00",
+        "speaker": "Patient",
+        "text": "One more thing—my sodium was low, right?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2128-11-07 08:10:00",
+        "speaker": "Doctor",
+        "text": "It was 128, but that’s partly because your sugar was so high. We call that pseudohyponatremia. It should improve as your sugars come down."
+      },
+      {
+        "turn_number": 56,
+        "time": "2128-11-07 08:11:00",
+        "speaker": "Patient",
+        "text": "Okay, that makes sense."
+      },
+      {
+        "turn_number": 57,
+        "time": "2128-11-07 08:12:00",
+        "speaker": "Doctor",
+        "text": "And your hemoglobin is stable, so your anemia isn’t worse. It’s related to your kidney disease."
+      },
+      {
+        "turn_number": 58,
+        "time": "2128-11-07 08:13:00",
+        "speaker": "Patient",
+        "text": "I’m tired a lot, but I guess that’s normal for me."
+      },
+      {
+        "turn_number": 59,
+        "time": "2128-11-07 08:14:00",
+        "speaker": "Doctor",
+        "text": "It can be. We’ll keep managing it. Rest when you get home."
+      },
+      {
+        "turn_number": 60,
+        "time": "2128-11-07 08:15:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks again."
+      },
+      {
+        "turn_number": 61,
+        "time": "2128-11-07 08:16:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’ll see you in follow-up if needed."
+      },
+      {
+        "turn_number": 62,
+        "time": "2128-11-07 08:17:00",
+        "speaker": "Patient",
+        "text": "One last question—my anxiety’s been bad. Is it okay to keep taking lorazepam?"
+      },
+      {
+        "turn_number": 63,
+        "time": "2128-11-07 08:18:00",
+        "speaker": "Doctor",
+        "text": "Yes, as prescribed—0.5 mg daily or for anxiety. But try relaxation techniques too. Social work can help with coping strategies."
+      },
+      {
+        "turn_number": 64,
+        "time": "2128-11-07 08:19:00",
+        "speaker": "Patient",
+        "text": "I’d like that."
+      },
+      {
+        "turn_number": 65,
+        "time": "2128-11-07 08:20:00",
+        "speaker": "Doctor",
+        "text": "I’ll connect you before discharge."
+      },
+      {
+        "turn_number": 66,
+        "time": "2128-11-07 08:21:00",
+        "speaker": "Patient",
+        "text": "Thank you. I feel more ready to go home now."
+      },
+      {
+        "turn_number": 67,
+        "time": "2128-11-07 08:22:00",
+        "speaker": "Doctor",
+        "text": "We’re glad you’re feeling better. Take care of yourself and your son."
+      }
+    ],
+    "summary": {
+      "admission_start": "2128-11-03 16:54:00",
+      "admission_end": "2128-11-07 20:00:00",
+      "summary_paragraph": "A woman with type 1 diabetes, end-stage renal disease on hemodialysis, and chronic gastroparesis was admitted for a flare of epigastric pain, nausea, and vomiting, with a blood glucose over 700 mg/dL. She had stopped her sliding scale insulin due to poor intake and fear of hypoglycemia. Her pain improved with Dilaudid and lidocaine patch, and she was able to tolerate oral intake. A gastric emptying study confirmed delayed gastric emptying. Her insulin regimen was adjusted with an increase in nighttime Lantus to 14 units. Hypertension improved with restart of home medications. She developed pseudohyponatremia, which resolved with better glycemic control. PTH was elevated, prompting initiation of vitamin D. Despite ongoing hyperglycemia, she chose to be discharged home to care for her son, with a follow-up appointment scheduled in the diabetes clinic the next day. Port placement was deferred to outpatient setting.",
+      "problems": [
+        "Gastroparesis",
+        "Hyperglycemia without evidence of diabetic ketoacidosis",
+        "Type 1 diabetes mellitus",
+        "End stage renal disease on hemodialysis",
+        "Hypertensive urgency",
+        "Pseudohyponatremia",
+        "Anemia in chronic kidney disease",
+        "Other chronic pain",
+        "Depressive disorder, not elsewhere classified",
+        "Personal history of noncompliance with medical treatment, presenting hazards to health"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-afa906f8309c26f8",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2128-11-03 17:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I’m Dr. Lee. I’ll be taking care of you during your stay. Can you tell me what brought you to the hospital today?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2128-11-03 17:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Hi… I’ve had this awful stomach pain for two days. It’s in my upper belly, crampy and burning. I’ve been vomiting, and once it had a little blood in it.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2128-11-03 17:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And have you been able to keep anything down—food or fluids?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2128-11-03 17:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, nothing. I can’t eat or drink without feeling sick. The pain goes into my back too.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2128-11-03 17:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. I see you have a history of gastroparesis and diabetes. Did anything seem to trigger this episode?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2128-11-03 17:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Maybe the hot weather last week? But honestly, I ran out of my Percocet and couldn’t refill it. The pain’s been worse without it.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2128-11-03 17:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. We’ll help manage your pain. Your blood sugar was very high when you arrived—over 700. Were you taking your insulin?\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2128-11-03 17:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I stopped my sliding scale because I wasn’t eating. I was scared of going too low.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2128-11-03 17:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That makes sense, but high sugars can actually make your stomach empty even slower. We’ll adjust your insulin to keep you safer.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2128-11-03 17:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh… I didn’t know that. So my pain might be worse because of the high sugar?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2128-11-03 17:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. High blood sugar slows stomach emptying, and so can narcotics like Percocet. We’ll work on both.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2128-11-03 17:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I get that. But I need something for the pain. Tylenol doesn’t touch it.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2128-11-03 17:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll give you Dilaudid, which is safe for you, and a lidocaine patch for your back. But we’ll avoid certain meds that can worsen your stomach.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2128-11-03 17:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s fine. I just want to feel better.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2128-11-03 18:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your chest X-ray shows mild fluid in the lungs, but no pneumonia. Your belly X-ray looks non-obstructed, so no blockage.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2128-11-03 18:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that from my heart or kidneys?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2128-11-03 18:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly related to your blood pressure and kidney function. Your BP was high when you came in—154 over 95. We’ve restarted your usual meds.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2128-11-03 18:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know I missed a few doses. I’ve been so sick.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2128-11-03 18:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s okay. We’re getting things back on track. Your labs show your kidney function is stable for now, though your creatinine is high at 7.0.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2128-11-04 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your nausea seems better. We’d like to do a gastric emptying study to check how your stomach is working.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2128-11-04 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had that before. But I heard I can’t take my pain meds before it?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2128-11-04 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Right. We need you off narcotics, Zofran, and laxatives for about 48 hours so the test is accurate. You took one Percocet 16 hours ago, which is close enough.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2128-11-04 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m scared the pain will come back.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2128-11-04 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll use Tylenol and the lidocaine patch. And we’ll monitor you closely. The test is important to guide your treatment.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2128-11-04 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll do it.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2128-11-05 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The gastric emptying study shows delayed emptying—62% of food still in your stomach after 4 hours. Normal is less than 10%.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2128-11-05 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s definitely gastroparesis again?\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2128-11-05 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. And being on Reglan helps, but high sugars and narcotics can still slow it down. We’re keeping you on Reglan and adjusting your insulin.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2128-11-05 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been trying to eat small meals, but I just feel full so fast.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2128-11-05 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s common. We’ll keep you on soft foods and encourage small, frequent meals when you go home.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2128-11-05 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re scheduled for dialysis today. We delayed it yesterday to do the stomach test.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2128-11-05 14:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s fine. I know it’s part of the plan.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2128-11-06 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your blood sugars are still high—around 400. The diabetes team increased your nighttime Lantus from 10 to 14 units.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2128-11-06 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"But I’m not eating much. Won’t that make me low at night?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2128-11-06 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re balancing it. Basal insulin keeps your baseline sugar down, even when you’re not eating. We’ll monitor and adjust at home.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2128-11-06 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I just want to go home. My son needs me.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2128-11-06 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. But we’re concerned your sugars aren’t stable yet. We’d like you to stay a bit longer.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2128-11-06 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know, but I feel better. The pain’s gone, and I’m not vomiting. I’ll follow up with my doctor.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2128-11-06 09:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll support your decision, but we want you to know it’s not ideal. We’re setting up a diabetes clinic visit for tomorrow.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2128-11-06 09:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I’ll go, I promise.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2128-11-06 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We also checked your PTH—it’s high, which is common in kidney disease. We’re starting vitamin D to help.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2128-11-06 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that why my bones hurt sometimes?\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2128-11-06 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can contribute. We’ll keep an eye on it. Also, your port placement was delayed. You’ll need to schedule that as an outpatient.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2128-11-06 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know. I just want to get home now.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2128-11-07 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your exam looks good—vitals stable, belly soft. You’re tolerating food. We’re ready to discharge you.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2128-11-07 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. What do I need to do at home?\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2128-11-07 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Continue all your meds, including the new vitamin D. Take your insulin as adjusted. Eat small, frequent meals. Avoid narcotics when possible.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2128-11-07 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my Percocet?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2128-11-07 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You can take it as needed, but know it may slow your stomach. Use the lowest dose for the shortest time.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2128-11-07 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. And I have my appointment tomorrow?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2128-11-07 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, at the diabetes clinic. Call us if you vomit, can’t keep fluids down, or your sugars go over 500.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2128-11-07 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you for everything.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2128-11-07 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care. We’re here if you need us.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2128-11-07 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"One more thing—my sodium was low, right?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2128-11-07 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It was 128, but that’s partly because your sugar was so high. We call that pseudohyponatremia. It should improve as your sugars come down.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2128-11-07 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, that makes sense.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2128-11-07 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"And your hemoglobin is stable, so your anemia isn’t worse. It’s related to your kidney disease.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2128-11-07 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m tired a lot, but I guess that’s normal for me.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2128-11-07 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can be. We’ll keep managing it. Rest when you get home.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2128-11-07 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks again.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2128-11-07 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’ll see you in follow-up if needed.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2128-11-07 08:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"One last question—my anxiety’s been bad. Is it okay to keep taking lorazepam?\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2128-11-07 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, as prescribed—0.5 mg daily or for anxiety. But try relaxation techniques too. Social work can help with coping strategies.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2128-11-07 08:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’d like that.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2128-11-07 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I’ll connect you before discharge.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2128-11-07 08:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I feel more ready to go home now.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2128-11-07 08:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re glad you’re feeling better. Take care of yourself and your son.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2128-11-03 16:54:00\",\n    \"admission_end\": \"2128-11-07 20:00:00\",\n    \"summary_paragraph\": \"A woman with type 1 diabetes, end-stage renal disease on hemodialysis, and chronic gastroparesis was admitted for a flare of epigastric pain, nausea, and vomiting, with a blood glucose over 700 mg/dL. She had stopped her sliding scale insulin due to poor intake and fear of hypoglycemia. Her pain improved with Dilaudid and lidocaine patch, and she was able to tolerate oral intake. A gastric emptying study confirmed delayed gastric emptying. Her insulin regimen was adjusted with an increase in nighttime Lantus to 14 units. Hypertension improved with restart of home medications. She developed pseudohyponatremia, which resolved with better glycemic control. PTH was elevated, prompting initiation of vitamin D. Despite ongoing hyperglycemia, she chose to be discharged home to care for her son, with a follow-up appointment scheduled in the diabetes clinic the next day. Port placement was deferred to outpatient setting.\",\n    \"problems\": [\n      \"Gastroparesis\",\n      \"Hyperglycemia without evidence of diabetic ketoacidosis\",\n      \"Type 1 diabetes mellitus\",\n      \"End stage renal disease on hemodialysis\",\n      \"Hypertensive urgency\",\n      \"Pseudohyponatremia\",\n      \"Anemia in chronic kidney disease\",\n      \"Other chronic pain\",\n      \"Depressive disorder, not elsewhere classified\",\n      \"Personal history of noncompliance with medical treatment, presenting hazards to health\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776615681,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5117,
+      "prompt_tokens": 13295,
+      "total_tokens": 18412,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

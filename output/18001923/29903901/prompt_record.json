@@ -1,0 +1,810 @@
+{
+  "subject_id": "18001923",
+  "hadm_id": "29903901",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-18T18:44:19Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 4 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2181-08-22 22:29:00 to 2181-08-26 11:30:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2181-08-03 09:40:00",
+    "admission_end": "2181-08-04 09:00:00",
+    "summary_paragraph": "The patient, a male with a history of alcoholic cirrhosis, hepatitis C, esophageal varices, and chronic alcohol use, was admitted for worsening abdominal pain and reported bright red blood per rectum and in emesis. He had stable vital signs and no active bleeding during the hospitalization. Laboratory results showed anemia with hemoglobin dropping to 8.3 g/dL, elevated INR of 1.5, and mild renal impairment likely due to dehydration. A CT scan revealed an enlarged, fatty liver and non-obstructing renal calculi but no acute abdominal process. The patient was offered endoscopy and medication reconciliation but left against medical advice before procedures or discharge planning could be completed. He acknowledged the risks, including potential fatal hemorrhage, and declined prescriptions despite being advised to follow up within two days.",
+    "problems": [
+      "Abdominal pain, unspecified site",
+      "Hemorrhage of rectum and anus",
+      "Esophageal varices without mention of bleeding",
+      "Portal hypertension",
+      "Alcohol abuse, continuous",
+      "Unspecified viral hepatitis C without hepatic coma",
+      "Cirrhosis of liver without mention of alcohol",
+      "Other and unspecified coagulation defects",
+      "Acute kidney failure, unspecified",
+      "Esophageal reflux",
+      "Personal history of noncompliance with medical treatment, presenting hazards to health"
+    ]
+  },
+  "stay_days": 4,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2181-08-26 00:00:00): Name:  ___                   Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \naspirin / Tylenol / ibuprofen\n \nAttending: ___.\n \nChief Complaint:\nAbdominal pain, hematemesis, melena, BRBPR, hematuria\n \nMajor Surgical or Invasive Procedure:\nEGD ___\nColonoscopy ___\n\n \nHistory of Present Illness:\n___ hx of EtOH abuse, HCV cirrhosis, Grade I varices (EGD ___, \nchronic abdominal pain presents with multiple complaints. He \nnotes chest pain yesterday described as stabbing, \nnon-exertional, asociated with nausea and left arm tingling. He \nalso notes hemoptysis/hematemesis, melena, BRBPR today \nassociated with some lightheadedness. He reports lower abdominal \ncramping, hematuria with clots, and N/V x2 with small amount of \nblood. He reports that he is anemic and has had 6 transfusions \nthis year. He states that he drank 1 glass of brandy yesterday \nand only drinks about ___ drinks per week.  \nOf note, he has had 6 ED visits/ED obs/admissions for similar sx \nsince ___ and has frequently left AMA.  \nIn the ED initial vitals were: 98.4 70 150/82 18 98% ra  \n- Labs were significant for ALT 29 AST 71 AP 140 Lip 85 Tbili \n0.4 Alb 3.3. WBC 2.9 PMN 61% Eos 6% H/H 8.2/25.8 (stable) Plt \n141. Trop <0.01. CXR showed no acute intrathoracic process.  \n- Patient was given 1LNS, 5mg IV morphine, 4mg IV ondansetron, \n40mg IV pantoprazole, 2 tab oxycodone-APAP.  \nVitals prior to transfer were: 93 150/73 16 100% RA  \nOn the floor, patient notes ___ abdominal pain and requests \npain medication and ice chips.  \nReview of Systems: Patient answers \"\"yes\"\" to all ROS questions \nincluding palpitations, SOB, orthopnea (though lying flat in \nbed), PND, ___ edema, poor sleep, ___ abdominal pain, dysuria, \nhematuria, clots in urine, nausea, night sweats, \ndizziness/lightheadedness, confusion, anemia, melena, \nhematochezia, hemoptysis, diarrhea.  \n\n \nPast Medical History:\n Alcohol abuse  \n- Cirrhosis, complicated by Grade 1 esophageal varices  \n- Hepatitis C, Ab positive, VL 46million on ___  \n- Gastritis  \n- GERD  \n- Colonic angiectasias  \n- Hypertension  \n- Atypical chest pain  \n- Chronic anemia  \n- Exploratory laparotomy in ___ following MVC  \n- ?Hx of MI (patient states he refused stent)  \n- ?Hx of prostate cancer  \n- Hemorrhoids  \n\n \nSocial History:\n___\nFamily History:\nFather had a history of Diabetes Mellitus, Hypertension, 3x  \nMyocardial Infarction (first one age ___, died of MI. Mother had \n \na history of Diabetes Mellitus, Hypertension, breast cancer, and \n \ndied of colon cancer with at age ___.  \n\n \nPhysical Exam:\nAdmission Physical Exam:\nVitals - T: 98.9 BP: 152/76 HR: 95 RR: 18 02 sat: 99%RA  \nGENERAL: Comfortable appearing man lying flat in bed in NAD  \nHEENT: AT/NC, EOMI, PERRL, anicteric sclera, pink conjunctiva, \nMMM  \nNECK: JVP ~8cm  \nCARDIAC: RRR, S1/S2, III/VI SEM loudest at RUSB  \nLUNG: CTAB, no wheezes, rales, rhonchi, breathing comfortably \nwithout use of accessory muscles  \nABDOMEN: Distended but soft, +BS, minimal tenderness in RUQ, no \nrebound/guarding, liver edge ~2cm below costal margin  \nEXTREMITIES: 1+ ___ edema bilaterally. moving all 4 extremities \nwith purpose  \nPULSES: 2+ DP pulses bilaterally  \nNEURO: CN II-XII intact, AAOx3, no asterixis, motor and sensory \nexam grossly intact  \nSKIN: warm and well perfused, no excoriations or lesions, no \nrashes  \n\nDischarge Physical Exam:\nVitals: T 98.1 BP 138/69  P 62 RR 18 ___ 99 RA\nOn ciwa, did not score overnight\nGeneral: NAD, appears stated age, no jaundice\nHEENT: NCAT, pupils reactive, EOMI, MMM, conjunctival pallor, \nmild scleral icterus\nCV: RRR, nl S1, S2, ___ systolic murmur loudest at apex but \nheard throughout precordium \nLungs: Normal work of breathing, some trace end-expiratory \nwheezes\nAbdomen: Soft, ND, no fluid wave, some suprapubic tenderness \nwithout g/r/r\nExt: Pulses 2+, no edema\nNeuro: AAOx3, no asterixis\nSkin: WWP\n\n \nPertinent Results:\nAdmission Labs:\n\n___ 08:20PM BLOOD WBC-2.9* RBC-3.05* Hgb-8.2* Hct-25.8* \nMCV-85 MCH-26.7* MCHC-31.7 RDW-17.2* Plt ___\n___ 08:20PM BLOOD Neuts-61.6 ___ Monos-6.6 Eos-6.0* \nBaso-0.3\n___ 08:27AM BLOOD ___ PTT-29.6 ___\n___ 08:20PM BLOOD Glucose-109* UreaN-10 Creat-0.8 Na-145 \nK-3.7 Cl-108 HCO3-27 AnGap-14\n___ 08:20PM BLOOD ALT-29 AST-71* AlkPhos-140* TotBili-0.4\n___ 08:20PM BLOOD Lipase-85*\n___ 08:20PM BLOOD Albumin-3.3*\n___ 08:20PM BLOOD ASA-NEG ___ Acetmnp-NEG \nBnzodzp-NEG Barbitr-NEG Tricycl-NEG\n___ 11:20PM BLOOD Lactate-1.8\n\nPertinent Labs:\n___ 08:20PM BLOOD cTropnT-<0.01\n___ 08:27AM BLOOD CK-MB-1 cTropnT-<0.01\n\n___ 08:20PM BLOOD Lipase-85*\n___ 08:27AM BLOOD Lipase-44\n\n___ 08:20PM BLOOD ALT-29 AST-71* AlkPhos-140* TotBili-0.4\n___ 08:27AM BLOOD ALT-26 AST-58* AlkPhos-120 TotBili-0.4\n___ 08:12AM BLOOD ALT-30 AST-59* AlkPhos-119 TotBili-0.8\n___ 08:59AM BLOOD ALT-31 AST-60* AlkPhos-134* TotBili-0.8\n___ 08:05AM BLOOD ALT-29 AST-59* AlkPhos-119 TotBili-0.5\n\nUrine:\n___ 12:05AM URINE Color-RED Appear-Hazy Sp ___\n___ 12:05AM URINE Blood-LG Nitrite-NEG Protein-30 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-4* pH-6.0 Leuks-SM \n___ 12:05AM URINE RBC->182* WBC-17* Bacteri-MOD Yeast-NONE \nEpi-0\n___ 12:05AM URINE WBC Clm-FEW\n\n___ 06:53PM URINE Color-Yellow Appear-Clear Sp ___\n___ 06:53PM URINE Blood-NEG Nitrite-NEG Protein-NEG \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-7.0 Leuks-NEG\n\n___ 11:24PM URINE Color-Yellow Appear-Clear Sp ___\n___ 11:24PM URINE Blood-NEG Nitrite-NEG Protein-NEG \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-2* pH-7.0 Leuks-NEG\n\nDischarge Labs:\n___ 08:05AM BLOOD Calcium-8.6 Phos-2.8 Mg-1.6\n___ 08:05AM BLOOD ALT-29 AST-59* AlkPhos-119 TotBili-0.5\n___ 08:05AM BLOOD Glucose-93 UreaN-12 Creat-0.8 Na-136 \nK-4.0 Cl-101 HCO3-29 AnGap-10\n___ 08:05AM BLOOD ___\n___ 08:05AM BLOOD WBC-3.9* RBC-3.14* Hgb-8.1* Hct-27.0* \nMCV-86 MCH-25.8* MCHC-30.0* RDW-17.1* Plt ___\n\nImaging:\n- RUQ U/S ___: IMPRESSION:  \n  \nNo evidence of focal liver lesion. Nodular liver with coarsened \nechotexture, \nconsistent with known cirrhosis. Trace perihepatic ascites \n\n- EGD ___: \nVarices at the lower third of the esophagus\nMosaic appearance in the stomach compatible with portal \nhypertensive gastropathy\nErythema in the antrum compatible with gastritis\nNormal mucosa in the duodenum\nOtherwise normal EGD to third part of the duodenum\n\n- Colonoscopy ___:\nNormal mucosa in the colon\nAngioectasias in the cecum and descending colon (thermal \ntherapy)\nGrade 2 internal hemorrhoids\nOtherwise normal colonoscopy to cecum\n\n- Renal U/S ___:\nNo hydronephrosis. No stones identified in the renal collecting \nsystem of the right kidney. A small calyceal diverticulum \ncontaining a crystal is noted peripherally in the right kidney \nand this structure correlates with the findings on the prior CTU \nof ___. \n\n- EKG ___: Sinus rhythm. Non-specific ST segment changes. \nCompared to the previous tracing of ___ the findings are \nsimilar. \nTRACING #2 \n\n- EKG ___: Sinus rhythm. Non-specific ST segment changes. \nCompared to the previous tracing of ___ the findings are \nsimilar. \nTRACING #1 \n\n- CXR ___: IMPRESSION:  \n  \nNo acute intrathoracic process. \n\nMicro:\n___ 11:05 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Preliminary): \n      CORYNEBACTERIUM SPECIES (DIPHTHEROIDS). \n         Isolated from only one set in the previous five days. \n\n   Anaerobic Bottle Gram Stain (Final ___: \n      GRAM POSITIVE ROD(S). \n      Reported to and read back by ___ ___ ___ \n1420. \n\n___ 8:27 am IMMUNOLOGY\n\n                            **FINAL REPORT ___\n\n   HCV VIRAL LOAD (Final ___: \n      564,000 IU/mL. \n      Performed using Cobas Ampliprep / Cobas Taqman HCV v2.0 \nTest. \n      Linear range of quantification: 1.50E+01 IU/mL - 1.00E+08 \nIU/mL. \n      Limit of detection: 1.50E+01 IU/mL. \n\n___ 4:52 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 4:56 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 6:53 pm URINE      Source: ___. \n\n                            **FINAL REPORT ___\n\n   URINE CULTURE (Final ___: \n      MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT \nWITH SKIN\n      AND/OR GENITAL CONTAMINATION. \n\n___ 8:59 am BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 8:59 am BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n \nBrief Hospital Course:\n___ h/o GERD, HTN, alcohol abuse, likely EtOH cirrhosis, \nhepatitis C, who presents with dark stools and pan-positive ROS \ncomplaints, as well as positive blood alcohol level on \nadmission. EGD showed 2 cords of grade I varices without active \nbleeding. Colonoscopy with angioectasias (cauterized), and grade \nII internal hemorrhoids but no active bleeding. Had 1 blood cx \ngrowing G+ anaerobic rods but no infectious sx, repeat cultures \nnegative. Complaining of dysuria/hematuria and found to have \nurinary tract infection, started on cipro. Culture contaminated. \nRenal ultrasound showed a small calyceal diverticulum containing \na crystal in the right kidney correlating with findings on a \nprior CTU. No stones were identified in the renal collecting \nsystem of the right kidney. Pain was controlled during stay with \nIV morphine 1mg q6h prn and tramadol, weaned to tramadol prior \nto discharge, and discontinued prior to leaving. Patient was \nplaced on ___ protocol upon admission for elevated alcohol \nlevel but did not require prn lorazepam at any point throughout \nhis admission. Discharged home to f/u with PCP as outpatient.\n\n# GIB, anemia: ddx upper vs lower GIB. patient with non-bleeding \ngrade I varices on last EGD 4 months ago with 6 month f/u \nrecommended. Last colonoscopy in ___ showed multiple \nangioectasias and grade II internal hemorrhoids. Stool exam in \nED negative for melena. H/H low but stable from previous without \nelevation in BUN/Cr. Pt reports six transfusions over the past \nyear. EGD, ___ with possible sources of occult bleeding but no \nfrank areas.\n- continued IV PPI BID for gastritis seen on EGD- switched to PO \non discharge\n- Continued home nadolol\n- pt refuses iron\n- outpatient gi follow-up scheduled\n\n# Chest pain: Concern for ischemia as patient complaining of \nchest pain on admit, however EKG similar to previous and trops \nnegative x2 with flat ck\n\n# Abdominal pain/hematuria/dysuria: u/a shows pyuria, bacteria, \nleuk est. no cva tenderness or fever to think pyelo. ultrasound \nnegative for nephrolithiasis or pyelo.\n- discharged with cipro x 7 days for complicated uti\n\n# EtOH: on ciwa, did not require lorazepam. has history of \nhiding alcohol nips in room.\n- sent with folate, thiamine on discharge\n\n# Wheezing on exam on admit: patient reports hx of asthma, also \nlongtime smoker. exam improved with albuterol neb while \ninpatient\n- d/c'd with albuterol inhaler\n\n# Hemorrhoids on ___: provided rectal foam while inpatient and \ndischarged with prescription for ___hronic Issues:\n\n# Cirrhosis: Childs ___ Class A on. MELD 12 on discharge. HCV \nviral load- 564,000 IU/mL. Trace ascites on ultrasound. \nOutpatient liver clinic follow-up scheduled.\n\n# Pancytopenia: likely related to cirrhosis, HCV infection\n\n# HTN: continued home lisinopril\n\n# CAD: continued statin\n\nTransitional Issues:\n- finish 7 day course of ciprofloxacin\n- pls repeat UA after tx of UTI. If hematuria persists, \nrecommend urological evaluation\n- cortifoam for hemorrhoids x 2 weeks\n- further discussion of alcohol cessation\n- wean off PPI if tolerated after gastritis sx resolve\n- f/u renal u/s findings- discuss urologic referral\n- recommend f/u blood cx results and speciation- treat if not \ncontaminant/patient presents with infectious symptoms\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Atorvastatin 80 mg PO QPM \n2. Furosemide 20 mg PO DAILY \n3. Lisinopril 5 mg PO DAILY \n4. Nadolol 60 mg PO DAILY \n5. Omeprazole 40 mg PO DAILY \n6. Ferrous Sulfate 325 mg PO DAILY \n7. Multivitamins 1 TAB PO DAILY \n8. Thiamine 100 mg PO DAILY \n9. Docusate Sodium 100 mg PO BID \n \nDischarge Medications:\n1. Atorvastatin 80 mg PO QPM \n2. Docusate Sodium 100 mg PO BID \n3. Multivitamins 1 TAB PO DAILY \n4. Nadolol 60 mg PO DAILY \n5. Thiamine 100 mg PO DAILY \n6. Ciprofloxacin HCl 500 mg PO Q12H Duration: 7 Days \nRX *ciprofloxacin 500 mg 1 tablet(s) by mouth every twelve (12) \nhours Disp #*11 Tablet Refills:*0\n7. FoLIC Acid 1 mg PO DAILY \nRX *folic acid 1 mg 1 tablet(s) by mouth daily Disp #*30 Tablet \nRefills:*0\n8. Furosemide 20 mg PO DAILY \n9. Omeprazole 40 mg PO DAILY \n10. Lisinopril 5 mg PO DAILY \n11. Hydrocortisone Acetate 10%  Foam 1 Appl PR QHS \nRX *hydrocortisone acetate [Cortifoam] 10 % 1 foam(s) rectally \nat bedtime Refills:*0\n12. Albuterol Inhaler 2 PUFF IH Q6H:PRN shortness of breath \nRX *albuterol sulfate 90 mcg 2 puffs Q4-6H: prn Disp #*1 Inhaler \nRefills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary Diagnoses:\nAngioectasias of colon\nGastritis\nPortal hypertensive gastropathy\nGrade I Esophageal Varices\nGrade II Internal Hemorrhoids\nUrinary Tract Infection\n\nSecondary Diagnoses:\nCirrhosis\nActive Alcohol Abuse\nHepatitis C Infection\nHypertension\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nMr. ___,\n\nIt was a pleasure taking care of you during your stay at ___. \nYou were admitted for abdominal pain, chest pain, vomiting \nblood, passing blood in your stool, and passing blood in your \nurine. Upper endoscopy showed some gastritis and grade I varices \nthat were not bleeding. Colonoscopy showed a few vessel \nmalformations that were not bleeding but cauterized by the GI \nteam. Hemorrhoids were also seen. Your blood counts remained \nstable throughout admission.\n\nYou were also found to have a urinary tract infection and should \ncomplete a 7 day course of antibiotics. This may be the cause of \nthe blood in your urine. If this blood persists after you finish \nyour antibiotics, please tell your primary doctor as you may \nrequire further evaluation.\n\nYou were found to have some wheezing on exam and based on your \nhistory of asthma, were prescribed an albuterol rescue inhaler \nto use if you feel short of breath.\n\nWishing you well,\nYour ___ Medicine Team\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Hematemesis\n- Blood in stool\n- Angiodysplasia of intestine (without mention of hemorrhage)\n- Internal hemorrhoids without mention of complication\n- Other chest pain\n- Urinary tract infection, site not specified\n- Esophageal varices in diseases classified elsewhere, without mention of bleeding\n- Coronary atherosclerosis of native coronary artery\n- Other specified disorders of stomach and duodenum\n- Unspecified gastritis and gastroduodenitis, without mention of hemorrhage\n- Other pancytopenia\n- Alcoholic cirrhosis of liver\n- Alcohol abuse, unspecified\n- Esophageal reflux\n- Unspecified essential hypertension\n- Tobacco use disorder\n- Chronic hepatitis C without mention of hepatic coma\n- Asthma, unspecified type, unspecified\n- Portal hypertension",
+  "supporting_context_block": "Radiology:\n- 2181-08-22 20:29:00: EXAMINATION: CHEST (PA AND LAT) INDICATION: ___ with chest pain // r/o infiltrate COMPARISON: ___. FINDINGS: PA and lateral views of the chest provided. There is no focal consolidation, effusion, or pneumothorax. The...\n- 2181-08-23 14:11:00: EXAMINATION: LIVER OR GALLBLADDER US (SINGLE ORGAN) INDICATION: A ___ man with history of alcoholic and hepatitis-C related cirrhosis presenting with abdominal pain. TECHNIQUE: Grey scale and color Doppler ultrasound...\n- 2181-08-25 14:04:00: EXAMINATION: RENAL U.S. INDICATION: ___ year old man with new hematuria, c/o RLQ flank, with known right nephrolithiasis // pls eval for ureteral stone. TECHNIQUE: Grey scale ultrasound images of the kidneys were obta...\n\nProcedures:\n- 2181-08-23 12:00:00: Other endoscopy of small intestine\n- 2181-08-24 12:00:00: Endoscopic destruction of other lesion or tissue of large intestine\n\nMicrobiology:\n- 2181-08-23 08:27:00: IMMUNOLOGY (___)\n- 2181-08-24 16:52:00: BLOOD CULTURE (NO GROWTH.)\n- 2181-08-24 16:56:00: BLOOD CULTURE (NO GROWTH.)\n- 2181-08-24 18:53:00: URINE (MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT WITH SKIN AND/OR GENITAL CONTAMINATION.)\n- 2181-08-25 08:59:00: BLOOD CULTURE (NO GROWTH.)",
+  "formed_packet": {
+    "subject_id": "18001923",
+    "hadm_id": "29903901",
+    "admission_start": "2181-08-22 22:29:00",
+    "admission_end": "2181-08-26 11:30:00",
+    "previous_admission_summary": {
+      "admission_start": "2181-08-03 09:40:00",
+      "admission_end": "2181-08-04 09:00:00",
+      "summary_paragraph": "The patient, a male with a history of alcoholic cirrhosis, hepatitis C, esophageal varices, and chronic alcohol use, was admitted for worsening abdominal pain and reported bright red blood per rectum and in emesis. He had stable vital signs and no active bleeding during the hospitalization. Laboratory results showed anemia with hemoglobin dropping to 8.3 g/dL, elevated INR of 1.5, and mild renal impairment likely due to dehydration. A CT scan revealed an enlarged, fatty liver and non-obstructing renal calculi but no acute abdominal process. The patient was offered endoscopy and medication reconciliation but left against medical advice before procedures or discharge planning could be completed. He acknowledged the risks, including potential fatal hemorrhage, and declined prescriptions despite being advised to follow up within two days.",
+      "problems": [
+        "Abdominal pain, unspecified site",
+        "Hemorrhage of rectum and anus",
+        "Esophageal varices without mention of bleeding",
+        "Portal hypertension",
+        "Alcohol abuse, continuous",
+        "Unspecified viral hepatitis C without hepatic coma",
+        "Cirrhosis of liver without mention of alcohol",
+        "Other and unspecified coagulation defects",
+        "Acute kidney failure, unspecified",
+        "Esophageal reflux",
+        "Personal history of noncompliance with medical treatment, presenting hazards to health"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "18001923-DS-32",
+        "note_seq": 32,
+        "charttime": "2181-08-26 00:00:00",
+        "storetime": "2181-08-27 13:09:00",
+        "text": " \nName:  ___                   Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \naspirin / Tylenol / ibuprofen\n \nAttending: ___.\n \nChief Complaint:\nAbdominal pain, hematemesis, melena, BRBPR, hematuria\n \nMajor Surgical or Invasive Procedure:\nEGD ___\nColonoscopy ___\n\n \nHistory of Present Illness:\n___ hx of EtOH abuse, HCV cirrhosis, Grade I varices (EGD ___, \nchronic abdominal pain presents with multiple complaints. He \nnotes chest pain yesterday described as stabbing, \nnon-exertional, asociated with nausea and left arm tingling. He \nalso notes hemoptysis/hematemesis, melena, BRBPR today \nassociated with some lightheadedness. He reports lower abdominal \ncramping, hematuria with clots, and N/V x2 with small amount of \nblood. He reports that he is anemic and has had 6 transfusions \nthis year. He states that he drank 1 glass of brandy yesterday \nand only drinks about ___ drinks per week.  \nOf note, he has had 6 ED visits/ED obs/admissions for similar sx \nsince ___ and has frequently left AMA.  \nIn the ED initial vitals were: 98.4 70 150/82 18 98% ra  \n- Labs were significant for ALT 29 AST 71 AP 140 Lip 85 Tbili \n0.4 Alb 3.3. WBC 2.9 PMN 61% Eos 6% H/H 8.2/25.8 (stable) Plt \n141. Trop <0.01. CXR showed no acute intrathoracic process.  \n- Patient was given 1LNS, 5mg IV morphine, 4mg IV ondansetron, \n40mg IV pantoprazole, 2 tab oxycodone-APAP.  \nVitals prior to transfer were: 93 150/73 16 100% RA  \nOn the floor, patient notes ___ abdominal pain and requests \npain medication and ice chips.  \nReview of Systems: Patient answers \"\"yes\"\" to all ROS questions \nincluding palpitations, SOB, orthopnea (though lying flat in \nbed), PND, ___ edema, poor sleep, ___ abdominal pain, dysuria, \nhematuria, clots in urine, nausea, night sweats, \ndizziness/lightheadedness, confusion, anemia, melena, \nhematochezia, hemoptysis, diarrhea.  \n\n \nPast Medical History:\n Alcohol abuse  \n- Cirrhosis, complicated by Grade 1 esophageal varices  \n- Hepatitis C, Ab positive, VL 46million on ___  \n- Gastritis  \n- GERD  \n- Colonic angiectasias  \n- Hypertension  \n- Atypical chest pain  \n- Chronic anemia  \n- Exploratory laparotomy in ___ following MVC  \n- ?Hx of MI (patient states he refused stent)  \n- ?Hx of prostate cancer  \n- Hemorrhoids  \n\n \nSocial History:\n___\nFamily History:\nFather had a history of Diabetes Mellitus, Hypertension, 3x  \nMyocardial Infarction (first one age ___, died of MI. Mother had \n \na history of Diabetes Mellitus, Hypertension, breast cancer, and \n \ndied of colon cancer with at age ___.  \n\n \nPhysical Exam:\nAdmission Physical Exam:\nVitals - T: 98.9 BP: 152/76 HR: 95 RR: 18 02 sat: 99%RA  \nGENERAL: Comfortable appearing man lying flat in bed in NAD  \nHEENT: AT/NC, EOMI, PERRL, anicteric sclera, pink conjunctiva, \nMMM  \nNECK: JVP ~8cm  \nCARDIAC: RRR, S1/S2, III/VI SEM loudest at RUSB  \nLUNG: CTAB, no wheezes, rales, rhonchi, breathing comfortably \nwithout use of accessory muscles  \nABDOMEN: Distended but soft, +BS, minimal tenderness in RUQ, no \nrebound/guarding, liver edge ~2cm below costal margin  \nEXTREMITIES: 1+ ___ edema bilaterally. moving all 4 extremities \nwith purpose  \nPULSES: 2+ DP pulses bilaterally  \nNEURO: CN II-XII intact, AAOx3, no asterixis, motor and sensory \nexam grossly intact  \nSKIN: warm and well perfused, no excoriations or lesions, no \nrashes  \n\nDischarge Physical Exam:\nVitals: T 98.1 BP 138/69  P 62 RR 18 ___ 99 RA\nOn ciwa, did not score overnight\nGeneral: NAD, appears stated age, no jaundice\nHEENT: NCAT, pupils reactive, EOMI, MMM, conjunctival pallor, \nmild scleral icterus\nCV: RRR, nl S1, S2, ___ systolic murmur loudest at apex but \nheard throughout precordium \nLungs: Normal work of breathing, some trace end-expiratory \nwheezes\nAbdomen: Soft, ND, no fluid wave, some suprapubic tenderness \nwithout g/r/r\nExt: Pulses 2+, no edema\nNeuro: AAOx3, no asterixis\nSkin: WWP\n\n \nPertinent Results:\nAdmission Labs:\n\n___ 08:20PM BLOOD WBC-2.9* RBC-3.05* Hgb-8.2* Hct-25.8* \nMCV-85 MCH-26.7* MCHC-31.7 RDW-17.2* Plt ___\n___ 08:20PM BLOOD Neuts-61.6 ___ Monos-6.6 Eos-6.0* \nBaso-0.3\n___ 08:27AM BLOOD ___ PTT-29.6 ___\n___ 08:20PM BLOOD Glucose-109* UreaN-10 Creat-0.8 Na-145 \nK-3.7 Cl-108 HCO3-27 AnGap-14\n___ 08:20PM BLOOD ALT-29 AST-71* AlkPhos-140* TotBili-0.4\n___ 08:20PM BLOOD Lipase-85*\n___ 08:20PM BLOOD Albumin-3.3*\n___ 08:20PM BLOOD ASA-NEG ___ Acetmnp-NEG \nBnzodzp-NEG Barbitr-NEG Tricycl-NEG\n___ 11:20PM BLOOD Lactate-1.8\n\nPertinent Labs:\n___ 08:20PM BLOOD cTropnT-<0.01\n___ 08:27AM BLOOD CK-MB-1 cTropnT-<0.01\n\n___ 08:20PM BLOOD Lipase-85*\n___ 08:27AM BLOOD Lipase-44\n\n___ 08:20PM BLOOD ALT-29 AST-71* AlkPhos-140* TotBili-0.4\n___ 08:27AM BLOOD ALT-26 AST-58* AlkPhos-120 TotBili-0.4\n___ 08:12AM BLOOD ALT-30 AST-59* AlkPhos-119 TotBili-0.8\n___ 08:59AM BLOOD ALT-31 AST-60* AlkPhos-134* TotBili-0.8\n___ 08:05AM BLOOD ALT-29 AST-59* AlkPhos-119 TotBili-0.5\n\nUrine:\n___ 12:05AM URINE Color-RED Appear-Hazy Sp ___\n___ 12:05AM URINE Blood-LG Nitrite-NEG Protein-30 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-4* pH-6.0 Leuks-SM \n___ 12:05AM URINE RBC->182* WBC-17* Bacteri-MOD Yeast-NONE \nEpi-0\n___ 12:05AM URINE WBC Clm-FEW\n\n___ 06:53PM URINE Color-Yellow Appear-Clear Sp ___\n___ 06:53PM URINE Blood-NEG Nitrite-NEG Protein-NEG \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-7.0 Leuks-NEG\n\n___ 11:24PM URINE Color-Yellow Appear-Clear Sp ___\n___ 11:24PM URINE Blood-NEG Nitrite-NEG Protein-NEG \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-2* pH-7.0 Leuks-NEG\n\nDischarge Labs:\n___ 08:05AM BLOOD Calcium-8.6 Phos-2.8 Mg-1.6\n___ 08:05AM BLOOD ALT-29 AST-59* AlkPhos-119 TotBili-0.5\n___ 08:05AM BLOOD Glucose-93 UreaN-12 Creat-0.8 Na-136 \nK-4.0 Cl-101 HCO3-29 AnGap-10\n___ 08:05AM BLOOD ___\n___ 08:05AM BLOOD WBC-3.9* RBC-3.14* Hgb-8.1* Hct-27.0* \nMCV-86 MCH-25.8* MCHC-30.0* RDW-17.1* Plt ___\n\nImaging:\n- RUQ U/S ___: IMPRESSION:  \n  \nNo evidence of focal liver lesion. Nodular liver with coarsened \nechotexture, \nconsistent with known cirrhosis. Trace perihepatic ascites \n\n- EGD ___: \nVarices at the lower third of the esophagus\nMosaic appearance in the stomach compatible with portal \nhypertensive gastropathy\nErythema in the antrum compatible with gastritis\nNormal mucosa in the duodenum\nOtherwise normal EGD to third part of the duodenum\n\n- Colonoscopy ___:\nNormal mucosa in the colon\nAngioectasias in the cecum and descending colon (thermal \ntherapy)\nGrade 2 internal hemorrhoids\nOtherwise normal colonoscopy to cecum\n\n- Renal U/S ___:\nNo hydronephrosis. No stones identified in the renal collecting \nsystem of the right kidney. A small calyceal diverticulum \ncontaining a crystal is noted peripherally in the right kidney \nand this structure correlates with the findings on the prior CTU \nof ___. \n\n- EKG ___: Sinus rhythm. Non-specific ST segment changes. \nCompared to the previous tracing of ___ the findings are \nsimilar. \nTRACING #2 \n\n- EKG ___: Sinus rhythm. Non-specific ST segment changes. \nCompared to the previous tracing of ___ the findings are \nsimilar. \nTRACING #1 \n\n- CXR ___: IMPRESSION:  \n  \nNo acute intrathoracic process. \n\nMicro:\n___ 11:05 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Preliminary): \n      CORYNEBACTERIUM SPECIES (DIPHTHEROIDS). \n         Isolated from only one set in the previous five days. \n\n   Anaerobic Bottle Gram Stain (Final ___: \n      GRAM POSITIVE ROD(S). \n      Reported to and read back by ___ ___ ___ \n1420. \n\n___ 8:27 am IMMUNOLOGY\n\n                            **FINAL REPORT ___\n\n   HCV VIRAL LOAD (Final ___: \n      564,000 IU/mL. \n      Performed using Cobas Ampliprep / Cobas Taqman HCV v2.0 \nTest. \n      Linear range of quantification: 1.50E+01 IU/mL - 1.00E+08 \nIU/mL. \n      Limit of detection: 1.50E+01 IU/mL. \n\n___ 4:52 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 4:56 pm BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 6:53 pm URINE      Source: ___. \n\n                            **FINAL REPORT ___\n\n   URINE CULTURE (Final ___: \n      MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT \nWITH SKIN\n      AND/OR GENITAL CONTAMINATION. \n\n___ 8:59 am BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n___ 8:59 am BLOOD CULTURE\n\n   Blood Culture, Routine (Pending): \n\n \nBrief Hospital Course:\n___ h/o GERD, HTN, alcohol abuse, likely EtOH cirrhosis, \nhepatitis C, who presents with dark stools and pan-positive ROS \ncomplaints, as well as positive blood alcohol level on \nadmission. EGD showed 2 cords of grade I varices without active \nbleeding. Colonoscopy with angioectasias (cauterized), and grade \nII internal hemorrhoids but no active bleeding. Had 1 blood cx \ngrowing G+ anaerobic rods but no infectious sx, repeat cultures \nnegative. Complaining of dysuria/hematuria and found to have \nurinary tract infection, started on cipro. Culture contaminated. \nRenal ultrasound showed a small calyceal diverticulum containing \na crystal in the right kidney correlating with findings on a \nprior CTU. No stones were identified in the renal collecting \nsystem of the right kidney. Pain was controlled during stay with \nIV morphine 1mg q6h prn and tramadol, weaned to tramadol prior \nto discharge, and discontinued prior to leaving. Patient was \nplaced on ___ protocol upon admission for elevated alcohol \nlevel but did not require prn lorazepam at any point throughout \nhis admission. Discharged home to f/u with PCP as outpatient.\n\n# GIB, anemia: ddx upper vs lower GIB. patient with non-bleeding \ngrade I varices on last EGD 4 months ago with 6 month f/u \nrecommended. Last colonoscopy in ___ showed multiple \nangioectasias and grade II internal hemorrhoids. Stool exam in \nED negative for melena. H/H low but stable from previous without \nelevation in BUN/Cr. Pt reports six transfusions over the past \nyear. EGD, ___ with possible sources of occult bleeding but no \nfrank areas.\n- continued IV PPI BID for gastritis seen on EGD- switched to PO \non discharge\n- Continued home nadolol\n- pt refuses iron\n- outpatient gi follow-up scheduled\n\n# Chest pain: Concern for ischemia as patient complaining of \nchest pain on admit, however EKG similar to previous and trops \nnegative x2 with flat ck\n\n# Abdominal pain/hematuria/dysuria: u/a shows pyuria, bacteria, \nleuk est. no cva tenderness or fever to think pyelo. ultrasound \nnegative for nephrolithiasis or pyelo.\n- discharged with cipro x 7 days for complicated uti\n\n# EtOH: on ciwa, did not require lorazepam. has history of \nhiding alcohol nips in room.\n- sent with folate, thiamine on discharge\n\n# Wheezing on exam on admit: patient reports hx of asthma, also \nlongtime smoker. exam improved with albuterol neb while \ninpatient\n- d/c'd with albuterol inhaler\n\n# Hemorrhoids on ___: provided rectal foam while inpatient and \ndischarged with prescription for ___hronic Issues:\n\n# Cirrhosis: Childs ___ Class A on. MELD 12 on discharge. HCV \nviral load- 564,000 IU/mL. Trace ascites on ultrasound. \nOutpatient liver clinic follow-up scheduled.\n\n# Pancytopenia: likely related to cirrhosis, HCV infection\n\n# HTN: continued home lisinopril\n\n# CAD: continued statin\n\nTransitional Issues:\n- finish 7 day course of ciprofloxacin\n- pls repeat UA after tx of UTI. If hematuria persists, \nrecommend urological evaluation\n- cortifoam for hemorrhoids x 2 weeks\n- further discussion of alcohol cessation\n- wean off PPI if tolerated after gastritis sx resolve\n- f/u renal u/s findings- discuss urologic referral\n- recommend f/u blood cx results and speciation- treat if not \ncontaminant/patient presents with infectious symptoms\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Atorvastatin 80 mg PO QPM \n2. Furosemide 20 mg PO DAILY \n3. Lisinopril 5 mg PO DAILY \n4. Nadolol 60 mg PO DAILY \n5. Omeprazole 40 mg PO DAILY \n6. Ferrous Sulfate 325 mg PO DAILY \n7. Multivitamins 1 TAB PO DAILY \n8. Thiamine 100 mg PO DAILY \n9. Docusate Sodium 100 mg PO BID \n \nDischarge Medications:\n1. Atorvastatin 80 mg PO QPM \n2. Docusate Sodium 100 mg PO BID \n3. Multivitamins 1 TAB PO DAILY \n4. Nadolol 60 mg PO DAILY \n5. Thiamine 100 mg PO DAILY \n6. Ciprofloxacin HCl 500 mg PO Q12H Duration: 7 Days \nRX *ciprofloxacin 500 mg 1 tablet(s) by mouth every twelve (12) \nhours Disp #*11 Tablet Refills:*0\n7. FoLIC Acid 1 mg PO DAILY \nRX *folic acid 1 mg 1 tablet(s) by mouth daily Disp #*30 Tablet \nRefills:*0\n8. Furosemide 20 mg PO DAILY \n9. Omeprazole 40 mg PO DAILY \n10. Lisinopril 5 mg PO DAILY \n11. Hydrocortisone Acetate 10%  Foam 1 Appl PR QHS \nRX *hydrocortisone acetate [Cortifoam] 10 % 1 foam(s) rectally \nat bedtime Refills:*0\n12. Albuterol Inhaler 2 PUFF IH Q6H:PRN shortness of breath \nRX *albuterol sulfate 90 mcg 2 puffs Q4-6H: prn Disp #*1 Inhaler \nRefills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary Diagnoses:\nAngioectasias of colon\nGastritis\nPortal hypertensive gastropathy\nGrade I Esophageal Varices\nGrade II Internal Hemorrhoids\nUrinary Tract Infection\n\nSecondary Diagnoses:\nCirrhosis\nActive Alcohol Abuse\nHepatitis C Infection\nHypertension\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nMr. ___,\n\nIt was a pleasure taking care of you during your stay at ___. \nYou were admitted for abdominal pain, chest pain, vomiting \nblood, passing blood in your stool, and passing blood in your \nurine. Upper endoscopy showed some gastritis and grade I varices \nthat were not bleeding. Colonoscopy showed a few vessel \nmalformations that were not bleeding but cauterized by the GI \nteam. Hemorrhoids were also seen. Your blood counts remained \nstable throughout admission.\n\nYou were also found to have a urinary tract infection and should \ncomplete a 7 day course of antibiotics. This may be the cause of \nthe blood in your urine. If this blood persists after you finish \nyour antibiotics, please tell your primary doctor as you may \nrequire further evaluation.\n\nYou were found to have some wheezing on exam and based on your \nhistory of asthma, were prescribed an albuterol rescue inhaler \nto use if you feel short of breath.\n\nWishing you well,\nYour ___ Medicine Team\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "18001923-RR-69",
+        "charttime": "2181-08-22 20:29:00",
+        "storetime": "2181-08-22 22:03:00",
+        "text": "EXAMINATION:  CHEST (PA AND LAT)\n\nINDICATION:  ___ with chest pain  // r/o infiltrate\n\nCOMPARISON:  ___.\n\nFINDINGS: \n\nPA and lateral views of the chest provided.\n\nThere is no focal consolidation, effusion, or pneumothorax. The\ncardiomediastinal silhouette is normal. Imaged osseous structures are intact. \nNo free air below the right hemidiaphragm is seen.\n\nIMPRESSION: \n\nNo acute intrathoracic process.\n"
+      },
+      {
+        "note_id": "18001923-RR-70",
+        "charttime": "2181-08-23 14:11:00",
+        "storetime": "2181-08-23 17:24:00",
+        "text": "EXAMINATION:  LIVER OR GALLBLADDER US (SINGLE ORGAN)\n\nINDICATION:  A ___ man with history of alcoholic and hepatitis-C\nrelated cirrhosis presenting with abdominal pain.\n\nTECHNIQUE:  Grey scale and color Doppler ultrasound images of the abdomen were\nobtained.\n\nCOMPARISON:  Abdominal ultrasound obtained ___.\n\nFINDINGS: \n\nLIVER: The liver is coarsened and nodular in echotexture. The contour of the\nliver is nodular, consistent with cirrhosis. There is no focal liver mass.\nMain portal vein is patent with hepatopetal flow. There is trace perihepatic\nascites.\n\nBILE DUCTS: There is no intrahepatic biliary dilation. The CBD measures 3 mm.\n\nGALLBLADDER: There is no evidence of gallbladder wall thickening or stones.\n\nPANCREAS: Imaged portion of the pancreas appears within normal limits, without\nmasses or pancreatic ductal dilation, with portions of the pancreatic tail\nobscured by overlying bowel gas.\n\nSPLEEN: Normal echogenicity, measuring 11.4 cm.\n\nKIDNEYS:  Limited sagittal views of the bilateral kidneys are unremarkable. \nThere is no evidence of hydronephrosis.\n\nRETROPERITONEUM:  The visualized portions of aorta and IVC are within normal\nlimits.\n\nIMPRESSION: \n\nNo evidence of focal liver lesion. Nodular liver with coarsened echotexture,\nconsistent with known cirrhosis. Trace perihepatic ascites.\n"
+      },
+      {
+        "note_id": "18001923-RR-71",
+        "charttime": "2181-08-25 14:04:00",
+        "storetime": "2181-08-25 16:35:00",
+        "text": "EXAMINATION:  RENAL U.S.\n\nINDICATION:  ___ year old man with new hematuria, c/o RLQ flank, with known\nright nephrolithiasis // pls eval for ureteral stone.\n\nTECHNIQUE:  Grey scale ultrasound images of the kidneys were obtained.\n\nCOMPARISON:  CTU ___\n\nFINDINGS: \n\nThe right kidney measures 9.2 cm. The left kidney measures 10.5 cm. There is\nno hydronephrosis. A small peripheral calcification is again seen in the\ninterpolar region of the right kidney measuring 1.3 cm. The appearance of this\nstructure is consistent with a crystal in a calyceal diverticulum. A tiny\nperipheral cyst is also seen in the right kidney measuring 0.7 x 0.7 x 0.5 cm.\nNo perinephric fluid collection is identified.\n\nThe bladder is moderately well seen and normal in appearance.\n\nIMPRESSION: \n\nNo hydronephrosis. No stones identified in the renal collecting system of the\nright kidney. A small calyceal diverticulum containing a crystal is noted\nperipherally in the right kidney and this structure correlates with the\nfindings on the prior CTU of ___.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "5780",
+        "icd_version": 9,
+        "long_title": "Hematemesis",
+        "normalized_time": "2181-08-26 10:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "5781",
+        "icd_version": 9,
+        "long_title": "Blood in stool",
+        "normalized_time": "2181-08-26 10:33:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "56984",
+        "icd_version": 9,
+        "long_title": "Angiodysplasia of intestine (without mention of hemorrhage)",
+        "normalized_time": "2181-08-26 10:36:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "4550",
+        "icd_version": 9,
+        "long_title": "Internal hemorrhoids without mention of complication",
+        "normalized_time": "2181-08-26 10:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "78659",
+        "icd_version": 9,
+        "long_title": "Other chest pain",
+        "normalized_time": "2181-08-26 10:43:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "5990",
+        "icd_version": 9,
+        "long_title": "Urinary tract infection, site not specified",
+        "normalized_time": "2181-08-26 10:46:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "45621",
+        "icd_version": 9,
+        "long_title": "Esophageal varices in diseases classified elsewhere, without mention of bleeding",
+        "normalized_time": "2181-08-26 10:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "41401",
+        "icd_version": 9,
+        "long_title": "Coronary atherosclerosis of native coronary artery",
+        "normalized_time": "2181-08-26 10:53:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "53789",
+        "icd_version": 9,
+        "long_title": "Other specified disorders of stomach and duodenum",
+        "normalized_time": "2181-08-26 10:56:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "53550",
+        "icd_version": 9,
+        "long_title": "Unspecified gastritis and gastroduodenitis, without mention of hemorrhage",
+        "normalized_time": "2181-08-26 11:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "28419",
+        "icd_version": 9,
+        "long_title": "Other pancytopenia",
+        "normalized_time": "2181-08-26 11:03:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "5712",
+        "icd_version": 9,
+        "long_title": "Alcoholic cirrhosis of liver",
+        "normalized_time": "2181-08-26 11:06:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "30500",
+        "icd_version": 9,
+        "long_title": "Alcohol abuse, unspecified",
+        "normalized_time": "2181-08-26 11:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2181-08-26 11:13:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "4019",
+        "icd_version": 9,
+        "long_title": "Unspecified essential hypertension",
+        "normalized_time": "2181-08-26 11:16:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "3051",
+        "icd_version": 9,
+        "long_title": "Tobacco use disorder",
+        "normalized_time": "2181-08-26 11:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "07054",
+        "icd_version": 9,
+        "long_title": "Chronic hepatitis C without mention of hepatic coma",
+        "normalized_time": "2181-08-26 11:23:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "49390",
+        "icd_version": 9,
+        "long_title": "Asthma, unspecified type, unspecified",
+        "normalized_time": "2181-08-26 11:26:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "5723",
+        "icd_version": 9,
+        "long_title": "Portal hypertension",
+        "normalized_time": "2181-08-26 11:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2181-08-23",
+        "icd_code": "4513",
+        "icd_version": 9,
+        "long_title": "Other endoscopy of small intestine",
+        "normalized_time": "2181-08-23 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 2,
+        "chartdate": "2181-08-24",
+        "icd_code": "4543",
+        "icd_version": 9,
+        "long_title": "Endoscopic destruction of other lesion or tissue of large intestine",
+        "normalized_time": "2181-08-24 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2181-08-23 00:00:00",
+        "charttime": "2181-08-23 08:27:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "IMMUNOLOGY",
+        "test_name": "HCV VIRAL LOAD",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "___"
+      },
+      {
+        "chartdate": "2181-08-24 00:00:00",
+        "charttime": "2181-08-24 16:52:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2181-08-24 00:00:00",
+        "charttime": "2181-08-24 16:56:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2181-08-24 00:00:00",
+        "charttime": "2181-08-24 18:53:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT WITH SKIN AND/OR GENITAL CONTAMINATION.  "
+      },
+      {
+        "chartdate": "2181-08-25 00:00:00",
+        "charttime": "2181-08-25 08:59:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 15025,
+    "output_tokens": 5055,
+    "total_tokens": 20080
+  },
+  "response_id": "chatcmpl-89bc740d2d5d3de5",
+  "latency_ms": 88850,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2181-08-22 22:30:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I’ll be taking care of you tonight. Can you tell me what brought you to the hospital?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2181-08-22 22:31:00",
+        "speaker": "Patient",
+        "text": "Yeah, I’ve been having bad stomach pain, and I threw up some blood earlier. Also passed blood in my stool and urine. Felt dizzy too."
+      },
+      {
+        "turn_number": 3,
+        "time": "2181-08-22 22:32:00",
+        "speaker": "Doctor",
+        "text": "I see. Any chest pain or arm tingling?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2181-08-22 22:33:00",
+        "speaker": "Patient",
+        "text": "Yeah, yesterday I had sharp chest pain and my left arm tingled. But it’s not bad now."
+      },
+      {
+        "turn_number": 5,
+        "time": "2181-08-22 22:34:00",
+        "speaker": "Doctor",
+        "text": "Okay. We did a chest X-ray and EKG—no signs of a heart attack. Your troponins were normal too."
+      },
+      {
+        "turn_number": 6,
+        "time": "2181-08-22 22:35:00",
+        "speaker": "Patient",
+        "text": "Good to hear. But I’ve been anemic for years—had six transfusions this year alone."
+      },
+      {
+        "turn_number": 7,
+        "time": "2181-08-22 22:36:00",
+        "speaker": "Doctor",
+        "text": "Yes, your hemoglobin is 8.2, which is low but stable. We’ll keep an eye on it. You also had a positive alcohol level. Did you drink recently?"
+      },
+      {
+        "turn_number": 8,
+        "time": "2181-08-22 22:37:00",
+        "speaker": "Patient",
+        "text": "Just one glass of brandy yesterday. I don’t drink much anymore."
+      },
+      {
+        "turn_number": 9,
+        "time": "2181-08-22 22:38:00",
+        "speaker": "Doctor",
+        "text": "We’ll start you on the CIWA protocol just in case. No signs of withdrawal so far. We gave you fluids and pain meds in the ER."
+      },
+      {
+        "turn_number": 10,
+        "time": "2181-08-22 22:39:00",
+        "speaker": "Patient",
+        "text": "Thanks. My stomach still hurts, though. Can I get something for that?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2181-08-22 22:40:00",
+        "speaker": "Doctor",
+        "text": "We gave you IV morphine earlier. I can order more if needed. We also started a medication to reduce stomach acid."
+      },
+      {
+        "turn_number": 12,
+        "time": "2181-08-23 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your labs are stable. We’re scheduling an upper endoscopy today to check your stomach and esophagus."
+      },
+      {
+        "turn_number": 13,
+        "time": "2181-08-23 08:01:00",
+        "speaker": "Patient",
+        "text": "I’ve had that before. Found varices last time."
+      },
+      {
+        "turn_number": 14,
+        "time": "2181-08-23 08:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, and we’ll check if they’re bleeding or need treatment. We’re also doing a colonoscopy tomorrow to look at the bleeding in your stool."
+      },
+      {
+        "turn_number": 15,
+        "time": "2181-08-23 08:03:00",
+        "speaker": "Patient",
+        "text": "And the blood in my urine?"
+      },
+      {
+        "turn_number": 16,
+        "time": "2181-08-23 08:04:00",
+        "speaker": "Doctor",
+        "text": "Your urine test shows infection—white blood cells and bacteria. No fever or flank pain, so it’s likely a bladder infection, not kidney."
+      },
+      {
+        "turn_number": 17,
+        "time": "2181-08-23 08:05:00",
+        "speaker": "Patient",
+        "text": "So antibiotics?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2181-08-23 08:06:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’ll start ciprofloxacin once we confirm it’s not contaminated."
+      },
+      {
+        "turn_number": 19,
+        "time": "2181-08-23 13:00:00",
+        "speaker": "Doctor",
+        "text": "The endoscopy is done. You have grade I esophageal varices, but no active bleeding. Also, gastritis and portal hypertensive gastropathy."
+      },
+      {
+        "turn_number": 20,
+        "time": "2181-08-23 13:01:00",
+        "speaker": "Patient",
+        "text": "Is that serious?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2181-08-23 13:02:00",
+        "speaker": "Doctor",
+        "text": "The varices are mild and not bleeding. We’ll keep you on your beta-blocker to reduce risk. The gastritis explains some of the stomach pain and vomiting blood."
+      },
+      {
+        "turn_number": 22,
+        "time": "2181-08-23 13:03:00",
+        "speaker": "Patient",
+        "text": "Okay. What about the colonoscopy?"
+      },
+      {
+        "turn_number": 23,
+        "time": "2181-08-23 13:04:00",
+        "speaker": "Doctor",
+        "text": "Scheduled for tomorrow. We’ll look for angioectasias or hemorrhoids as possible sources of bleeding."
+      },
+      {
+        "turn_number": 24,
+        "time": "2181-08-23 14:15:00",
+        "speaker": "Doctor",
+        "text": "The ultrasound of your liver shows cirrhosis, as expected. There’s a small amount of fluid around the liver, but no tumors."
+      },
+      {
+        "turn_number": 25,
+        "time": "2181-08-23 14:16:00",
+        "speaker": "Patient",
+        "text": "That’s from years of drinking and hepatitis C."
+      },
+      {
+        "turn_number": 26,
+        "time": "2181-08-23 14:17:00",
+        "speaker": "Doctor",
+        "text": "Yes. Your liver function is stable—MELD score is 12, which is mild. But we need to manage your alcohol use."
+      },
+      {
+        "turn_number": 27,
+        "time": "2181-08-24 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your blood cultures came back—only one showed a possible skin contaminant. No infection signs, so we won’t treat."
+      },
+      {
+        "turn_number": 28,
+        "time": "2181-08-24 08:01:00",
+        "speaker": "Patient",
+        "text": "What about the urine culture?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2181-08-24 08:02:00",
+        "speaker": "Doctor",
+        "text": "It was contaminated—mixed bacteria. But based on symptoms and urinalysis, we’re treating you for a UTI with cipro."
+      },
+      {
+        "turn_number": 30,
+        "time": "2181-08-24 13:00:00",
+        "speaker": "Doctor",
+        "text": "Colonoscopy is done. We found angioectasias in the cecum and descending colon—cauterized them. Also saw grade II hemorrhoids."
+      },
+      {
+        "turn_number": 31,
+        "time": "2181-08-24 13:01:00",
+        "speaker": "Patient",
+        "text": "Were they bleeding?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2181-08-24 13:02:00",
+        "speaker": "Doctor",
+        "text": "No active bleeding, but they could cause slow blood loss. We cauterized them to prevent future issues."
+      },
+      {
+        "turn_number": 33,
+        "time": "2181-08-24 13:03:00",
+        "speaker": "Patient",
+        "text": "And the hemorrhoids?"
+      },
+      {
+        "turn_number": 34,
+        "time": "2181-08-24 13:04:00",
+        "speaker": "Doctor",
+        "text": "We’ll give you a rectal foam to use at home. Avoid straining and increase fiber."
+      },
+      {
+        "turn_number": 35,
+        "time": "2181-08-25 08:00:00",
+        "speaker": "Doctor",
+        "text": "Your repeat labs are stable. Hemoglobin is still 8.1. We’re switching your pain meds from IV to oral."
+      },
+      {
+        "turn_number": 36,
+        "time": "2181-08-25 08:01:00",
+        "speaker": "Patient",
+        "text": "I’ve been feeling better. Can I go home soon?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2181-08-25 08:02:00",
+        "speaker": "Doctor",
+        "text": "Possibly tomorrow. We’re waiting on your hepatitis C viral load. It came back—564,000 IU/mL. Still active infection."
+      },
+      {
+        "turn_number": 38,
+        "time": "2181-08-25 08:03:00",
+        "speaker": "Patient",
+        "text": "Will I need treatment for that?"
+      },
+      {
+        "turn_number": 39,
+        "time": "2181-08-25 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, but that’s for the liver clinic. You’ll follow up there soon."
+      },
+      {
+        "turn_number": 40,
+        "time": "2181-08-25 14:05:00",
+        "speaker": "Doctor",
+        "text": "The kidney ultrasound shows a small crystal in a diverticulum on your right kidney. No stones in the collecting system."
+      },
+      {
+        "turn_number": 41,
+        "time": "2181-08-25 14:06:00",
+        "speaker": "Patient",
+        "text": "Could that be why I passed clots?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2181-08-25 14:07:00",
+        "speaker": "Doctor",
+        "text": "Possibly, but the infection is more likely the cause. We’ll repeat your urine test after antibiotics."
+      },
+      {
+        "turn_number": 43,
+        "time": "2181-08-25 14:08:00",
+        "speaker": "Patient",
+        "text": "What about my breathing? I’ve been wheezing."
+      },
+      {
+        "turn_number": 44,
+        "time": "2181-08-25 14:09:00",
+        "speaker": "Doctor",
+        "text": "You mentioned asthma and smoking. Your lungs improved with albuterol. We’re sending you home with an inhaler."
+      },
+      {
+        "turn_number": 45,
+        "time": "2181-08-26 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good news—you’re ready to go home. Your condition is stable."
+      },
+      {
+        "turn_number": 46,
+        "time": "2181-08-26 08:01:00",
+        "speaker": "Patient",
+        "text": "What meds am I taking?"
+      },
+      {
+        "turn_number": 47,
+        "time": "2181-08-26 08:02:00",
+        "speaker": "Doctor",
+        "text": "Same as before, plus cipro for 7 days, folic acid, and a rectal foam for hemorrhoids. Also, an albuterol inhaler for breathing."
+      },
+      {
+        "turn_number": 48,
+        "time": "2181-08-26 08:03:00",
+        "speaker": "Patient",
+        "text": "And the blood in my urine?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2181-08-26 08:04:00",
+        "speaker": "Doctor",
+        "text": "Finish the antibiotics. If blood persists, see your doctor—they may refer you to urology."
+      },
+      {
+        "turn_number": 50,
+        "time": "2181-08-26 08:05:00",
+        "speaker": "Patient",
+        "text": "What about my liver and drinking?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2181-08-26 08:06:00",
+        "speaker": "Doctor",
+        "text": "Your cirrhosis is stable, but alcohol makes it worse. Please consider stopping. We can help with resources."
+      },
+      {
+        "turn_number": 52,
+        "time": "2181-08-26 08:07:00",
+        "speaker": "Patient",
+        "text": "I’ll think about it. Thanks for everything."
+      },
+      {
+        "turn_number": 53,
+        "time": "2181-08-26 08:08:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Follow up with your PCP, liver clinic, and GI. Call us if you have fever, severe pain, or more bleeding."
+      },
+      {
+        "turn_number": 54,
+        "time": "2181-08-26 08:09:00",
+        "speaker": "Patient",
+        "text": "Got it. I’ll keep my appointments."
+      },
+      {
+        "turn_number": 55,
+        "time": "2181-08-26 08:10:00",
+        "speaker": "Doctor",
+        "text": "One last thing—your hemoglobin is still low, but you refused iron supplements. Let us know if you change your mind."
+      },
+      {
+        "turn_number": 56,
+        "time": "2181-08-26 08:11:00",
+        "speaker": "Patient",
+        "text": "I just don’t like how they make me feel. But I’ll consider it."
+      },
+      {
+        "turn_number": 57,
+        "time": "2181-08-26 08:12:00",
+        "speaker": "Doctor",
+        "text": "Understood. We’ll support whatever helps you stay healthy."
+      },
+      {
+        "turn_number": 58,
+        "time": "2181-08-26 08:13:00",
+        "speaker": "Patient",
+        "text": "Appreciate that."
+      },
+      {
+        "turn_number": 59,
+        "time": "2181-08-26 08:14:00",
+        "speaker": "Doctor",
+        "text": "Nurse will go over your discharge instructions and meds. You can leave once that’s done."
+      },
+      {
+        "turn_number": 60,
+        "time": "2181-08-26 08:15:00",
+        "speaker": "Patient",
+        "text": "Alright, thanks again, Doctor."
+      },
+      {
+        "turn_number": 61,
+        "time": "2181-08-26 08:16:00",
+        "speaker": "Doctor",
+        "text": "Take care. Stay safe and healthy."
+      },
+      {
+        "turn_number": 62,
+        "time": "2181-08-26 08:17:00",
+        "speaker": "Patient",
+        "text": "I’ll do my best."
+      },
+      {
+        "turn_number": 63,
+        "time": "2181-08-26 08:18:00",
+        "speaker": "Doctor",
+        "text": "We’re here if you need us. See you at follow-up."
+      },
+      {
+        "turn_number": 64,
+        "time": "2181-08-26 08:19:00",
+        "speaker": "Patient",
+        "text": "Will do."
+      },
+      {
+        "turn_number": 65,
+        "time": "2181-08-26 08:20:00",
+        "speaker": "Doctor",
+        "text": "Rest well and take your meds as prescribed."
+      },
+      {
+        "turn_number": 66,
+        "time": "2181-08-26 08:21:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks for explaining everything."
+      },
+      {
+        "turn_number": 67,
+        "time": "2181-08-26 08:22:00",
+        "speaker": "Doctor",
+        "text": "You're very welcome. Have a safe trip home."
+      }
+    ],
+    "summary": {
+      "admission_start": "2181-08-22 22:29:00",
+      "admission_end": "2181-08-26 11:30:00",
+      "summary_paragraph": "The patient, a male with a history of alcoholic cirrhosis, hepatitis C, esophageal varices, and chronic alcohol use, was admitted for abdominal pain, hematemesis, melena, hematuria, and chest pain. Initial evaluation ruled out acute cardiac ischemia and active gastrointestinal bleeding. Endoscopy revealed grade I esophageal varices, gastritis, and portal hypertensive gastropathy, while colonoscopy identified angioectasias that were cauterized and grade II hemorrhoids. A urinary tract infection was diagnosed based on urinalysis, and treatment with ciprofloxacin was initiated despite a contaminated culture. Liver ultrasound confirmed cirrhosis with trace ascites, and renal ultrasound showed a calyceal diverticulum with a crystal but no obstructing stones. The patient remained hemodynamically stable, with no signs of active bleeding or infection. He was managed with pain control, continued beta-blockade, and supportive care. He was discharged home with antibiotics, inhaler for wheezing, hemorrhoid treatment, and follow-up plans for liver, GI, and primary care.",
+      "problems": [
+        "Hematemesis",
+        "Blood in stool",
+        "Angiodysplasia of intestine (without mention of hemorrhage)",
+        "Internal hemorrhoids without mention of complication",
+        "Other chest pain",
+        "Urinary tract infection, site not specified",
+        "Esophageal varices in diseases classified elsewhere, without mention of bleeding",
+        "Coronary atherosclerosis of native coronary artery",
+        "Other specified disorders of stomach and duodenum",
+        "Unspecified gastritis and gastroduodenitis, without mention of hemorrhage",
+        "Other pancytopenia",
+        "Alcoholic cirrhosis of liver",
+        "Alcohol abuse, unspecified",
+        "Esophageal reflux",
+        "Unspecified essential hypertension",
+        "Tobacco use disorder",
+        "Chronic hepatitis C without mention of hepatic coma",
+        "Asthma, unspecified type, unspecified",
+        "Portal hypertension"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-89bc740d2d5d3de5",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2181-08-22 22:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I’ll be taking care of you tonight. Can you tell me what brought you to the hospital?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2181-08-22 22:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yeah, I’ve been having bad stomach pain, and I threw up some blood earlier. Also passed blood in my stool and urine. Felt dizzy too.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2181-08-22 22:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. Any chest pain or arm tingling?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2181-08-22 22:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yeah, yesterday I had sharp chest pain and my left arm tingled. But it’s not bad now.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2181-08-22 22:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. We did a chest X-ray and EKG—no signs of a heart attack. Your troponins were normal too.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2181-08-22 22:35:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good to hear. But I’ve been anemic for years—had six transfusions this year alone.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2181-08-22 22:36:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your hemoglobin is 8.2, which is low but stable. We’ll keep an eye on it. You also had a positive alcohol level. Did you drink recently?\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2181-08-22 22:37:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Just one glass of brandy yesterday. I don’t drink much anymore.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2181-08-22 22:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll start you on the CIWA protocol just in case. No signs of withdrawal so far. We gave you fluids and pain meds in the ER.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2181-08-22 22:39:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks. My stomach still hurts, though. Can I get something for that?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2181-08-22 22:40:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We gave you IV morphine earlier. I can order more if needed. We also started a medication to reduce stomach acid.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2181-08-23 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your labs are stable. We’re scheduling an upper endoscopy today to check your stomach and esophagus.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2181-08-23 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had that before. Found varices last time.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2181-08-23 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, and we’ll check if they’re bleeding or need treatment. We’re also doing a colonoscopy tomorrow to look at the bleeding in your stool.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2181-08-23 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the blood in my urine?\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2181-08-23 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your urine test shows infection—white blood cells and bacteria. No fever or flank pain, so it’s likely a bladder infection, not kidney.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2181-08-23 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So antibiotics?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2181-08-23 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’ll start ciprofloxacin once we confirm it’s not contaminated.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2181-08-23 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The endoscopy is done. You have grade I esophageal varices, but no active bleeding. Also, gastritis and portal hypertensive gastropathy.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2181-08-23 13:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that serious?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2181-08-23 13:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The varices are mild and not bleeding. We’ll keep you on your beta-blocker to reduce risk. The gastritis explains some of the stomach pain and vomiting blood.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2181-08-23 13:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. What about the colonoscopy?\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2181-08-23 13:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Scheduled for tomorrow. We’ll look for angioectasias or hemorrhoids as possible sources of bleeding.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2181-08-23 14:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The ultrasound of your liver shows cirrhosis, as expected. There’s a small amount of fluid around the liver, but no tumors.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2181-08-23 14:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s from years of drinking and hepatitis C.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2181-08-23 14:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. Your liver function is stable—MELD score is 12, which is mild. But we need to manage your alcohol use.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2181-08-24 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your blood cultures came back—only one showed a possible skin contaminant. No infection signs, so we won’t treat.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2181-08-24 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about the urine culture?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2181-08-24 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It was contaminated—mixed bacteria. But based on symptoms and urinalysis, we’re treating you for a UTI with cipro.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2181-08-24 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Colonoscopy is done. We found angioectasias in the cecum and descending colon—cauterized them. Also saw grade II hemorrhoids.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2181-08-24 13:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Were they bleeding?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2181-08-24 13:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No active bleeding, but they could cause slow blood loss. We cauterized them to prevent future issues.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2181-08-24 13:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the hemorrhoids?\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2181-08-24 13:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll give you a rectal foam to use at home. Avoid straining and increase fiber.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2181-08-25 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your repeat labs are stable. Hemoglobin is still 8.1. We’re switching your pain meds from IV to oral.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2181-08-25 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been feeling better. Can I go home soon?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2181-08-25 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly tomorrow. We’re waiting on your hepatitis C viral load. It came back—564,000 IU/mL. Still active infection.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2181-08-25 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I need treatment for that?\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2181-08-25 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, but that’s for the liver clinic. You’ll follow up there soon.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2181-08-25 14:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The kidney ultrasound shows a small crystal in a diverticulum on your right kidney. No stones in the collecting system.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2181-08-25 14:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Could that be why I passed clots?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2181-08-25 14:07:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly, but the infection is more likely the cause. We’ll repeat your urine test after antibiotics.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2181-08-25 14:08:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about my breathing? I’ve been wheezing.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2181-08-25 14:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You mentioned asthma and smoking. Your lungs improved with albuterol. We’re sending you home with an inhaler.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2181-08-26 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good news—you’re ready to go home. Your condition is stable.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2181-08-26 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What meds am I taking?\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2181-08-26 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Same as before, plus cipro for 7 days, folic acid, and a rectal foam for hemorrhoids. Also, an albuterol inhaler for breathing.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2181-08-26 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the blood in my urine?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2181-08-26 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Finish the antibiotics. If blood persists, see your doctor—they may refer you to urology.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2181-08-26 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about my liver and drinking?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2181-08-26 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your cirrhosis is stable, but alcohol makes it worse. Please consider stopping. We can help with resources.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2181-08-26 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll think about it. Thanks for everything.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2181-08-26 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Follow up with your PCP, liver clinic, and GI. Call us if you have fever, severe pain, or more bleeding.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2181-08-26 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. I’ll keep my appointments.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2181-08-26 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—your hemoglobin is still low, but you refused iron supplements. Let us know if you change your mind.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2181-08-26 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I just don’t like how they make me feel. But I’ll consider it.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2181-08-26 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Understood. We’ll support whatever helps you stay healthy.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2181-08-26 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Appreciate that.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2181-08-26 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Nurse will go over your discharge instructions and meds. You can leave once that’s done.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2181-08-26 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Alright, thanks again, Doctor.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2181-08-26 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care. Stay safe and healthy.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2181-08-26 08:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll do my best.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2181-08-26 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re here if you need us. See you at follow-up.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2181-08-26 08:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will do.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2181-08-26 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Rest well and take your meds as prescribed.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2181-08-26 08:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks for explaining everything.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2181-08-26 08:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You're very welcome. Have a safe trip home.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2181-08-22 22:29:00\",\n    \"admission_end\": \"2181-08-26 11:30:00\",\n    \"summary_paragraph\": \"The patient, a male with a history of alcoholic cirrhosis, hepatitis C, esophageal varices, and chronic alcohol use, was admitted for abdominal pain, hematemesis, melena, hematuria, and chest pain. Initial evaluation ruled out acute cardiac ischemia and active gastrointestinal bleeding. Endoscopy revealed grade I esophageal varices, gastritis, and portal hypertensive gastropathy, while colonoscopy identified angioectasias that were cauterized and grade II hemorrhoids. A urinary tract infection was diagnosed based on urinalysis, and treatment with ciprofloxacin was initiated despite a contaminated culture. Liver ultrasound confirmed cirrhosis with trace ascites, and renal ultrasound showed a calyceal diverticulum with a crystal but no obstructing stones. The patient remained hemodynamically stable, with no signs of active bleeding or infection. He was managed with pain control, continued beta-blockade, and supportive care. He was discharged home with antibiotics, inhaler for wheezing, hemorrhoid treatment, and follow-up plans for liver, GI, and primary care.\",\n    \"problems\": [\n      \"Hematemesis\",\n      \"Blood in stool\",\n      \"Angiodysplasia of intestine (without mention of hemorrhage)\",\n      \"Internal hemorrhoids without mention of complication\",\n      \"Other chest pain\",\n      \"Urinary tract infection, site not specified\",\n      \"Esophageal varices in diseases classified elsewhere, without mention of bleeding\",\n      \"Coronary atherosclerosis of native coronary artery\",\n      \"Other specified disorders of stomach and duodenum\",\n      \"Unspecified gastritis and gastroduodenitis, without mention of hemorrhage\",\n      \"Other pancytopenia\",\n      \"Alcoholic cirrhosis of liver\",\n      \"Alcohol abuse, unspecified\",\n      \"Esophageal reflux\",\n      \"Unspecified essential hypertension\",\n      \"Tobacco use disorder\",\n      \"Chronic hepatitis C without mention of hepatic coma\",\n      \"Asthma, unspecified type, unspecified\",\n      \"Portal hypertension\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776537859,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5055,
+      "prompt_tokens": 15025,
+      "total_tokens": 20080,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

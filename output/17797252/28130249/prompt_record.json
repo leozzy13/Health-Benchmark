@@ -1,0 +1,852 @@
+{
+  "subject_id": "17797252",
+  "hadm_id": "28130249",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-27T12:12:58Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 17 day(s).\n- Recommended turn range: 60-85 turns.\n- Exact admission window: 2156-02-23 16:04:00 to 2156-03-11 14:30:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2155-11-01 18:10:00",
+    "admission_end": "2155-11-04 19:22:00",
+    "summary_paragraph": "The patient was admitted for evaluation of chronic abdominal pain and diarrhea lasting one month, in the context of multiple comorbidities including common variable immunodeficiency, large cell lymphoma in remission, and colostomy status. She also reported orthostatic dizziness and new left shoulder pain. Workup included a CT abdomen and pelvis showing stable retroperitoneal lymphadenopathy and no acute abdominal findings, a normal shoulder X-ray, and a colonoscopy with unremarkable findings and pending biopsies. Stool studies were negative for C. diff, parasites, and CMV. She was treated with intravenous antibiotics initiated in clinic and continued on ciprofloxacin and metronidazole, along with loperamide and dicyclomine for symptom control. Her symptoms improved during the hospitalization, dizziness resolved, and she was discharged home on a full course of oral antibiotics and updated symptom management medications. Follow-up was arranged for shoulder pain if persistent, strongyloides IgG results, and colonoscopy biopsies.",
+    "problems": [
+      "Intestinal infection due to other organism, not elsewhere classified",
+      "Other malignant lymphomas, unspecified site, extranodal and solid organ sites",
+      "Common variable immunodeficiency",
+      "Need for prophylactic vaccination and inoculation against influenza",
+      "Asthma, unspecified type, unspecified",
+      "Other chronic pain",
+      "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+      "Acquired absence of intestine (large) (small)",
+      "Personal history of antineoplastic chemotherapy",
+      "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+      "Lumbosacral spondylosis without myelopathy",
+      "Sciatica",
+      "Depressive disorder, not elsewhere classified",
+      "Anxiety state, unspecified",
+      "Other and unspecified hyperlipidemia",
+      "Unspecified acquired hypothyroidism",
+      "Tobacco use disorder",
+      "Colostomy status",
+      "Orthostatic hypotension",
+      "Pain in limb",
+      "Systemic sclerosis"
+    ]
+  },
+  "stay_days": 17,
+  "recommended_turn_range": [
+    60,
+    85
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2156-03-11 00:00:00): Name:  ___              Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nSulfa (Sulfonamide Antibiotics) / Penicillins / Omeprazole / \nMinocycline / Nexium Packet / Morphine / bee stings / \nmethocarbamol\n \nAttending: ___.\n \nChief Complaint:\nneck and head pain\n \nMajor Surgical or Invasive Procedure:\nlumbar puncture and intrathecal methotrexate ___\n \nHistory of Present Illness:\nMs. ___ is a ___ year old woman with history of CVID (IVIG q4 \nweeks), DM2, Asthma, chronic back pain, primary colonic diffuse \nlarge B cell lymphoma with new diagnosis of Hodgkin lymphoma who \npresents from clinic with neck pain and headache.\n\nPatient has history of DLBCL complicated by colonic perforation, \ns/p sigmoid and descending colectomy, s/p EPOCH, R-CHOP, MTX \nlast cycle ___. More recently patient has had ongoing work \nup for nasopharyngeal mass/process, s/p 2 admissions, 2 biopsies \nwhich returned equivocal. Most recently patient underwent R \nsided neck lymph node dissection ___ with biopsy consistent \nwith classical Hodgkin's lymphoma, nodular sclerosis type.\n\nPatient presented to clinic today to initiate ABVD, however \nduring visit she endorsed right sided head and neck pain, right \near drainage, and transient R sided vision loss. Labs were \nnotable for WBC 2.9 (73.7% PMNs, ANC ___), Hgb below recent \nbaseline at 8.4, and platelets slightly increased from recent \nbaseline at 114.  Chemistry, LFTs unremarkable with exception of \nglucose 228 and magnesium 1.5. LDH 110. HIV negative; EBV PCR \nelevated at 1000 on ___. Patient was then admitted to ___ \nservice for further evaluation and treatment.\n\nMs. ___ reports her pain began after R sided lymph node \ndissection and biopsy. She describes pain as sharp, constant, \nstabbing from her hair at top of head to her collar bone. Pain \nis ___ on pain scale. Better with dilaudid + acetaminophen. \nBright lights make the pain worse. She also notes headaches, \ndifferent from previous migraine headaches, with \nphotosensitivity, no phonophobia. She has also had increased \nsinus pressure, nasal congestion, and drainage from R ear. \nAdditionally she notes transient episodes (3 separate incidents) \nof complete R sided vision loss. No floaters or eye pain. No \nincreased eye pressure. She has not had fevers, chills, \nproductive cough. She has not had any recent travel or any sick \ncontacts. \n\nShe was evaluated by Dr. ___, today in clinic who \nnoted right ear with mucoid otorrhea, central TM perforation. \nRecommended dry ear precautions, ofloxin drops, no foreign \nobjects in ear.\n\nReview of Systems:  \n(+) Per HPI.\nDenies fever, chills, night sweats, cough, shortness of breath, \nchest pain, abdominal pain, nausea, vomiting, diarrhea, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria. \n \nPast Medical History:\nPAST ONCOLOGIC HISTORY:  \nPer OMR NOTES:\nIn ___ she noted abdominal pain and weight loss. On\n___ EGD revealed chronic gastritis and duodenitis. She was\nadmitted to ___ ___ with abdominal pain,\nweight loss, and diarrhea. EGD was unrevealing and colonoscopy\nshowed ulceration in the descending colon, thought possibly\nsecondary to IBD. She was started on prednisone and asacol and\ndischarged but returned on ___ due to worsening symptoms and\nrepeat CT showed descending colitis along with inflamed small\nbowel loops and concern for enterocolic fistula. \n\nShe was transferred to ___ on ___ showed an 11.7\ncm ulcerated mass in the left abdomen with associated diffuse\nmesenteric and retroperitoneal lymphadenopathy and splenomegaly.\nColonoscopy and biopsy on ___ was consistent with a high \ngrade\ndiffuse large B cell lymphoma, with MIB-1 fraction >95%. On ___\nand ___ blood cultures were drawn positive for ___ \n___.\nOn ___ bone marrow biopsy was done that was limited but\nnegative for evidence of lymphoma. On ___ bronchoscopy with\nBAL of lingula was done and revealed relatively small quantities\nof staph aureus and yeast. \n\nShe received cycle 1 of EPOCH from ___. On ___ she\ndeveloped bowel perforation and underwent resection of sigmoid\nand descending colon, resection of small bowel x 2 and \ncolostomy.\nPeritoneal cultures revealed Klebsiella and C. albicans and\npathology revealed necrotic tumor involving segments of colon \nand\nsmall bowel with fistulas between small and large bowel. In\nareas, the bowel wall was completely replaced by necrotic tumor.\nThe tumor was nearly totally necrotic in the sections examined.\nMargins were free of necrosis and tumor. There was no evidence \nof\nlarge cell lymphoma in the mesenteric lymph nodes examined. \n\nShe was discharged to rehab on ___ on\nmicafungin and meropenem and discharged home on ___. \n\nOn ___ she was re-admitted with partial small bowel\nobstruction which was treated conservatively and she improved\nslowly. On ___ she had new right sided weakness and MRI\nbrain on ___ revealed left frontoparietal mass with edema. \nOpen\nbiopsy on ___ showed high grade diffuse large B cell lymphoma\nand she was started on high-dose methotrexate on ___. She\nreceived C3 R-CHOP on ___ and her next treatment with high\ndose methotrexate on ___, complicated by severe mucositis.\nShe was discharged home ___. \n\nOn ___ she had MRI brain showing diminished edema and\nenhancement of previously diagnosed left occipital region tumor.\nPET scan was negative for FDG-avid disease on ___ and she\nwas admitted and received high-dose methotrexate (reduced to \n3500\nmg/m2) on ___. This admission was complicated by C.\ndiff infection diagnosed on ___ and was started on oral\nvancomycin. Received a total of 8 cycle of high dose \nMethotrexate\nwhich she completed in ___. For her systemic treatment she \ndid\nreceive four cycles of R-CHOP.  Her last treatment was in\n___. \n\nDue to low blood counts we held off giving her ___ cycle of\nsystemic R-CHOP. Intially delayed due to low counts and also had\nan admission for a question of an infection presenting with some\nGI discomfort and edema in her jejunal inflammation.  Due to\npersistent low counts we ultimately did a bone marrow bx which\nrevealed no evidence of lymphoma. MDS panel was negative. Her\nbone marrow was normocellular and her counts have slowly been\nrecovering. Due to persisent low counts and recurrent infections\nwe decided that we would hold further chemotherapy as she is now\nin remission and the risk-benefit for ongoing consolidative\ntherapy with maintenance MTX may not be of benefit given side\neffects. Has been followed off treatment since ___ with \nserial\nscans and has been in disease remission.\n\nOf note, the patient presented to clinic back in ___\nday history of headaches and was found to have nystagmus.  Given\nher history of CNS disease, she was admitted for further workup\nand evaluation.  She had an MRI on ___, which revealed \nno\nnew lesions or any abnormal enhancement.  She had stable\nappearance of left parietal resection cavity with surrounding\nFLAIR signal hyperintensity.  There was, however, some mucosal\nthickening in the right frontal sinus and ethmoid air cells had\nincreased from prior study.  She was discharged home on a course\nof Levaquin.  Her nystagmus had resolved and that was felt to\nmost likely be related to physiologic process.  She did have a\nlumbar puncture, which did not reveal any evidence of lymphoma;\nhowever, did have some atypical lymphocytes. She had follow up\nwith neuro-oncology as an outpatient who felt that it was more\nphysiologic and had otherwise been doing well since that time\nuntil this past ___.\n\nHas had ongoing work up for a nasopharyngeal mass/process with\ntwo admissions. Has had 2 biopsies which have been equivocal \nwith\nno clear evidence of relapsed lymphoma. Her first biopsy came\nback positive for Strep Pneumoniae and MRSA. Completed a 21 day\ncourse of vanco. Fungal stains negative. Continued with blocked\neustachian tube and hearing loss.  Continues with some\nradiographic findings. Has had multiple consults by ENT and ID \nas\nwell as surgery. Clinically she is much improved but continues\nwith hearing loss. Has completed a couple course of antibiotics\nin this setting. Also had tube placed in right ear. Ultimately \nin\n___ had a right middle ear exploration and tympanomastoidectomy\nwith T-tube placement. Path was very similar to prior 2 bxs from\nnasopharyngeal area. There was no definitive evidence of\nlymphoma.  There were mixed inflammatory infiltrate with rare\nlarge ayptical lymphoid cells. Continued to have ongoing\nnasopharyngeal process on imaging since that time but was\nrelatively stable. \n\nOver past couple of months has had proressive bulky FDG avid LAD\nin right cervical chain. Evaluated by Dr. ___ in ___\nwho ordered a core needle bx which was suspicious for Hodgkin's\nlymphoma but not able to make firm dx. Then proceeded with\nexcisional bx on ___ which confirmed EBV + classical\nHodgkin's lymphoma, nodular sclerosing type. Also of note with\nEBV viremia.  Over past couple of weeks has been doing baseline\ntesting in anticipation of chemotherapy including bone marrow \nbx,\nPET-CT, ECHO and PFTs. \n\nPAST MEDICAL/SURGICAL HISTORY:  \n1) Common variable immune deficiency, on IVIG 1 gm/kg q3 weeks\nsince diagnosis in ___ (but now receiving it q4 weeks as pt\nadamant about not coming more often). Initially followed by Dr.\n___ now followed by Dr. ___\n2) Frequent sinusitis and bronchitis\n3) Type 2 diabetes-diet and exercise controlled\n4) Asthma\n5) ?Scleroderma-previously on chronic minocycline\n6) DJD, L5-S1 fusion with hardware in ___\n7) Sciatica\n8) chronic back pain followed by pain clinic,on chronic \nmethadone\n9) depression, anxiety, panic attacks\n10) Hyperlipidemia\n11) Oral herpes\n12) Migraines\n13) hypothyroidism\n \nSocial History:\n___\nFamily History:\nColon and breast cancer on mother's side; father's side with \nlung ca and cirrhosis\n \nPhysical Exam:\nADMISSION EXAM:\n\nVitals: \nWeight 108.1\nT 97.7\nBP  92/54\nP 94\nR 20\nSa   100% on RA\n\nGen: Pleasant, thin, well developed female sitting up in bed, \ncomfortable appearing, speaking in full sentences, NAD  \nHEENT: PERRL, EOMI, oropharynx without erythema or exudate, \nnares with clear rhinorrhea, no conjunctival pallor. No icterus. \nMMM. OP clear. No pain to palpation of R pinna, no visible \ndrainage. No sinus tenderness to palpation.  \nNECK: R sided cervical lymphadenopathy, right axillary \nlymphadenopathy, R cervical lymph node dissection site c/d/i \nwithout erythema, induration, or pain to palpation. JVP flat. \nCV: Normocardic, regular. Normal S1,S2. No MRG.   \nLUNGS: No incr WOB. CTAB. No wheezes, rales, or rhonchi.  \nABD: Soft, non distended,non tender to palpation,+BS. +colostomy \nwith pink ostomy with formed brown stool in ostomy bag  \nEXT: WWP. No ___ edema. \nSKIN: No rashes/lesions, petechiae/purpura ecchymoses.  \nNEURO: A&Ox3. CN II-XII intact, no weakness or deficits, moving \nall 4 extremities, strength and sensation intact\nLINES:  R port c/d/i without erythema or induration\n\nDISCHARGE EXAM:\nGen: Pleasant, thin, well developed female sitting up in bed, \nwearing regular glasses, comfortable appearing, speaking in full \nsentences, NAD  \nHEENT: PERRL, EOMI, oropharynx without erythema or exudate, no \nconjunctival pallor. No icterus. MMM. OP clear. No pain to \npalpation of R pinna, no visible drainage. no tenderness to \npalpation of R maxillary sinus\nNECK: R sided cervical lymphadenopathy- palpable node behind \nmastoid process smaller than prior approx 5mm diameter, R \ncervical lymph node dissection site c/d/i without erythema, \ninduration, or pain to palpation. JVP flat. \nCV: Normocardic, regular. Normal S1,S2. No MRG.   \nLUNGS: No incr WOB. CTAB. No wheezes, crackles at R base \nABD: Soft, non distended,non tender to palpation,+BS. +colostomy \nwith pink ostomy with formed brown stool in ostomy bag  \nEXT: WWP. No ___ edema. \nSKIN: No rashes/lesions, petechiae/purpura ecchymoses. Back with \nwell healed surgical scars. LP site c/d/i without erythema or \ninduration  \nNEURO: A&Ox3. CN II-XII intact, LLE ___ strength which is \nchronic, RLE ___ strength, moving all 4 extremities, sensation \nintact\nLINES:  R port c/d/i without erythema or induration\n\n \nPertinent Results:\nADMISSION LABS:\n--------------\n___ 11:30AM BLOOD WBC-2.9* RBC-3.95* Hgb-8.4* Hct-26.6* \nMCV-67* MCH-21.3* MCHC-31.6 RDW-16.9* Plt ___\n___ 11:30AM BLOOD Neuts-73.7* Lymphs-17.4* Monos-7.9 \nEos-0.8 Baso-0.2\n___ 11:30AM BLOOD UreaN-7 Creat-0.6 Na-137 K-3.7 Cl-99\n___ 11:30AM BLOOD ALT-7 AST-11 LD(LDH)-110 AlkPhos-80 \nTotBili-0.2\n___ 11:30AM BLOOD Albumin-3.6 Calcium-8.8 Phos-4.2 Mg-1.5*\n\nPERTINENT LABS:\n---------------\n___ 11:30AM BLOOD HBsAg-NEGATIVE HBsAb-POSITIVE \nHBcAb-NEGATIVE\n___ 12:28AM BLOOD IgG-833 IgA-<5* IgM-<3*\n___ 11:30AM BLOOD HCV Ab-NEGATIVE\n___ 11:30AM BLOOD HCV Ab-NEGATIVE\n___ 12:20AM BLOOD EBV PCR, QUANTITATIVE, WHOLE BLOOD-Test   \n   \n___ 11:30AM BLOOD EBV PCR, QUANTITATIVE, WHOLE BLOOD-Test   \n   \n___ 03:00PM CEREBROSPINAL FLUID (CSF) WBC-11 ___ \nPolys-84 Bands-1 ___ ___ 02:26PM CEREBROSPINAL FLUID (CSF) WBC-6 ___ \nPolys-52 ___ ___ 03:00PM CEREBROSPINAL FLUID (CSF) TotProt-232* \nGlucose-150 LD(LDH)-37\n___ 07:33AM OTHER BODY FLUID CD45-DONE Kappa-DONE CD19-DONE \nLamba-DONE\n___ 07:33AM OTHER BODY FLUID IPT-DONE\n\nMICRO:\n-----\n___ 11:00 am SWAB      RIGHT EAR. \n\n                            **FINAL REPORT ___\n\n   GRAM STAIN (Final ___: \n      1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      NO MICROORGANISMS SEEN. \n\n   RESPIRATORY CULTURE (Final ___:    NO GROWTH.\n___ 2:26 pm CSF;SPINAL FLUID      RECEIVED @ 1743 SOURCE: \nLPD #3. \n\n                            **FINAL REPORT ___\n\n   GRAM STAIN (Final ___: \n      1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      NO MICROORGANISMS SEEN. \n      This is a concentrated smear made by cytospin method, \nplease refer to\n      hematology for a quantitative white blood cell count.. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n___ CULTUREBlood Culture, \nRoutine-PENDINGINPATIENT\n___ CULTUREBlood Culture, \nRoutine-PENDINGINPATIENT\n\n___ 5:47 am URINE      Source: ___. \n\n                            **FINAL REPORT ___\n\n   URINE CULTURE (Final ___:    <10,000 organisms/ml. \n\nIMAGING:\n-------\nMRI HEAD ___:\n1. Dramatic interval increase in size of a right nasopharyngeal \nmass, which\nnow results in conglomerate lymphadenopathy involving the \nvisualized cervical nodal stations, palatine tonsils and \nadenoids. The mass extends into the masticator spaces, right \nparotid gland and bilateral posterior triangles.\n2. There is apparent new osseous involvement of the clivus and \nskullbase. This may be further evaluated with temporal bone CT \nif clinically indicated.\n3. There is encasement of the right V3 segment, with perineural \nextension\nthrough the right foramen ovale and thickening of the associated \ndura.  There is also apparent encasement of the seventh cranial \nnerve at the level of the right stylomastoid foramen. Dedicated \nnasopharyngeal MRI with and without contrast would be more \nsensitive in the detection of intracranial extension and \ncavernous sinus involvement.\n4. The lesion encroaches into the transverse foramina and \nbilateral neural\nforamina spanning C1-2 through C2-3.This may be due to engorged \nveins but can be assessed to exclude infiltrating disease on \nNeck MRI.\n5. The mass encases and likely flattens the bilateral internal \njugular veins at the level of the jugular foramen.  There \nappears to be mild exophthalmos without apparent orbital mass.\n6. Unchanged appearance of left posterior parietal/occipital \nsurgical and\ntreatment changes.\n\nCT HEAD ___:\n1. Partially imaged heterogeneous right nasopharyngeal mass.\n2. Unchanged postsurgical appearance of the left posterior \nparietal lobe.\n3. Skullbase involvement better appreciated on MRI, but there is \nno evidence of bone destruction on CT.\n\nMR ORBIT ___:\n\n1. Again identified is a large enhancing nasopharyngeal mass \nextending to the bilateral, right greater than left masticator \nspace with intracranial\nextension of via the right foramen ovale.\n2. Question soft tissue extension into right Meckel's cave and \ncavernous\nsinus.\n3. Although there is no abnormal enhancement or STIR \nhyperintense signal of\nthe optic nerves, the right-sided lesion extends into the right \noptic canal.\n4. Better defined on the current exam, there is abnormal right \npterygopalatine fossa enhancement.\n5. There is STIR hyperintense signal of the clivus and right \ngreater wing of the sphenoid compatible with tumoral involvement \nalthough there is no evidence of gross osseous erosion.\n6. Paranasal sinus disease and right mastoid fluid as described.\n\n___ PUNCTURE (W/ FLU\nIMPRESSION: \n \nSuccessful fluoroscopic guided lumbar puncture and intrathecal \nchemotherapy\nadministration.\n \n\nPATHOLOGY:\n---------\nCSF Flow Cytometry ___:\nRESULTS:\n \nThree color gating is performed (light scatter vs. CD45) to \noptimize lymphocyte yield.\n \nDue to paucicellular nature of the specimen, a limited panel is \nperformed to determine B-cell clonality.\n \nB cells are scant in number precluding evaluation of clonality.\n\nCSF CYTOMETRY: ___\nDIAGNOSIS:\nCerebrospinal fluid:\nNEGATIVE FOR MALIGNANT CELLS.\nLymphocytes, monocytes, and red blood cells.\nFour Heme slides were reviewed. \n\nCYTOGENETICS REPORT - Final\nSPECIMEN: BODY FLUID, CSF\n\nCLINICAL HISTORY: Non-Hodgkin lymphoma.\nCYTOGENETICS PROCEDURE: Unstimulated culture for Giemsa-banded \nchromosome analysis.\nFINDINGS: No mitotic cells were found in the culture set up from \nthis cerebral spinal fluid sample.\n \nINTERPRETATION\n \nNondiagnostic study. Clonality could not be assessed in this \ncase due to insufficient number of B cells. Cell marker analysis \nwas attempted, but was nondiagnostic in this case due to \ninsufficient numbers of cells. Please correlate with cytology \nfindings. If clinically indicated, we recommend a repeat \nspecimen be submitted to the flow cytometry laboratory.\n\nDISCHARGE LABS:\n--------------\n___ 12:00AM BLOOD WBC-3.8*# RBC-3.41* Hgb-8.2* Hct-24.6* \nMCV-72* MCH-24.0* MCHC-33.3 RDW-19.6* Plt Ct-32*\n___ 12:00AM BLOOD Neuts-74* Bands-3 Lymphs-10* Monos-10 \nEos-0 Baso-0 Atyps-1* Metas-1* Myelos-1*\n___ 12:00AM BLOOD Hypochr-3+ Anisocy-2+ Poiklo-2+ \nMacrocy-NORMAL Microcy-3+ Polychr-1+ Spheroc-1+ Ovalocy-1+ \nSchisto-OCCASIONAL Tear ___\n___ 12:00AM BLOOD Plt Smr-VERY LOW Plt Ct-32*\n___ 12:00AM BLOOD Glucose-300* UreaN-5* Creat-0.7 Na-139 \nK-3.5 Cl-103 HCO3-28 AnGap-12\n___ 12:00AM BLOOD ALT-15 AST-17 LD(LDH)-130 AlkPhos-111* \nTotBili-0.3\n___ 12:00AM BLOOD Calcium-8.7 Phos-3.2 Mg-1.6\n \nBrief Hospital Course:\nMs. ___ is a ___ year old woman with history of CVID (IVIG q4 \nweeks), DM2, Asthma, chronic back pain, primary colonic diffuse \nlarge B cell lymphoma with new diagnosis of Hodgkin lymphoma who \npresents from clinic with neck pain and headache, MRI showing \nextensive progression of disease, started on ICE chemotherapy, \nC1D1= ___, ended ___, s/p IT MTX ___.  \n\n#Lymphoma: The patient has a history of CIVD and DLBCL, s/p \ntreatment, who presented with lymphadenopathy and lymph node \nbiopsy connsistent with classical Hodgkin's lymphoa, nodular \nsclerosis type. It was unclear if this was a true diagnosis \nbased on significant nasopharyngeal and head and neck bony \ninvolvement, which would be more typical of a non-Hodgkin's \nlymphoma. A lumbar puncture was performed on ___ due to concern \nfor CNS involvement, with negative cytology, immunophenotyping \nwith insufficient B cells. The LP did show many RBCs and \nelevated protein, concerning for a traumatic tap vs. CSF flow \nobstruction. Rad onc, ENT, ophtho, and neurology were consulted. \nPer rad/onc, there was no need for radiation without acute \nneurological changes. The patient was started on ICE on ___, \nwhich was completed ___, and started intrathecal methotrexate \n(___). The patient also received IV dexamethasone which was \ntapered and then stopped. Neupogen 300 mg SC daily was started \non ___, and then stopped ___ due to improvement in ANC. The \npatient was on acyclovir for prophylaxis and atovaquone, which \nwas started ___. Atovaquone was continued upon discharge. \n\n#Neck Pain and Headache: The patient initially presented with \nneck pain and headache, likely secondary to lymphoma given \nextensive disease. Imaging showed a large nasopharyngeal mass, \nimpaired outflow of the mastoid sinus, as well as a TM \nperforation and evidence of otitis externa. She was initially \ntreated with Augmented as an outpatient, but during \nhospitalization was started on empiric cefepime on ___, which \nwas then stopped ___ (and then restarted again ___ due to \nneutropenic fever). Cefepime was stopped prior to discharge. The \npatient's pain symptoms improved during hospital course, with \nthe exception of a migraine-like headache on ___ without other \nneurological deficits. The patient continued on cipro ear drops \nfor otitis externa. Her pain was controlled with PO dilaudid as \nwell as methadone. The pain service was consulted and \nrecommended increasing Lyrica to 50 mg QID, which was done. \n\n#Vision Loss: The patient did not exhibit further episodes of \nvision loss during hospital stay after her initial 3 transient \nepisodes of R sided vision loss. As above, MRI head notable for \nextensive lymphoma, which was treated as above. Ophthalmology \nwas consulted and found no signs of optic nerve head swelling or \natrophy in either eye, and near-normal visual acuity in both \neyes.\n\n#Microcytic anemia: During hospitalization the patient was noted \nto have a microcytic anemia, MCV 67-70. She has a history of \niron deficiency anemia in the past and is s/p IV iron infusion \nin the past. During this hospitalization the patient was \ntransfused pRBCs as needed to maintain an H/H > ___. She showed \nno signs of bleeding and by day of discharge her Hgb improved to \n8.2.\n\n#Diabetes Mellitus type 2, uncontrolled: The patient is on \nglimepiride and metformin as outpatient, which were held as an \ninpatient. During hospital stay the patient was given insulin, \nwhich needed to be uptitrated especially while on dexamethasone. \nHowever, once dexamethasone was stopped, the patient remained \npersistently hyperglycemic (200s-300s) and ___ was \nconsulted on ___. Changes were made in her insluin regimen. The \npatient preferred to be discharged home on her home oral \nmedications. \n\n#Esophagitis/GERD: The patient has a known history of GERD, but \ndeveloped worsening heartburn symptoms during hospital stay. Her \npantoprazole was increased to 40 mg BID and Tums, carafate, and \nGaviscon provided some relief. Her heartburn developed into \nodynophagia and there was concern for mucositis related to MTX \nor ___ esophagitis, and so on ___ flucontazole, Nystatin \nswish and swallow, and magic mouthwash were started. Several \ndays after starting fluconazole the patient exhibited some \nchanges in mental status with increased sedation, and so it was \nthought that the fluconazole interacted with her home methadone. \nFluconazole was stopped and switched to micafungin. Her \nodynophagia improved with improvement in her cell counts and her \nfungal treatments were stopped. \n\n#CVID: The patient receives IVIG infusions every month for CVID. \nPrior to admission her last dose had been ___, and so on ___ \nshe received another IVIG treatment (50g IV) with premedication \nwith tylenol and diphenhydramine. On ___ she had repeat \nquantitative immunoglobulins: IgG 833 IgA <5, IgM <3.\n \n\n#Hx EBV VIREMIA: The patient has a history of EBV viremia with a \nviral load on ___ of 1038 and of ___ <200. On ___ her EBV \nviral load was 303.\n\n#Hypotension: The patient at baseline has low SBPs, in the \n___. Occasionally at night she would drop to ___ while \nremaining asymtpomatic. She was given IVF as needed and \ntransfused blood products as needed. She remained \nhemodynamically stable prior to and upon discharge.\n\n#Chronic Back Pain: The patient follows at pain clinic. She \ncontinued initially on home methadone 5 mg PO q6h, \ncyclobenzaprine, and dilaudid. Given concern for interactions \nwith fluconazole, her methadone was briefly decreased in \nfrequency, but then was able to be resumed at its prior dose \nbefore discharge. As above, for pain her Lyrica was increased by \nchronic pain in-house recommendations.\n\n#Asthma: The patient was continued on home fluticasone, \nalbuterol prn.\n\n#Hypothyroidism: The patient continued on home levothryoxine 50 \nmcg PO daily. \n\n#Depression/Anxiety: The patient contined on home duloxetine \n30mg PO BID, clonazepam 1mg PO q6h and additional prn.\n\n#s/p colonic resection with end colostomy: The patient's stool \noutput was closely monitored, with continued ostomy care.\n\n===============\nTRANSITIONAL ISSUES:\n===============\n[] Please follow up with Dr. ___ one week of \ndischarge.\n[] Patient should follow up in ___ eye clinic with \nNeur-ophthalmology clinic to repeat the exam and do automated \nvisual field exam.\n[] Follow up blood glucose and diabetes management as an \noutpatient\n[] Last IVIG treatment was ___\n[] Patient will be discharged on atovaquone \n\n# CODE STATUS: Full Confirmed with patient\n# EMERGENCY CONTACT: mother, ___, ___\n\n \n___ on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Acyclovir 400 mg PO Q8H \n2. Albuterol Inhaler 2 PUFF IH Q6H:PRN sob wheezing \n3. Amoxicillin-Clavulanic Acid ___ mg PO Q12H \n4. azelastine 137 mcg nasal BID PRN \n5. ClonazePAM 1 mg PO QID \n6. ClonazePAM 1 mg PO DAILY:PRN anxiety \n7. Cyclobenzaprine 5 mg PO QID \n8. Duloxetine 30 mg PO BID \n9. Fluticasone Propionate 110mcg 2 PUFF IH BID \n10. glimepiride 2 mg oral BID \n11. HYDROmorphone (Dilaudid) 2 mg PO Q4H:PRN pain \n12. Levothyroxine Sodium 50 mcg PO DAILY \n13. Maalox/Diphenhydramine/Lidocaine 30 mL PO QID:PRN mouthpain \n14. MetFORMIN (Glucophage) 1000 mg PO BID \n15. Methadone 5 mg PO Q6H:PRN pain \n16. mometasone 50 mcg/actuation nasal daily \n17. ofloxacin 0.3 % otic twice daily \n18. olopatadine 0.1 % ophthalmic BID prn allergies \n19. Ondansetron 4 mg PO Q8H:PRN nausea \n20. Pantoprazole 20 mg PO Q24H \n21. Pregabalin 25 mg PO QID \n\n \nDischarge Medications:\n1. Acyclovir 400 mg PO Q8H \n2. Albuterol Inhaler 2 PUFF IH Q6H:PRN sob wheezing \n3. azelastine 137 mcg nasal BID PRN \n4. ClonazePAM 1 mg PO QID \n5. ClonazePAM 1 mg PO DAILY:PRN anxiety \n6. Cyclobenzaprine 5 mg PO QID \n7. Duloxetine 30 mg PO BID \n8. HYDROmorphone (Dilaudid) 2 mg PO Q4H:PRN pain \n9. Levothyroxine Sodium 50 mcg PO DAILY \n10. Maalox/Diphenhydramine/Lidocaine 30 mL PO QID:PRN mouthpain \n11. Ondansetron 4 mg PO Q8H:PRN nausea \n12. Methadone 5 mg PO Q6H:PRN pain \n13. Pantoprazole 20 mg PO Q24H \n14. Pregabalin 50 mg PO QID \nRX *pregabalin [Lyrica] 50 mg 1 capsule(s) by mouth four times a \nday Disp #*112 Capsule Refills:*0\n15. Atovaquone Suspension 1500 mg PO DAILY \nRX *atovaquone 750 mg/5 mL 10 mL by mouth Daily Refills:*0\n16. Fluticasone Propionate 110mcg 2 PUFF IH BID \n17. glimepiride 2 mg oral BID \n18. MetFORMIN (Glucophage) 1000 mg PO BID \n19. mometasone 50 mcg/actuation nasal daily \n20. ofloxacin 0.3 % OTIC TWICE DAILY \n21. olopatadine 0.1 % ophthalmic BID prn allergies \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary: Lymphoma\nSecondary: CVID, Diabetes Mellitus, Chronic Back Pain\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure taking care of you during your recent \nadmission to ___. You came into \nthe hospital because of headache and vision changes. We found \nthat you had progression of your lymphoma involving your head \nand neck. You received chemotherapy to treat the lymphoma. As \npart of treatment you received dexamethasone (a steroid) which \nmade your blood sugars high and you required insulin to better \ncontrol your blood sugar. You also had a fever and so were \nstarted on antibiotics. \nYou also received your monthly IVIG treatment.  \n\nPlease continue to take your medications as directed and follow \nup with the appointments scheduled below.\n\nWe wish you the best.\n\nSincerely,\n\nYour ___ Care Team \n\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Encounter for antineoplastic chemotherapy\n- Other malignant lymphomas, unspecified site, extranodal and solid organ sites\n- Candidiasis of mouth\n- Common variable immunodeficiency\n- Systemic sclerosis\n- Asthma, unspecified type, unspecified\n- Other chronic pain\n- Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus\n- Diabetes mellitus without mention of complication, type II or unspecified type, uncontrolled\n- Lumbosacral spondylosis without myelopathy\n- Depressive disorder, not elsewhere classified\n- Anxiety state, unspecified\n- Other and unspecified hyperlipidemia\n- Unspecified acquired hypothyroidism\n- Tobacco use disorder\n- Unspecified otitis media\n- Herpes simplex without mention of complication\n- Iron deficiency anemia, unspecified\n- Esophageal reflux\n- Esophagitis, unspecified\n- Acquired absence of intestine (large) (small)\n- Colostomy status\n- Personal history of colonic polyps",
+  "supporting_context_block": "Radiology:\n- 2156-02-24 10:36:00: EXAMINATION: MR HEAD W AND W/O CONTRAST INDICATION: ___ year old woman with hx DLBCL with neuro involvement, recurrent sinusitis, new dx hodgkin lymphoma ___ with 3 weeks severe headache and pressure, 3 episodes of tr...\n- 2156-02-26 17:54:00: EXAMINATION: CT HEAD W/O CONTRAST INDICATION: ___ year old woman with hx DLBCL with CNS involvement now with nex dx lymphoma, severe headache and 3 episodes of vision loss, MRI head with nasopharyngeal mass, bilateral...\n- 2156-02-26 18:38:00: EXAMINATION: MR ORBIT ___ ANDW/O CONTRAST INDICATION: ___ year old woman with history of diffuse large B-cell lymphoma with CNS involvement with diagnosis of right nasopharynx Hodgkin's lymphoma with recent increased...\n- 2156-02-28 15:22:00: EXAMINATION: LUMBAR PUNCTURE (W/ FLUORO) and intrathecal chemotherapy administration INDICATION: This is a ___ woman with remote history of L5-S1 fusion and Hodgkin's lymphoma with recent MRI suggesting skull base inv...\n\nProcedures:\n- 2156-02-24 12:00:00: Injection or infusion of cancer chemotherapeutic substance\n- 2156-02-28 12:00:00: Spinal tap\n- 2156-03-03 12:00:00: Injection or infusion of immunoglobulin\n\nMicrobiology:\n- 2156-02-28 14:26:00: CSF;SPINAL FLUID (1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR LEUKOCYTES.  NO MICROORGANISMS SEEN.  This is a concentrated smear made by cytospin method, please refer to hematology for a quantitative white blood cell count.)\n- 2156-02-28 14:26:00: CSF;SPINAL FLUID (NO GROWTH.)\n- 2156-03-06 04:45:00: BLOOD CULTURE (NO GROWTH.)\n- 2156-03-06 04:50:00: BLOOD CULTURE (NO GROWTH.)\n- 2156-03-06 05:47:00: URINE (<10,000 organisms/ml.)",
+  "formed_packet": {
+    "subject_id": "17797252",
+    "hadm_id": "28130249",
+    "admission_start": "2156-02-23 16:04:00",
+    "admission_end": "2156-03-11 14:30:00",
+    "previous_admission_summary": {
+      "admission_start": "2155-11-01 18:10:00",
+      "admission_end": "2155-11-04 19:22:00",
+      "summary_paragraph": "The patient was admitted for evaluation of chronic abdominal pain and diarrhea lasting one month, in the context of multiple comorbidities including common variable immunodeficiency, large cell lymphoma in remission, and colostomy status. She also reported orthostatic dizziness and new left shoulder pain. Workup included a CT abdomen and pelvis showing stable retroperitoneal lymphadenopathy and no acute abdominal findings, a normal shoulder X-ray, and a colonoscopy with unremarkable findings and pending biopsies. Stool studies were negative for C. diff, parasites, and CMV. She was treated with intravenous antibiotics initiated in clinic and continued on ciprofloxacin and metronidazole, along with loperamide and dicyclomine for symptom control. Her symptoms improved during the hospitalization, dizziness resolved, and she was discharged home on a full course of oral antibiotics and updated symptom management medications. Follow-up was arranged for shoulder pain if persistent, strongyloides IgG results, and colonoscopy biopsies.",
+      "problems": [
+        "Intestinal infection due to other organism, not elsewhere classified",
+        "Other malignant lymphomas, unspecified site, extranodal and solid organ sites",
+        "Common variable immunodeficiency",
+        "Need for prophylactic vaccination and inoculation against influenza",
+        "Asthma, unspecified type, unspecified",
+        "Other chronic pain",
+        "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+        "Acquired absence of intestine (large) (small)",
+        "Personal history of antineoplastic chemotherapy",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Lumbosacral spondylosis without myelopathy",
+        "Sciatica",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Other and unspecified hyperlipidemia",
+        "Unspecified acquired hypothyroidism",
+        "Tobacco use disorder",
+        "Colostomy status",
+        "Orthostatic hypotension",
+        "Pain in limb",
+        "Systemic sclerosis"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "17797252-DS-33",
+        "note_seq": 33,
+        "charttime": "2156-03-11 00:00:00",
+        "storetime": "2156-03-11 17:52:00",
+        "text": " \nName:  ___              Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nSulfa (Sulfonamide Antibiotics) / Penicillins / Omeprazole / \nMinocycline / Nexium Packet / Morphine / bee stings / \nmethocarbamol\n \nAttending: ___.\n \nChief Complaint:\nneck and head pain\n \nMajor Surgical or Invasive Procedure:\nlumbar puncture and intrathecal methotrexate ___\n \nHistory of Present Illness:\nMs. ___ is a ___ year old woman with history of CVID (IVIG q4 \nweeks), DM2, Asthma, chronic back pain, primary colonic diffuse \nlarge B cell lymphoma with new diagnosis of Hodgkin lymphoma who \npresents from clinic with neck pain and headache.\n\nPatient has history of DLBCL complicated by colonic perforation, \ns/p sigmoid and descending colectomy, s/p EPOCH, R-CHOP, MTX \nlast cycle ___. More recently patient has had ongoing work \nup for nasopharyngeal mass/process, s/p 2 admissions, 2 biopsies \nwhich returned equivocal. Most recently patient underwent R \nsided neck lymph node dissection ___ with biopsy consistent \nwith classical Hodgkin's lymphoma, nodular sclerosis type.\n\nPatient presented to clinic today to initiate ABVD, however \nduring visit she endorsed right sided head and neck pain, right \near drainage, and transient R sided vision loss. Labs were \nnotable for WBC 2.9 (73.7% PMNs, ANC ___), Hgb below recent \nbaseline at 8.4, and platelets slightly increased from recent \nbaseline at 114.  Chemistry, LFTs unremarkable with exception of \nglucose 228 and magnesium 1.5. LDH 110. HIV negative; EBV PCR \nelevated at 1000 on ___. Patient was then admitted to ___ \nservice for further evaluation and treatment.\n\nMs. ___ reports her pain began after R sided lymph node \ndissection and biopsy. She describes pain as sharp, constant, \nstabbing from her hair at top of head to her collar bone. Pain \nis ___ on pain scale. Better with dilaudid + acetaminophen. \nBright lights make the pain worse. She also notes headaches, \ndifferent from previous migraine headaches, with \nphotosensitivity, no phonophobia. She has also had increased \nsinus pressure, nasal congestion, and drainage from R ear. \nAdditionally she notes transient episodes (3 separate incidents) \nof complete R sided vision loss. No floaters or eye pain. No \nincreased eye pressure. She has not had fevers, chills, \nproductive cough. She has not had any recent travel or any sick \ncontacts. \n\nShe was evaluated by Dr. ___, today in clinic who \nnoted right ear with mucoid otorrhea, central TM perforation. \nRecommended dry ear precautions, ofloxin drops, no foreign \nobjects in ear.\n\nReview of Systems:  \n(+) Per HPI.\nDenies fever, chills, night sweats, cough, shortness of breath, \nchest pain, abdominal pain, nausea, vomiting, diarrhea, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria. \n \nPast Medical History:\nPAST ONCOLOGIC HISTORY:  \nPer OMR NOTES:\nIn ___ she noted abdominal pain and weight loss. On\n___ EGD revealed chronic gastritis and duodenitis. She was\nadmitted to ___ ___ with abdominal pain,\nweight loss, and diarrhea. EGD was unrevealing and colonoscopy\nshowed ulceration in the descending colon, thought possibly\nsecondary to IBD. She was started on prednisone and asacol and\ndischarged but returned on ___ due to worsening symptoms and\nrepeat CT showed descending colitis along with inflamed small\nbowel loops and concern for enterocolic fistula. \n\nShe was transferred to ___ on ___ showed an 11.7\ncm ulcerated mass in the left abdomen with associated diffuse\nmesenteric and retroperitoneal lymphadenopathy and splenomegaly.\nColonoscopy and biopsy on ___ was consistent with a high \ngrade\ndiffuse large B cell lymphoma, with MIB-1 fraction >95%. On ___\nand ___ blood cultures were drawn positive for ___ \n___.\nOn ___ bone marrow biopsy was done that was limited but\nnegative for evidence of lymphoma. On ___ bronchoscopy with\nBAL of lingula was done and revealed relatively small quantities\nof staph aureus and yeast. \n\nShe received cycle 1 of EPOCH from ___. On ___ she\ndeveloped bowel perforation and underwent resection of sigmoid\nand descending colon, resection of small bowel x 2 and \ncolostomy.\nPeritoneal cultures revealed Klebsiella and C. albicans and\npathology revealed necrotic tumor involving segments of colon \nand\nsmall bowel with fistulas between small and large bowel. In\nareas, the bowel wall was completely replaced by necrotic tumor.\nThe tumor was nearly totally necrotic in the sections examined.\nMargins were free of necrosis and tumor. There was no evidence \nof\nlarge cell lymphoma in the mesenteric lymph nodes examined. \n\nShe was discharged to rehab on ___ on\nmicafungin and meropenem and discharged home on ___. \n\nOn ___ she was re-admitted with partial small bowel\nobstruction which was treated conservatively and she improved\nslowly. On ___ she had new right sided weakness and MRI\nbrain on ___ revealed left frontoparietal mass with edema. \nOpen\nbiopsy on ___ showed high grade diffuse large B cell lymphoma\nand she was started on high-dose methotrexate on ___. She\nreceived C3 R-CHOP on ___ and her next treatment with high\ndose methotrexate on ___, complicated by severe mucositis.\nShe was discharged home ___. \n\nOn ___ she had MRI brain showing diminished edema and\nenhancement of previously diagnosed left occipital region tumor.\nPET scan was negative for FDG-avid disease on ___ and she\nwas admitted and received high-dose methotrexate (reduced to \n3500\nmg/m2) on ___. This admission was complicated by C.\ndiff infection diagnosed on ___ and was started on oral\nvancomycin. Received a total of 8 cycle of high dose \nMethotrexate\nwhich she completed in ___. For her systemic treatment she \ndid\nreceive four cycles of R-CHOP.  Her last treatment was in\n___. \n\nDue to low blood counts we held off giving her ___ cycle of\nsystemic R-CHOP. Intially delayed due to low counts and also had\nan admission for a question of an infection presenting with some\nGI discomfort and edema in her jejunal inflammation.  Due to\npersistent low counts we ultimately did a bone marrow bx which\nrevealed no evidence of lymphoma. MDS panel was negative. Her\nbone marrow was normocellular and her counts have slowly been\nrecovering. Due to persisent low counts and recurrent infections\nwe decided that we would hold further chemotherapy as she is now\nin remission and the risk-benefit for ongoing consolidative\ntherapy with maintenance MTX may not be of benefit given side\neffects. Has been followed off treatment since ___ with \nserial\nscans and has been in disease remission.\n\nOf note, the patient presented to clinic back in ___\nday history of headaches and was found to have nystagmus.  Given\nher history of CNS disease, she was admitted for further workup\nand evaluation.  She had an MRI on ___, which revealed \nno\nnew lesions or any abnormal enhancement.  She had stable\nappearance of left parietal resection cavity with surrounding\nFLAIR signal hyperintensity.  There was, however, some mucosal\nthickening in the right frontal sinus and ethmoid air cells had\nincreased from prior study.  She was discharged home on a course\nof Levaquin.  Her nystagmus had resolved and that was felt to\nmost likely be related to physiologic process.  She did have a\nlumbar puncture, which did not reveal any evidence of lymphoma;\nhowever, did have some atypical lymphocytes. She had follow up\nwith neuro-oncology as an outpatient who felt that it was more\nphysiologic and had otherwise been doing well since that time\nuntil this past ___.\n\nHas had ongoing work up for a nasopharyngeal mass/process with\ntwo admissions. Has had 2 biopsies which have been equivocal \nwith\nno clear evidence of relapsed lymphoma. Her first biopsy came\nback positive for Strep Pneumoniae and MRSA. Completed a 21 day\ncourse of vanco. Fungal stains negative. Continued with blocked\neustachian tube and hearing loss.  Continues with some\nradiographic findings. Has had multiple consults by ENT and ID \nas\nwell as surgery. Clinically she is much improved but continues\nwith hearing loss. Has completed a couple course of antibiotics\nin this setting. Also had tube placed in right ear. Ultimately \nin\n___ had a right middle ear exploration and tympanomastoidectomy\nwith T-tube placement. Path was very similar to prior 2 bxs from\nnasopharyngeal area. There was no definitive evidence of\nlymphoma.  There were mixed inflammatory infiltrate with rare\nlarge ayptical lymphoid cells. Continued to have ongoing\nnasopharyngeal process on imaging since that time but was\nrelatively stable. \n\nOver past couple of months has had proressive bulky FDG avid LAD\nin right cervical chain. Evaluated by Dr. ___ in ___\nwho ordered a core needle bx which was suspicious for Hodgkin's\nlymphoma but not able to make firm dx. Then proceeded with\nexcisional bx on ___ which confirmed EBV + classical\nHodgkin's lymphoma, nodular sclerosing type. Also of note with\nEBV viremia.  Over past couple of weeks has been doing baseline\ntesting in anticipation of chemotherapy including bone marrow \nbx,\nPET-CT, ECHO and PFTs. \n\nPAST MEDICAL/SURGICAL HISTORY:  \n1) Common variable immune deficiency, on IVIG 1 gm/kg q3 weeks\nsince diagnosis in ___ (but now receiving it q4 weeks as pt\nadamant about not coming more often). Initially followed by Dr.\n___ now followed by Dr. ___\n2) Frequent sinusitis and bronchitis\n3) Type 2 diabetes-diet and exercise controlled\n4) Asthma\n5) ?Scleroderma-previously on chronic minocycline\n6) DJD, L5-S1 fusion with hardware in ___\n7) Sciatica\n8) chronic back pain followed by pain clinic,on chronic \nmethadone\n9) depression, anxiety, panic attacks\n10) Hyperlipidemia\n11) Oral herpes\n12) Migraines\n13) hypothyroidism\n \nSocial History:\n___\nFamily History:\nColon and breast cancer on mother's side; father's side with \nlung ca and cirrhosis\n \nPhysical Exam:\nADMISSION EXAM:\n\nVitals: \nWeight 108.1\nT 97.7\nBP  92/54\nP 94\nR 20\nSa   100% on RA\n\nGen: Pleasant, thin, well developed female sitting up in bed, \ncomfortable appearing, speaking in full sentences, NAD  \nHEENT: PERRL, EOMI, oropharynx without erythema or exudate, \nnares with clear rhinorrhea, no conjunctival pallor. No icterus. \nMMM. OP clear. No pain to palpation of R pinna, no visible \ndrainage. No sinus tenderness to palpation.  \nNECK: R sided cervical lymphadenopathy, right axillary \nlymphadenopathy, R cervical lymph node dissection site c/d/i \nwithout erythema, induration, or pain to palpation. JVP flat. \nCV: Normocardic, regular. Normal S1,S2. No MRG.   \nLUNGS: No incr WOB. CTAB. No wheezes, rales, or rhonchi.  \nABD: Soft, non distended,non tender to palpation,+BS. +colostomy \nwith pink ostomy with formed brown stool in ostomy bag  \nEXT: WWP. No ___ edema. \nSKIN: No rashes/lesions, petechiae/purpura ecchymoses.  \nNEURO: A&Ox3. CN II-XII intact, no weakness or deficits, moving \nall 4 extremities, strength and sensation intact\nLINES:  R port c/d/i without erythema or induration\n\nDISCHARGE EXAM:\nGen: Pleasant, thin, well developed female sitting up in bed, \nwearing regular glasses, comfortable appearing, speaking in full \nsentences, NAD  \nHEENT: PERRL, EOMI, oropharynx without erythema or exudate, no \nconjunctival pallor. No icterus. MMM. OP clear. No pain to \npalpation of R pinna, no visible drainage. no tenderness to \npalpation of R maxillary sinus\nNECK: R sided cervical lymphadenopathy- palpable node behind \nmastoid process smaller than prior approx 5mm diameter, R \ncervical lymph node dissection site c/d/i without erythema, \ninduration, or pain to palpation. JVP flat. \nCV: Normocardic, regular. Normal S1,S2. No MRG.   \nLUNGS: No incr WOB. CTAB. No wheezes, crackles at R base \nABD: Soft, non distended,non tender to palpation,+BS. +colostomy \nwith pink ostomy with formed brown stool in ostomy bag  \nEXT: WWP. No ___ edema. \nSKIN: No rashes/lesions, petechiae/purpura ecchymoses. Back with \nwell healed surgical scars. LP site c/d/i without erythema or \ninduration  \nNEURO: A&Ox3. CN II-XII intact, LLE ___ strength which is \nchronic, RLE ___ strength, moving all 4 extremities, sensation \nintact\nLINES:  R port c/d/i without erythema or induration\n\n \nPertinent Results:\nADMISSION LABS:\n--------------\n___ 11:30AM BLOOD WBC-2.9* RBC-3.95* Hgb-8.4* Hct-26.6* \nMCV-67* MCH-21.3* MCHC-31.6 RDW-16.9* Plt ___\n___ 11:30AM BLOOD Neuts-73.7* Lymphs-17.4* Monos-7.9 \nEos-0.8 Baso-0.2\n___ 11:30AM BLOOD UreaN-7 Creat-0.6 Na-137 K-3.7 Cl-99\n___ 11:30AM BLOOD ALT-7 AST-11 LD(LDH)-110 AlkPhos-80 \nTotBili-0.2\n___ 11:30AM BLOOD Albumin-3.6 Calcium-8.8 Phos-4.2 Mg-1.5*\n\nPERTINENT LABS:\n---------------\n___ 11:30AM BLOOD HBsAg-NEGATIVE HBsAb-POSITIVE \nHBcAb-NEGATIVE\n___ 12:28AM BLOOD IgG-833 IgA-<5* IgM-<3*\n___ 11:30AM BLOOD HCV Ab-NEGATIVE\n___ 11:30AM BLOOD HCV Ab-NEGATIVE\n___ 12:20AM BLOOD EBV PCR, QUANTITATIVE, WHOLE BLOOD-Test   \n   \n___ 11:30AM BLOOD EBV PCR, QUANTITATIVE, WHOLE BLOOD-Test   \n   \n___ 03:00PM CEREBROSPINAL FLUID (CSF) WBC-11 ___ \nPolys-84 Bands-1 ___ ___ 02:26PM CEREBROSPINAL FLUID (CSF) WBC-6 ___ \nPolys-52 ___ ___ 03:00PM CEREBROSPINAL FLUID (CSF) TotProt-232* \nGlucose-150 LD(LDH)-37\n___ 07:33AM OTHER BODY FLUID CD45-DONE Kappa-DONE CD19-DONE \nLamba-DONE\n___ 07:33AM OTHER BODY FLUID IPT-DONE\n\nMICRO:\n-----\n___ 11:00 am SWAB      RIGHT EAR. \n\n                            **FINAL REPORT ___\n\n   GRAM STAIN (Final ___: \n      1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      NO MICROORGANISMS SEEN. \n\n   RESPIRATORY CULTURE (Final ___:    NO GROWTH.\n___ 2:26 pm CSF;SPINAL FLUID      RECEIVED @ 1743 SOURCE: \nLPD #3. \n\n                            **FINAL REPORT ___\n\n   GRAM STAIN (Final ___: \n      1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      NO MICROORGANISMS SEEN. \n      This is a concentrated smear made by cytospin method, \nplease refer to\n      hematology for a quantitative white blood cell count.. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n___ CULTUREBlood Culture, \nRoutine-PENDINGINPATIENT\n___ CULTUREBlood Culture, \nRoutine-PENDINGINPATIENT\n\n___ 5:47 am URINE      Source: ___. \n\n                            **FINAL REPORT ___\n\n   URINE CULTURE (Final ___:    <10,000 organisms/ml. \n\nIMAGING:\n-------\nMRI HEAD ___:\n1. Dramatic interval increase in size of a right nasopharyngeal \nmass, which\nnow results in conglomerate lymphadenopathy involving the \nvisualized cervical nodal stations, palatine tonsils and \nadenoids. The mass extends into the masticator spaces, right \nparotid gland and bilateral posterior triangles.\n2. There is apparent new osseous involvement of the clivus and \nskullbase. This may be further evaluated with temporal bone CT \nif clinically indicated.\n3. There is encasement of the right V3 segment, with perineural \nextension\nthrough the right foramen ovale and thickening of the associated \ndura.  There is also apparent encasement of the seventh cranial \nnerve at the level of the right stylomastoid foramen. Dedicated \nnasopharyngeal MRI with and without contrast would be more \nsensitive in the detection of intracranial extension and \ncavernous sinus involvement.\n4. The lesion encroaches into the transverse foramina and \nbilateral neural\nforamina spanning C1-2 through C2-3.This may be due to engorged \nveins but can be assessed to exclude infiltrating disease on \nNeck MRI.\n5. The mass encases and likely flattens the bilateral internal \njugular veins at the level of the jugular foramen.  There \nappears to be mild exophthalmos without apparent orbital mass.\n6. Unchanged appearance of left posterior parietal/occipital \nsurgical and\ntreatment changes.\n\nCT HEAD ___:\n1. Partially imaged heterogeneous right nasopharyngeal mass.\n2. Unchanged postsurgical appearance of the left posterior \nparietal lobe.\n3. Skullbase involvement better appreciated on MRI, but there is \nno evidence of bone destruction on CT.\n\nMR ORBIT ___:\n\n1. Again identified is a large enhancing nasopharyngeal mass \nextending to the bilateral, right greater than left masticator \nspace with intracranial\nextension of via the right foramen ovale.\n2. Question soft tissue extension into right Meckel's cave and \ncavernous\nsinus.\n3. Although there is no abnormal enhancement or STIR \nhyperintense signal of\nthe optic nerves, the right-sided lesion extends into the right \noptic canal.\n4. Better defined on the current exam, there is abnormal right \npterygopalatine fossa enhancement.\n5. There is STIR hyperintense signal of the clivus and right \ngreater wing of the sphenoid compatible with tumoral involvement \nalthough there is no evidence of gross osseous erosion.\n6. Paranasal sinus disease and right mastoid fluid as described.\n\n___ PUNCTURE (W/ FLU\nIMPRESSION: \n \nSuccessful fluoroscopic guided lumbar puncture and intrathecal \nchemotherapy\nadministration.\n \n\nPATHOLOGY:\n---------\nCSF Flow Cytometry ___:\nRESULTS:\n \nThree color gating is performed (light scatter vs. CD45) to \noptimize lymphocyte yield.\n \nDue to paucicellular nature of the specimen, a limited panel is \nperformed to determine B-cell clonality.\n \nB cells are scant in number precluding evaluation of clonality.\n\nCSF CYTOMETRY: ___\nDIAGNOSIS:\nCerebrospinal fluid:\nNEGATIVE FOR MALIGNANT CELLS.\nLymphocytes, monocytes, and red blood cells.\nFour Heme slides were reviewed. \n\nCYTOGENETICS REPORT - Final\nSPECIMEN: BODY FLUID, CSF\n\nCLINICAL HISTORY: Non-Hodgkin lymphoma.\nCYTOGENETICS PROCEDURE: Unstimulated culture for Giemsa-banded \nchromosome analysis.\nFINDINGS: No mitotic cells were found in the culture set up from \nthis cerebral spinal fluid sample.\n \nINTERPRETATION\n \nNondiagnostic study. Clonality could not be assessed in this \ncase due to insufficient number of B cells. Cell marker analysis \nwas attempted, but was nondiagnostic in this case due to \ninsufficient numbers of cells. Please correlate with cytology \nfindings. If clinically indicated, we recommend a repeat \nspecimen be submitted to the flow cytometry laboratory.\n\nDISCHARGE LABS:\n--------------\n___ 12:00AM BLOOD WBC-3.8*# RBC-3.41* Hgb-8.2* Hct-24.6* \nMCV-72* MCH-24.0* MCHC-33.3 RDW-19.6* Plt Ct-32*\n___ 12:00AM BLOOD Neuts-74* Bands-3 Lymphs-10* Monos-10 \nEos-0 Baso-0 Atyps-1* Metas-1* Myelos-1*\n___ 12:00AM BLOOD Hypochr-3+ Anisocy-2+ Poiklo-2+ \nMacrocy-NORMAL Microcy-3+ Polychr-1+ Spheroc-1+ Ovalocy-1+ \nSchisto-OCCASIONAL Tear ___\n___ 12:00AM BLOOD Plt Smr-VERY LOW Plt Ct-32*\n___ 12:00AM BLOOD Glucose-300* UreaN-5* Creat-0.7 Na-139 \nK-3.5 Cl-103 HCO3-28 AnGap-12\n___ 12:00AM BLOOD ALT-15 AST-17 LD(LDH)-130 AlkPhos-111* \nTotBili-0.3\n___ 12:00AM BLOOD Calcium-8.7 Phos-3.2 Mg-1.6\n \nBrief Hospital Course:\nMs. ___ is a ___ year old woman with history of CVID (IVIG q4 \nweeks), DM2, Asthma, chronic back pain, primary colonic diffuse \nlarge B cell lymphoma with new diagnosis of Hodgkin lymphoma who \npresents from clinic with neck pain and headache, MRI showing \nextensive progression of disease, started on ICE chemotherapy, \nC1D1= ___, ended ___, s/p IT MTX ___.  \n\n#Lymphoma: The patient has a history of CIVD and DLBCL, s/p \ntreatment, who presented with lymphadenopathy and lymph node \nbiopsy connsistent with classical Hodgkin's lymphoa, nodular \nsclerosis type. It was unclear if this was a true diagnosis \nbased on significant nasopharyngeal and head and neck bony \ninvolvement, which would be more typical of a non-Hodgkin's \nlymphoma. A lumbar puncture was performed on ___ due to concern \nfor CNS involvement, with negative cytology, immunophenotyping \nwith insufficient B cells. The LP did show many RBCs and \nelevated protein, concerning for a traumatic tap vs. CSF flow \nobstruction. Rad onc, ENT, ophtho, and neurology were consulted. \nPer rad/onc, there was no need for radiation without acute \nneurological changes. The patient was started on ICE on ___, \nwhich was completed ___, and started intrathecal methotrexate \n(___). The patient also received IV dexamethasone which was \ntapered and then stopped. Neupogen 300 mg SC daily was started \non ___, and then stopped ___ due to improvement in ANC. The \npatient was on acyclovir for prophylaxis and atovaquone, which \nwas started ___. Atovaquone was continued upon discharge. \n\n#Neck Pain and Headache: The patient initially presented with \nneck pain and headache, likely secondary to lymphoma given \nextensive disease. Imaging showed a large nasopharyngeal mass, \nimpaired outflow of the mastoid sinus, as well as a TM \nperforation and evidence of otitis externa. She was initially \ntreated with Augmented as an outpatient, but during \nhospitalization was started on empiric cefepime on ___, which \nwas then stopped ___ (and then restarted again ___ due to \nneutropenic fever). Cefepime was stopped prior to discharge. The \npatient's pain symptoms improved during hospital course, with \nthe exception of a migraine-like headache on ___ without other \nneurological deficits. The patient continued on cipro ear drops \nfor otitis externa. Her pain was controlled with PO dilaudid as \nwell as methadone. The pain service was consulted and \nrecommended increasing Lyrica to 50 mg QID, which was done. \n\n#Vision Loss: The patient did not exhibit further episodes of \nvision loss during hospital stay after her initial 3 transient \nepisodes of R sided vision loss. As above, MRI head notable for \nextensive lymphoma, which was treated as above. Ophthalmology \nwas consulted and found no signs of optic nerve head swelling or \natrophy in either eye, and near-normal visual acuity in both \neyes.\n\n#Microcytic anemia: During hospitalization the patient was noted \nto have a microcytic anemia, MCV 67-70. She has a history of \niron deficiency anemia in the past and is s/p IV iron infusion \nin the past. During this hospitalization the patient was \ntransfused pRBCs as needed to maintain an H/H > ___. She showed \nno signs of bleeding and by day of discharge her Hgb improved to \n8.2.\n\n#Diabetes Mellitus type 2, uncontrolled: The patient is on \nglimepiride and metformin as outpatient, which were held as an \ninpatient. During hospital stay the patient was given insulin, \nwhich needed to be uptitrated especially while on dexamethasone. \nHowever, once dexamethasone was stopped, the patient remained \npersistently hyperglycemic (200s-300s) and ___ was \nconsulted on ___. Changes were made in her insluin regimen. The \npatient preferred to be discharged home on her home oral \nmedications. \n\n#Esophagitis/GERD: The patient has a known history of GERD, but \ndeveloped worsening heartburn symptoms during hospital stay. Her \npantoprazole was increased to 40 mg BID and Tums, carafate, and \nGaviscon provided some relief. Her heartburn developed into \nodynophagia and there was concern for mucositis related to MTX \nor ___ esophagitis, and so on ___ flucontazole, Nystatin \nswish and swallow, and magic mouthwash were started. Several \ndays after starting fluconazole the patient exhibited some \nchanges in mental status with increased sedation, and so it was \nthought that the fluconazole interacted with her home methadone. \nFluconazole was stopped and switched to micafungin. Her \nodynophagia improved with improvement in her cell counts and her \nfungal treatments were stopped. \n\n#CVID: The patient receives IVIG infusions every month for CVID. \nPrior to admission her last dose had been ___, and so on ___ \nshe received another IVIG treatment (50g IV) with premedication \nwith tylenol and diphenhydramine. On ___ she had repeat \nquantitative immunoglobulins: IgG 833 IgA <5, IgM <3.\n \n\n#Hx EBV VIREMIA: The patient has a history of EBV viremia with a \nviral load on ___ of 1038 and of ___ <200. On ___ her EBV \nviral load was 303.\n\n#Hypotension: The patient at baseline has low SBPs, in the \n___. Occasionally at night she would drop to ___ while \nremaining asymtpomatic. She was given IVF as needed and \ntransfused blood products as needed. She remained \nhemodynamically stable prior to and upon discharge.\n\n#Chronic Back Pain: The patient follows at pain clinic. She \ncontinued initially on home methadone 5 mg PO q6h, \ncyclobenzaprine, and dilaudid. Given concern for interactions \nwith fluconazole, her methadone was briefly decreased in \nfrequency, but then was able to be resumed at its prior dose \nbefore discharge. As above, for pain her Lyrica was increased by \nchronic pain in-house recommendations.\n\n#Asthma: The patient was continued on home fluticasone, \nalbuterol prn.\n\n#Hypothyroidism: The patient continued on home levothryoxine 50 \nmcg PO daily. \n\n#Depression/Anxiety: The patient contined on home duloxetine \n30mg PO BID, clonazepam 1mg PO q6h and additional prn.\n\n#s/p colonic resection with end colostomy: The patient's stool \noutput was closely monitored, with continued ostomy care.\n\n===============\nTRANSITIONAL ISSUES:\n===============\n[] Please follow up with Dr. ___ one week of \ndischarge.\n[] Patient should follow up in ___ eye clinic with \nNeur-ophthalmology clinic to repeat the exam and do automated \nvisual field exam.\n[] Follow up blood glucose and diabetes management as an \noutpatient\n[] Last IVIG treatment was ___\n[] Patient will be discharged on atovaquone \n\n# CODE STATUS: Full Confirmed with patient\n# EMERGENCY CONTACT: mother, ___, ___\n\n \n___ on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Acyclovir 400 mg PO Q8H \n2. Albuterol Inhaler 2 PUFF IH Q6H:PRN sob wheezing \n3. Amoxicillin-Clavulanic Acid ___ mg PO Q12H \n4. azelastine 137 mcg nasal BID PRN \n5. ClonazePAM 1 mg PO QID \n6. ClonazePAM 1 mg PO DAILY:PRN anxiety \n7. Cyclobenzaprine 5 mg PO QID \n8. Duloxetine 30 mg PO BID \n9. Fluticasone Propionate 110mcg 2 PUFF IH BID \n10. glimepiride 2 mg oral BID \n11. HYDROmorphone (Dilaudid) 2 mg PO Q4H:PRN pain \n12. Levothyroxine Sodium 50 mcg PO DAILY \n13. Maalox/Diphenhydramine/Lidocaine 30 mL PO QID:PRN mouthpain \n14. MetFORMIN (Glucophage) 1000 mg PO BID \n15. Methadone 5 mg PO Q6H:PRN pain \n16. mometasone 50 mcg/actuation nasal daily \n17. ofloxacin 0.3 % otic twice daily \n18. olopatadine 0.1 % ophthalmic BID prn allergies \n19. Ondansetron 4 mg PO Q8H:PRN nausea \n20. Pantoprazole 20 mg PO Q24H \n21. Pregabalin 25 mg PO QID \n\n \nDischarge Medications:\n1. Acyclovir 400 mg PO Q8H \n2. Albuterol Inhaler 2 PUFF IH Q6H:PRN sob wheezing \n3. azelastine 137 mcg nasal BID PRN \n4. ClonazePAM 1 mg PO QID \n5. ClonazePAM 1 mg PO DAILY:PRN anxiety \n6. Cyclobenzaprine 5 mg PO QID \n7. Duloxetine 30 mg PO BID \n8. HYDROmorphone (Dilaudid) 2 mg PO Q4H:PRN pain \n9. Levothyroxine Sodium 50 mcg PO DAILY \n10. Maalox/Diphenhydramine/Lidocaine 30 mL PO QID:PRN mouthpain \n11. Ondansetron 4 mg PO Q8H:PRN nausea \n12. Methadone 5 mg PO Q6H:PRN pain \n13. Pantoprazole 20 mg PO Q24H \n14. Pregabalin 50 mg PO QID \nRX *pregabalin [Lyrica] 50 mg 1 capsule(s) by mouth four times a \nday Disp #*112 Capsule Refills:*0\n15. Atovaquone Suspension 1500 mg PO DAILY \nRX *atovaquone 750 mg/5 mL 10 mL by mouth Daily Refills:*0\n16. Fluticasone Propionate 110mcg 2 PUFF IH BID \n17. glimepiride 2 mg oral BID \n18. MetFORMIN (Glucophage) 1000 mg PO BID \n19. mometasone 50 mcg/actuation nasal daily \n20. ofloxacin 0.3 % OTIC TWICE DAILY \n21. olopatadine 0.1 % ophthalmic BID prn allergies \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary: Lymphoma\nSecondary: CVID, Diabetes Mellitus, Chronic Back Pain\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure taking care of you during your recent \nadmission to ___. You came into \nthe hospital because of headache and vision changes. We found \nthat you had progression of your lymphoma involving your head \nand neck. You received chemotherapy to treat the lymphoma. As \npart of treatment you received dexamethasone (a steroid) which \nmade your blood sugars high and you required insulin to better \ncontrol your blood sugar. You also had a fever and so were \nstarted on antibiotics. \nYou also received your monthly IVIG treatment.  \n\nPlease continue to take your medications as directed and follow \nup with the appointments scheduled below.\n\nWe wish you the best.\n\nSincerely,\n\nYour ___ Care Team \n\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "17797252-RR-203",
+        "charttime": "2156-02-24 10:36:00",
+        "storetime": "2156-02-24 14:29:00",
+        "text": "EXAMINATION:  MR HEAD W AND W/O CONTRAST\n\nINDICATION:  ___ year old woman with hx DLBCL with neuro involvement, recurrent\nsinusitis, new dx hodgkin lymphoma ___ with 3 weeks severe headache and\npressure, 3 episodes of transient R sided vision loss.  // evidence of neuro\ninvolvement of lymphoma? mass? R sided sinusitis?\n\nTECHNIQUE:  Sagittal and axial T1 weighted imaging were performed. After\nadministration of 5cc of Gadavist intravenous contrast, axial imaging was\nperformed with gradient echo, FLAIR, diffusion, and T1 technique. Sagittal\nMPRAGE imaging was performed and re-formatted in axial and coronal\norientations\n\nCOMPARISON:  CT neck with contrast of ___, MRI head with without\ncontrast of ___ through ___. MRI nasopharynx ___.  MRI cervical spine of ___.\n\nFINDINGS: \n\nWhen compared to the prior exam, there has been dramatic interval increase in\nsize of a right nasopharynx mass which now extends to the contralateral side\nvia the palatine tonsils and adenoids.  The mass obstructs the right nasal\nchoana, effaces the left choana and narrows the ___- and oropharynx,\nmeasuring a conglomerate 9.8 x 4.7 x 6.8 cm (TRV, AP, CC; series 10 nerve B,\nimage 58 and series 901b, image 43). There is complete obliteration of the\nright fossa of ___. The lesion now includes all of the visualize\ncervical nodal stations and extends posteriorly into the posterior triangle\nand laterally into the right parotid gland and anteriorly into the right much\ngreater than left masticator spaces. There is obliteration of both longus coli\nmuscles as well as encasement of the right V3 in the masticator space and\npotential encasement of the right seventh cranial nerve at the level of the\nstylomastoid foramen. Central hypoattenuation of the right nasopharyngeal\naspect of this lesion may represent necrosis. Associated pathologically\nenlarged right level 5 conglomerate lymph nodes are also noted. There appears\nto be new high signal and tumoral extension into the clivus, bilateral\ntemporal bones and occipital bone, worse on the right.\n\nThe lesion in cases and compresses both internal jugular veins at the level of\nthe jugular fossa.  Furthermore, there is extension of enhancing soft tissue\nthrough the transverse processes and bilateral neural foramina of the\nvisualized upper cervical spine which includes the C1-2 through C2-3 levels.\nThere is increased enhancement of the lateral and ventral epidural space,\nconcerning for tumoral extension into the spinal canal.\n\nOn the coronal MPRAGE sequences, there is obliteration of the right masticator\nfat, with nodular enhancement within the foramen ovale (series 900 B, image\n56) and adjacent meninges highly concerning for perineural extension.\n\nWhen compared to prior examinations, there appears to be new onset bilateral\nproptosis with subtle traction on the optic nerves. Although the dural venous\nsinuses are patent and there is no evidence for acute infarct or worsening\nparenchymal FLAIR signal abnormality, the any proptosis may represent\nincreased intracranial pressure secondary to compression of the bilateral\njugular veins.\n\nThere is complete opacification of the right mastoid air cells and middle ear\ncavities, presumably secondary to station to obstruction from the right\nnasopharyngeal mass. There is mucosal thickening of the sphenoid sinuses as\nwell as right ethmoid air cells and right-sided frontal sinus.\n\nThe patient is status post left parietal occipital craniotomy with stable\npostoperative changes of the left parieto-occipital treatment bed. A few\nscattered nonspecific subcortical T2/FLAIR white matter hyperintensities are\nnoted, unchanged configuration from prior exam.\n\nIMPRESSION:\n\n\n1. Dramatic interval increase in size of a right nasopharyngeal mass, which\nnow results in conglomerate lymphadenopathy involving the visualized cervical\nnodal stations, palatine tonsils and adenoids. The mass extends into the\nmasticator spaces, right parotid gland and bilateral posterior triangles.\n2. There is apparent new osseous involvement of the clivus and skullbase. This\nmay be further evaluated with temporal bone CT if clinically indicated.\n3. There is encasement of the right V3 segment, with perineural extension\nthrough the right foramen ovale and thickening of the associated dura.  There\nis also apparent encasement of the seventh cranial nerve at the level of the\nright stylomastoid foramen. Dedicated nasopharyngeal MRI with and without\ncontrast would be more sensitive in the detection of intracranial extension\nand cavernous sinus involvement.\n4. The lesion encroaches into the transverse foramina and bilateral neural\nforamina spanning C1-2 through C2-3.This may be due to engorged veins but can\nbe assessed to exclude infiltrating disease on Neck MRI.\n5. The mass encases and likely flattens the bilateral internal jugular veins\nat the level of the jugular foramen.  There appears to be mild exophthalmos\nwithout apparent orbital mass.\n6. Unchanged appearance of left posterior parietal/occipital surgical and\ntreatment changes.\n\nNOTIFICATION:  The findings were discussed by Dr. ___ with Dr.\n___ on the telephone on ___ at 1:10PM, at the time of\ndiscovery of the findings.\n"
+      },
+      {
+        "note_id": "17797252-RR-204",
+        "charttime": "2156-02-26 17:54:00",
+        "storetime": "2156-02-26 18:35:00",
+        "text": "EXAMINATION:  CT HEAD W/O CONTRAST\n\nINDICATION:  ___ year old woman with hx DLBCL with CNS involvement now with nex\ndx lymphoma, severe headache and 3 episodes of vision loss, MRI head with\nnasopharyngeal mass, bilateral neck lesions.\n\nTECHNIQUE:  Contiguous axial images of the brain were obtained without\ncontrast. Thin bone-algorithm reconstructed images were obtained.\n\nDOSE:  DLP:  766 mGy-cm\nCTDI:  51 mGy\n\nCOMPARISON:  Comparison is made to head CT from ___ and MR head\nfrom ___.\n\nFINDINGS: \n\nAn area of encephalomalacia in the left posterior parietal lobe and changes\nfrom left parietal craniotomy are unchanged. There is no evidence of\nhemorrhage. The ventricles and sulci are unchanged in size and configuration.\nThere is no evidence of infarction. The basal cisterns are patent and there is\npreservation of gray-white matter differentiation.\n\nPartially visualized large heterogeneous nasopharyngeal mass, right greater\nthan left. Involvement of the skullbase is better seen on prior MRI. There no\nevidence of bone destruction by CT criteria. There is dense opacification of\nthe right sphenoid sinus and mucosal thickening of the ethmoid air cells. The\nleft mastoid air cells are clear.  There has been a right mastoidectomy with a\nsmall amount of fluid or soft tissue in the cavity and the residual air cells.\n\nIMPRESSION:\n\n\n1. Partially imaged heterogeneous right nasopharyngeal mass.\n2. Unchanged postsurgical appearance of the left posterior parietal lobe.\n3. Skullbase involvement better appreciated on MRI, but there is no evidence\nof bone destruction on CT.\n"
+      },
+      {
+        "note_id": "17797252-RR-206",
+        "charttime": "2156-02-26 18:38:00",
+        "storetime": "2156-02-27 12:58:00",
+        "text": "EXAMINATION:  MR ORBIT ___ ANDW/O CONTRAST\n\nINDICATION:  ___ year old woman with history of diffuse large B-cell lymphoma\nwith CNS involvement with diagnosis of right nasopharynx Hodgkin's lymphoma\nwith recent increased size and possible intracranial extension via right\nforamen ovale.  Now with retro-orbital pain and transient vision loss. Assess\nfor optic nerve involvement and bony destructions around the superior orbital\nfissure and  sphenoid bone.\n\nTECHNIQUE:  Axial and coronal T1 3 mm pre contrast, coronal STIR 3 mm, axial\nand coronal T1 fat sat postcontrast 3 mm sequences through the orbits. 5 cc\nGadavist.\n\nCOMPARISON:  MRI head with and without contrast of ___ through ___, FDG PET-CT of ___.  CT neck with contrast of ___.\n\nFINDINGS: \n\nAgain noted is a large heterogeneously enhancing mass centered in the right\nnasopharynx with obliteration of the bilateral nasal choana, extending to the\nbilateral masticator space right much worse than left as well as invading the\nright parotid gland, similar in appearance from prior MRI of ___\nallowing for technical differences. As noted on prior exam the lesion encases\nthe right V3 with intracranial extension via of the right foramen ovale.\n\nQuestion soft tissue extension through Meckel's cave  into the right cavernous\nsinus.  No definite extension into right optic canal noted. There is no\nabnormal enhancement of the optic nerves or abnormal STIR hyperintense signal.\n\nBetter identified on current exam, there is abnormal enhancement within the\nright pterygopalatine fossa (series 6, image 14).\n\nThere is resolution of previously noted bilateral proptosis.\n\nSTIR hyperintense signal of the clivus and right greater sphenoid wing is\nconcerning for tumoral involvement although there is no osseous erosion.\n\nLimited evaluation of the brain parenchyma demonstrate signal abnormalities.\n\nThere is right mastoid fluid, near-complete opacification of the right and\npartial opacification of the left sphenoid sinus.\n\nIMPRESSION:\n\n\n1. Again identified is a large enhancing nasopharyngeal mass extending to the\nbilateral, right greater than left masticator space with intracranial\nextension of via the right foramen ovale.\n2. Question soft tissue extension into right Meckel's cave and cavernous\nsinus.\n3. Although there is no abnormal enhancement or STIR hyperintense signal of\nthe optic nerves, the right-sided lesion extends into the right optic canal.\n4. Better defined on the current exam, there is abnormal right pterygopalatine\nfossa enhancement.\n5. There is STIR hyperintense signal of the clivus and right greater wing of\nthe sphenoid compatible with tumoral involvement although there is no evidence\nof gross osseous erosion.\n6. Paranasal sinus disease and right mastoid fluid as described.\n"
+      },
+      {
+        "note_id": "17797252-RR-207",
+        "charttime": "2156-02-28 15:22:00",
+        "storetime": "2156-02-28 18:54:00",
+        "text": "EXAMINATION:  LUMBAR PUNCTURE (W/ FLUORO) and intrathecal chemotherapy\nadministration\n\nINDICATION:  This is a ___ woman with remote history of L5-S1 fusion\nand Hodgkin's lymphoma with recent MRI suggesting skull base involvement.\nLumbar puncture is requested to evaluate for CSF malignancy and to provide\nadministration route for intrathecal chemotherapy.\n\nTECHNIQUE:  After informed consent was obtained from the patient explaining\nthe risks, benefits, and alternatives to the procedure, the patient was laid \nin prone position on the fluoroscopic table. A preprocedure time-out was\nperformed confirming the patient's identity, relevant history, procedure to be\nperformed and labs.  A preprocedure scout film was obtained, demonstrating\nposterior fusion hardware at L5-S1.\n\nApproximately 15 cc of 1% lidocaine was administered for local anesthesia.\nUnder fluoroscopic guidance, a 20 gauge spinal needle was inserted into the\nthecal sac.  An initial attempt at L4-5 was unsuccessful, likely due to scar\ntissue and bony hypertrophy. L5-S1 was next attempted and was also\nunsuccessful due to scar tissue and bony hypertrophy. The patient was\nrepositioned and L4-5 again appeared to be a good fluoroscopic target. Under\nfluoroscopic guidance, the 20 gauge spinal needle was successfully inserted\ninto the thecal sac at L4-5. 9 cc of bloody CSF was obtained in 4 tubes and\nsent for requested analysis. The CSF appeared to have partially cleared by\ntube 4.\n\nIntrathecal chemotherapy was administered by the patient's oncology team. CSF\nwas given to the patient's oncology team as per the ordering team's request.\n\nCOMPARISON:  MRI orbits ___, noncontrast CT head ___, CT abdomen and pelvis ___\n\nFINDINGS: \n\n9  cc's of bloody CSF were collected in 4 tubes.  The CSF appeared to have\npartially cleared by tube 4 compared to tube 1.\n\nIMPRESSION: \n\nSuccessful fluoroscopic guided lumbar puncture and intrathecal chemotherapy\nadministration.\n\nI, Dr. ___ supervised the trainee during the key components of\nthe above procedure and I reviewed and agree with the trainee's findings and\ndictation.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "V5811",
+        "icd_version": 9,
+        "long_title": "Encounter for antineoplastic chemotherapy",
+        "normalized_time": "2156-03-11 13:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "20280",
+        "icd_version": 9,
+        "long_title": "Other malignant lymphomas, unspecified site, extranodal and solid organ sites",
+        "normalized_time": "2156-03-11 13:32:44",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "1120",
+        "icd_version": 9,
+        "long_title": "Candidiasis of mouth",
+        "normalized_time": "2156-03-11 13:35:27",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "27906",
+        "icd_version": 9,
+        "long_title": "Common variable immunodeficiency",
+        "normalized_time": "2156-03-11 13:38:11",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "7101",
+        "icd_version": 9,
+        "long_title": "Systemic sclerosis",
+        "normalized_time": "2156-03-11 13:40:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "49390",
+        "icd_version": 9,
+        "long_title": "Asthma, unspecified type, unspecified",
+        "normalized_time": "2156-03-11 13:43:38",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "33829",
+        "icd_version": 9,
+        "long_title": "Other chronic pain",
+        "normalized_time": "2156-03-11 13:46:22",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "34690",
+        "icd_version": 9,
+        "long_title": "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+        "normalized_time": "2156-03-11 13:49:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "25002",
+        "icd_version": 9,
+        "long_title": "Diabetes mellitus without mention of complication, type II or unspecified type, uncontrolled",
+        "normalized_time": "2156-03-11 13:51:49",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "7213",
+        "icd_version": 9,
+        "long_title": "Lumbosacral spondylosis without myelopathy",
+        "normalized_time": "2156-03-11 13:54:33",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "311",
+        "icd_version": 9,
+        "long_title": "Depressive disorder, not elsewhere classified",
+        "normalized_time": "2156-03-11 13:57:16",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "30000",
+        "icd_version": 9,
+        "long_title": "Anxiety state, unspecified",
+        "normalized_time": "2156-03-11 14:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2156-03-11 14:02:44",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "2449",
+        "icd_version": 9,
+        "long_title": "Unspecified acquired hypothyroidism",
+        "normalized_time": "2156-03-11 14:05:27",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "3051",
+        "icd_version": 9,
+        "long_title": "Tobacco use disorder",
+        "normalized_time": "2156-03-11 14:08:11",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "3829",
+        "icd_version": 9,
+        "long_title": "Unspecified otitis media",
+        "normalized_time": "2156-03-11 14:10:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "0549",
+        "icd_version": 9,
+        "long_title": "Herpes simplex without mention of complication",
+        "normalized_time": "2156-03-11 14:13:38",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "2809",
+        "icd_version": 9,
+        "long_title": "Iron deficiency anemia, unspecified",
+        "normalized_time": "2156-03-11 14:16:22",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2156-03-11 14:19:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "53010",
+        "icd_version": 9,
+        "long_title": "Esophagitis, unspecified",
+        "normalized_time": "2156-03-11 14:21:49",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "V4572",
+        "icd_version": 9,
+        "long_title": "Acquired absence of intestine (large) (small)",
+        "normalized_time": "2156-03-11 14:24:33",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "V443",
+        "icd_version": 9,
+        "long_title": "Colostomy status",
+        "normalized_time": "2156-03-11 14:27:16",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "V1272",
+        "icd_version": 9,
+        "long_title": "Personal history of colonic polyps",
+        "normalized_time": "2156-03-11 14:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2156-02-24",
+        "icd_code": "9925",
+        "icd_version": 9,
+        "long_title": "Injection or infusion of cancer chemotherapeutic substance",
+        "normalized_time": "2156-02-24 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 2,
+        "chartdate": "2156-02-28",
+        "icd_code": "0331",
+        "icd_version": 9,
+        "long_title": "Spinal tap",
+        "normalized_time": "2156-02-28 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 3,
+        "chartdate": "2156-03-03",
+        "icd_code": "9914",
+        "icd_version": 9,
+        "long_title": "Injection or infusion of immunoglobulin",
+        "normalized_time": "2156-03-03 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2156-02-28 00:00:00",
+        "charttime": "2156-02-28 14:26:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "CSF;SPINAL FLUID",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "1+    (<1 per 1000X FIELD):   POLYMORPHONUCLEAR LEUKOCYTES.  NO MICROORGANISMS SEEN.  This is a concentrated smear made by cytospin method, please refer to hematology for a quantitative white blood cell count.  "
+      },
+      {
+        "chartdate": "2156-02-28 00:00:00",
+        "charttime": "2156-02-28 14:26:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "CSF;SPINAL FLUID",
+        "test_name": "FLUID CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2156-03-06 00:00:00",
+        "charttime": "2156-03-06 04:45:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2156-03-06 00:00:00",
+        "charttime": "2156-03-06 04:50:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2156-03-06 00:00:00",
+        "charttime": "2156-03-06 05:47:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "<10,000 organisms/ml.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 25059,
+    "output_tokens": 5025,
+    "total_tokens": 30084
+  },
+  "response_id": "chatcmpl-8ea83819fab58198",
+  "latency_ms": 93072,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2156-02-23 16:10:00",
+        "speaker": "Doctor",
+        "text": "Hi, I’m Dr. Lee. I’ll be part of your care team. I understand you came in with neck and head pain. Can you tell me more about it?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2156-02-23 16:12:00",
+        "speaker": "Patient",
+        "text": "Yes, it started after my lymph node biopsy. It’s sharp, constant pain from the top of my head down to my collarbone on the right side. It’s about a 7 out of 10."
+      },
+      {
+        "turn_number": 3,
+        "time": "2156-02-23 16:14:00",
+        "speaker": "Doctor",
+        "text": "I see. And you mentioned headaches and vision changes too?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2156-02-23 16:15:00",
+        "speaker": "Patient",
+        "text": "Yes, the headaches are different—worse with light. And I’ve had three times where I completely lost vision in my right eye for a few seconds."
+      },
+      {
+        "turn_number": 5,
+        "time": "2156-02-23 16:17:00",
+        "speaker": "Doctor",
+        "text": "That’s concerning. We’ll need to do an MRI to see what’s going on. Your blood work shows low white blood cells and anemia, so we’ll keep an eye on that."
+      },
+      {
+        "turn_number": 6,
+        "time": "2156-02-23 16:19:00",
+        "speaker": "Patient",
+        "text": "I’ve been having ear drainage too. My ENT said I have a perforated eardrum."
+      },
+      {
+        "turn_number": 7,
+        "time": "2156-02-23 16:21:00",
+        "speaker": "Doctor",
+        "text": "Yes, we saw that. We’ll continue the ofloxacin drops and keep the ear dry. We’re also starting you on cefepime, just in case there’s an infection."
+      },
+      {
+        "turn_number": 8,
+        "time": "2156-02-24 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your MRI results are back. There’s been a big increase in the size of a mass in your nasopharynx. It’s spreading into nearby areas, including the skull base and nerves."
+      },
+      {
+        "turn_number": 9,
+        "time": "2156-02-24 09:03:00",
+        "speaker": "Patient",
+        "text": "Is that related to my lymphoma?"
+      },
+      {
+        "turn_number": 10,
+        "time": "2156-02-24 09:05:00",
+        "speaker": "Doctor",
+        "text": "Yes. The recent biopsy confirmed Hodgkin lymphoma, and this mass appears to be part of that. It’s likely causing your pain and vision issues due to nerve involvement."
+      },
+      {
+        "turn_number": 11,
+        "time": "2156-02-24 09:08:00",
+        "speaker": "Patient",
+        "text": "Will the chemotherapy help shrink it?"
+      },
+      {
+        "turn_number": 12,
+        "time": "2156-02-24 09:10:00",
+        "speaker": "Doctor",
+        "text": "We’re starting ICE chemotherapy today. It’s designed to treat aggressive lymphomas. We’ll also consider intrathecal methotrexate to protect your nervous system."
+      },
+      {
+        "turn_number": 13,
+        "time": "2156-02-24 09:13:00",
+        "speaker": "Patient",
+        "text": "I’m already on antibiotics. Is the fever from infection or the lymphoma?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2156-02-24 09:15:00",
+        "speaker": "Doctor",
+        "text": "Good question. Your fever could be from either. Your cultures haven’t grown anything yet, so we’re watching closely. The cefepime is a precaution."
+      },
+      {
+        "turn_number": 15,
+        "time": "2156-02-25 10:00:00",
+        "speaker": "Doctor",
+        "text": "We’re scheduling a lumbar puncture tomorrow. We need to check if the lymphoma has reached your spinal fluid."
+      },
+      {
+        "turn_number": 16,
+        "time": "2156-02-25 10:02:00",
+        "speaker": "Patient",
+        "text": "Is that safe with my back surgery history?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2156-02-25 10:05:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’ll use fluoroscopy to guide the needle safely. It’s important to rule out central nervous system involvement."
+      },
+      {
+        "turn_number": 18,
+        "time": "2156-02-25 10:07:00",
+        "speaker": "Patient",
+        "text": "Okay, I trust you. My pain is still bad—can we adjust my meds?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2156-02-25 10:09:00",
+        "speaker": "Doctor",
+        "text": "We’ve consulted pain management. They recommend increasing your Lyrica to 50 mg four times a day. We’ll also keep your dilaudid and methadone."
+      },
+      {
+        "turn_number": 20,
+        "time": "2156-02-26 11:00:00",
+        "speaker": "Doctor",
+        "text": "The CT and orbit MRI confirm the mass is pressing on nerves near your eye and skull. No new brain lesions, which is good."
+      },
+      {
+        "turn_number": 21,
+        "time": "2156-02-26 11:03:00",
+        "speaker": "Patient",
+        "text": "So the vision loss might stop if the tumor shrinks?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2156-02-26 11:05:00",
+        "speaker": "Doctor",
+        "text": "That’s the hope. Ophthalmology checked your eyes—no swelling or damage. The vision loss is likely from nerve compression."
+      },
+      {
+        "turn_number": 23,
+        "time": "2156-02-28 13:00:00",
+        "speaker": "Doctor",
+        "text": "The lumbar puncture went well. We gave intrathecal methotrexate. The fluid had some blood, so it’s hard to say if there are cancer cells."
+      },
+      {
+        "turn_number": 24,
+        "time": "2156-02-28 13:03:00",
+        "speaker": "Patient",
+        "text": "So it’s inconclusive?"
+      },
+      {
+        "turn_number": 25,
+        "time": "2156-02-28 13:05:00",
+        "speaker": "Doctor",
+        "text": "Yes, but we’re treating as if there’s a risk. The methotrexate helps prevent spread. Your cell counts are low, so we’ve started Neupogen to help them recover."
+      },
+      {
+        "turn_number": 26,
+        "time": "2156-02-28 13:08:00",
+        "speaker": "Patient",
+        "text": "I’ve been more tired and my mouth hurts. Is that from chemo?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2156-02-28 13:10:00",
+        "speaker": "Doctor",
+        "text": "Yes, mucositis is common. We’ve started magic mouthwash and nystatin. We also added fluconazole in case it’s fungal."
+      },
+      {
+        "turn_number": 28,
+        "time": "2156-03-01 09:00:00",
+        "speaker": "Doctor",
+        "text": "You seemed more drowsy yesterday. We think the fluconazole might be interacting with your methadone. We’ve stopped fluconazole and started micafungin instead."
+      },
+      {
+        "turn_number": 29,
+        "time": "2156-03-01 09:03:00",
+        "speaker": "Patient",
+        "text": "I do feel more alert today. Is the micafungin safer?"
+      },
+      {
+        "turn_number": 30,
+        "time": "2156-03-01 09:05:00",
+        "speaker": "Doctor",
+        "text": "Yes, and it still covers fungal infections. Your mouth sores are improving, which is great."
+      },
+      {
+        "turn_number": 31,
+        "time": "2156-03-02 10:00:00",
+        "speaker": "Doctor",
+        "text": "Your blood sugar has been high. The steroids we gave are making it worse. We’ve started insulin to manage it."
+      },
+      {
+        "turn_number": 32,
+        "time": "2156-03-02 10:02:00",
+        "speaker": "Patient",
+        "text": "I’m usually on pills. Can I go back to them after?"
+      },
+      {
+        "turn_number": 33,
+        "time": "2156-03-02 10:05:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’ll transition you back. But for now, insulin gives us better control, especially with the steroids."
+      },
+      {
+        "turn_number": 34,
+        "time": "2156-03-03 11:00:00",
+        "speaker": "Doctor",
+        "text": "You got your IVIG today—50 grams. Your immunoglobulin levels are stable, which helps your immune system."
+      },
+      {
+        "turn_number": 35,
+        "time": "2156-03-03 11:02:00",
+        "speaker": "Patient",
+        "text": "Good. I’ve been worried about infections with my low counts."
+      },
+      {
+        "turn_number": 36,
+        "time": "2156-03-03 11:04:00",
+        "speaker": "Doctor",
+        "text": "We are too. That’s why you’re on acyclovir and atovaquone for prevention. Your blood cultures are still negative—no sign of active infection."
+      },
+      {
+        "turn_number": 37,
+        "time": "2156-03-04 09:30:00",
+        "speaker": "Doctor",
+        "text": "Your hemoglobin dropped, so we gave a unit of red blood cells. You have microcytic anemia—likely iron deficiency. We’ll monitor it."
+      },
+      {
+        "turn_number": 38,
+        "time": "2156-03-04 09:33:00",
+        "speaker": "Patient",
+        "text": "I’ve had that before. Should I take iron at home?"
+      },
+      {
+        "turn_number": 39,
+        "time": "2156-03-04 09:35:00",
+        "speaker": "Doctor",
+        "text": "We’ll discuss that with your oncologist. For now, transfusions are safest given your condition."
+      },
+      {
+        "turn_number": 40,
+        "time": "2156-03-05 10:00:00",
+        "speaker": "Doctor",
+        "text": "You spiked a fever last night. We restarted cefepime. It’s likely due to low neutrophils from chemo."
+      },
+      {
+        "turn_number": 41,
+        "time": "2156-03-05 10:03:00",
+        "speaker": "Patient",
+        "text": "Will that delay my treatment?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2156-03-05 10:05:00",
+        "speaker": "Doctor",
+        "text": "We’ll see how you respond. The ICE cycle is complete, so we’re focusing on recovery now."
+      },
+      {
+        "turn_number": 43,
+        "time": "2156-03-06 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good news—your fever is gone, and blood cultures are negative. We’re stopping cefepime."
+      },
+      {
+        "turn_number": 44,
+        "time": "2156-03-06 08:02:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. My headache is better too."
+      },
+      {
+        "turn_number": 45,
+        "time": "2156-03-06 08:04:00",
+        "speaker": "Doctor",
+        "text": "The steroids and chemo are helping reduce inflammation. Your neck exam shows the lymph node is smaller."
+      },
+      {
+        "turn_number": 46,
+        "time": "2156-03-07 09:00:00",
+        "speaker": "Doctor",
+        "text": "We’re planning your discharge. You’ll continue atovaquone and all your home meds, including the new Lyrica dose."
+      },
+      {
+        "turn_number": 47,
+        "time": "2156-03-07 09:03:00",
+        "speaker": "Patient",
+        "text": "What about follow-up?"
+      },
+      {
+        "turn_number": 48,
+        "time": "2156-03-07 09:05:00",
+        "speaker": "Doctor",
+        "text": "You’ll see your oncologist in a week. Also, neuro-ophthalmology to check your vision. Keep monitoring your blood sugar."
+      },
+      {
+        "turn_number": 49,
+        "time": "2156-03-08 10:00:00",
+        "speaker": "Doctor",
+        "text": "Your latest labs show your white count is improving. Platelets are still low, so avoid injury."
+      },
+      {
+        "turn_number": 50,
+        "time": "2156-03-08 10:02:00",
+        "speaker": "Patient",
+        "text": "I’ll be careful. Can I travel for appointments?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2156-03-08 10:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, but have someone with you. And call us if you develop fever, worsening pain, or vision changes."
+      },
+      {
+        "turn_number": 52,
+        "time": "2156-03-09 09:30:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. We’re discharging tomorrow. Continue the ofloxacin drops for your ear."
+      },
+      {
+        "turn_number": 53,
+        "time": "2156-03-09 09:32:00",
+        "speaker": "Patient",
+        "text": "And my diabetes meds—back to glimepiride and metformin?"
+      },
+      {
+        "turn_number": 54,
+        "time": "2156-03-09 09:35:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’ll restart them. We’ll send instructions to your pharmacy."
+      },
+      {
+        "turn_number": 55,
+        "time": "2156-03-09 09:38:00",
+        "speaker": "Patient",
+        "text": "Thank you. I was really scared with the vision loss."
+      },
+      {
+        "turn_number": 56,
+        "time": "2156-03-09 09:40:00",
+        "speaker": "Doctor",
+        "text": "I understand. But you’ve responded well to treatment. The mass is likely shrinking, and your symptoms are improving."
+      },
+      {
+        "turn_number": 57,
+        "time": "2156-03-10 10:00:00",
+        "speaker": "Doctor",
+        "text": "Final check: your vitals are stable, pain is controlled, and you’re eating well. Discharge is set for tomorrow morning."
+      },
+      {
+        "turn_number": 58,
+        "time": "2156-03-10 10:03:00",
+        "speaker": "Patient",
+        "text": "I’m ready to go home. Will I need another IVIG soon?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2156-03-10 10:05:00",
+        "speaker": "Doctor",
+        "text": "Your last dose was this week, so next is in about four weeks. Your immunology team will coordinate that."
+      },
+      {
+        "turn_number": 60,
+        "time": "2156-03-10 10:08:00",
+        "speaker": "Patient",
+        "text": "And my colostomy—everything looks okay?"
+      },
+      {
+        "turn_number": 61,
+        "time": "2156-03-10 10:10:00",
+        "speaker": "Doctor",
+        "text": "Yes, your ostomy is healthy, and output is normal. Keep up with your care routine."
+      },
+      {
+        "turn_number": 62,
+        "time": "2156-03-11 09:00:00",
+        "speaker": "Doctor",
+        "text": "All set. Here’s your discharge summary. Keep all your follow-ups, take your meds, and call if anything changes."
+      },
+      {
+        "turn_number": 63,
+        "time": "2156-03-11 09:03:00",
+        "speaker": "Patient",
+        "text": "Thank you, Dr. Lee. I really appreciate everything."
+      },
+      {
+        "turn_number": 64,
+        "time": "2156-03-11 09:05:00",
+        "speaker": "Doctor",
+        "text": "You did great. Take care, and we’ll see you in clinic soon."
+      }
+    ],
+    "summary": {
+      "admission_start": "2156-02-23 16:04:00",
+      "admission_end": "2156-03-11 14:30:00",
+      "summary_paragraph": "The patient was admitted with right-sided neck and head pain, transient vision loss, and ear drainage, following a recent diagnosis of classical Hodgkin lymphoma. Imaging revealed a rapidly enlarging nasopharyngeal mass with skull base and nerve involvement, explaining her symptoms. She received ICE chemotherapy and intrathecal methotrexate, with a lumbar puncture performed for CNS evaluation. During admission, she developed neutropenic fever, managed with cefepime, and mucositis, complicated by a methadone-fluconazole interaction, leading to a switch to micafungin. Her diabetes required insulin due to steroid-induced hyperglycemia, and she received a blood transfusion for symptomatic microcytic anemia. IVIG was administered for immunodeficiency. Her pain improved with optimized analgesia, including increased pregabalin. She stabilized, completed treatment, and was discharged home with follow-up in oncology, neuro-ophthalmology, and immunology.",
+      "problems": [
+        "Other malignant lymphomas, unspecified site, extranodal and solid organ sites",
+        "Common variable immunodeficiency",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, uncontrolled",
+        "Other chronic pain",
+        "Iron deficiency anemia, unspecified",
+        "Esophagitis, unspecified",
+        "Unspecified otitis media",
+        "Candidiasis of mouth",
+        "Asthma, unspecified type, unspecified",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Colostomy status"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-8ea83819fab58198",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2156-02-23 16:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I’m Dr. Lee. I’ll be part of your care team. I understand you came in with neck and head pain. Can you tell me more about it?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2156-02-23 16:12:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, it started after my lymph node biopsy. It’s sharp, constant pain from the top of my head down to my collarbone on the right side. It’s about a 7 out of 10.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2156-02-23 16:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And you mentioned headaches and vision changes too?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2156-02-23 16:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, the headaches are different—worse with light. And I’ve had three times where I completely lost vision in my right eye for a few seconds.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2156-02-23 16:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s concerning. We’ll need to do an MRI to see what’s going on. Your blood work shows low white blood cells and anemia, so we’ll keep an eye on that.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2156-02-23 16:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been having ear drainage too. My ENT said I have a perforated eardrum.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2156-02-23 16:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we saw that. We’ll continue the ofloxacin drops and keep the ear dry. We’re also starting you on cefepime, just in case there’s an infection.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2156-02-24 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your MRI results are back. There’s been a big increase in the size of a mass in your nasopharynx. It’s spreading into nearby areas, including the skull base and nerves.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2156-02-24 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that related to my lymphoma?\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2156-02-24 09:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The recent biopsy confirmed Hodgkin lymphoma, and this mass appears to be part of that. It’s likely causing your pain and vision issues due to nerve involvement.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2156-02-24 09:08:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will the chemotherapy help shrink it?\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2156-02-24 09:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re starting ICE chemotherapy today. It’s designed to treat aggressive lymphomas. We’ll also consider intrathecal methotrexate to protect your nervous system.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2156-02-24 09:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m already on antibiotics. Is the fever from infection or the lymphoma?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2156-02-24 09:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good question. Your fever could be from either. Your cultures haven’t grown anything yet, so we’re watching closely. The cefepime is a precaution.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2156-02-25 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re scheduling a lumbar puncture tomorrow. We need to check if the lymphoma has reached your spinal fluid.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2156-02-25 10:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that safe with my back surgery history?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2156-02-25 10:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’ll use fluoroscopy to guide the needle safely. It’s important to rule out central nervous system involvement.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2156-02-25 10:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I trust you. My pain is still bad—can we adjust my meds?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2156-02-25 10:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ve consulted pain management. They recommend increasing your Lyrica to 50 mg four times a day. We’ll also keep your dilaudid and methadone.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2156-02-26 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The CT and orbit MRI confirm the mass is pressing on nerves near your eye and skull. No new brain lesions, which is good.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2156-02-26 11:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So the vision loss might stop if the tumor shrinks?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2156-02-26 11:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s the hope. Ophthalmology checked your eyes—no swelling or damage. The vision loss is likely from nerve compression.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2156-02-28 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The lumbar puncture went well. We gave intrathecal methotrexate. The fluid had some blood, so it’s hard to say if there are cancer cells.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2156-02-28 13:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s inconclusive?\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2156-02-28 13:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, but we’re treating as if there’s a risk. The methotrexate helps prevent spread. Your cell counts are low, so we’ve started Neupogen to help them recover.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2156-02-28 13:08:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been more tired and my mouth hurts. Is that from chemo?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2156-02-28 13:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, mucositis is common. We’ve started magic mouthwash and nystatin. We also added fluconazole in case it’s fungal.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2156-03-01 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You seemed more drowsy yesterday. We think the fluconazole might be interacting with your methadone. We’ve stopped fluconazole and started micafungin instead.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2156-03-01 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I do feel more alert today. Is the micafungin safer?\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2156-03-01 09:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, and it still covers fungal infections. Your mouth sores are improving, which is great.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2156-03-02 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your blood sugar has been high. The steroids we gave are making it worse. We’ve started insulin to manage it.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2156-03-02 10:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m usually on pills. Can I go back to them after?\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2156-03-02 10:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’ll transition you back. But for now, insulin gives us better control, especially with the steroids.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2156-03-03 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You got your IVIG today—50 grams. Your immunoglobulin levels are stable, which helps your immune system.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2156-03-03 11:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. I’ve been worried about infections with my low counts.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2156-03-03 11:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We are too. That’s why you’re on acyclovir and atovaquone for prevention. Your blood cultures are still negative—no sign of active infection.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2156-03-04 09:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your hemoglobin dropped, so we gave a unit of red blood cells. You have microcytic anemia—likely iron deficiency. We’ll monitor it.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2156-03-04 09:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had that before. Should I take iron at home?\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2156-03-04 09:35:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll discuss that with your oncologist. For now, transfusions are safest given your condition.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2156-03-05 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You spiked a fever last night. We restarted cefepime. It’s likely due to low neutrophils from chemo.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2156-03-05 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will that delay my treatment?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2156-03-05 10:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll see how you respond. The ICE cycle is complete, so we’re focusing on recovery now.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2156-03-06 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good news—your fever is gone, and blood cultures are negative. We’re stopping cefepime.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2156-03-06 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. My headache is better too.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2156-03-06 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The steroids and chemo are helping reduce inflammation. Your neck exam shows the lymph node is smaller.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2156-03-07 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re planning your discharge. You’ll continue atovaquone and all your home meds, including the new Lyrica dose.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2156-03-07 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about follow-up?\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2156-03-07 09:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll see your oncologist in a week. Also, neuro-ophthalmology to check your vision. Keep monitoring your blood sugar.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2156-03-08 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your latest labs show your white count is improving. Platelets are still low, so avoid injury.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2156-03-08 10:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll be careful. Can I travel for appointments?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2156-03-08 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, but have someone with you. And call us if you develop fever, worsening pain, or vision changes.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2156-03-09 09:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. We’re discharging tomorrow. Continue the ofloxacin drops for your ear.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2156-03-09 09:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my diabetes meds—back to glimepiride and metformin?\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2156-03-09 09:35:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’ll restart them. We’ll send instructions to your pharmacy.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2156-03-09 09:38:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I was really scared with the vision loss.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2156-03-09 09:40:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. But you’ve responded well to treatment. The mass is likely shrinking, and your symptoms are improving.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2156-03-10 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Final check: your vitals are stable, pain is controlled, and you’re eating well. Discharge is set for tomorrow morning.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2156-03-10 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m ready to go home. Will I need another IVIG soon?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2156-03-10 10:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your last dose was this week, so next is in about four weeks. Your immunology team will coordinate that.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2156-03-10 10:08:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my colostomy—everything looks okay?\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2156-03-10 10:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your ostomy is healthy, and output is normal. Keep up with your care routine.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2156-03-11 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All set. Here’s your discharge summary. Keep all your follow-ups, take your meds, and call if anything changes.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2156-03-11 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Dr. Lee. I really appreciate everything.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2156-03-11 09:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You did great. Take care, and we’ll see you in clinic soon.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2156-02-23 16:04:00\",\n    \"admission_end\": \"2156-03-11 14:30:00\",\n    \"summary_paragraph\": \"The patient was admitted with right-sided neck and head pain, transient vision loss, and ear drainage, following a recent diagnosis of classical Hodgkin lymphoma. Imaging revealed a rapidly enlarging nasopharyngeal mass with skull base and nerve involvement, explaining her symptoms. She received ICE chemotherapy and intrathecal methotrexate, with a lumbar puncture performed for CNS evaluation. During admission, she developed neutropenic fever, managed with cefepime, and mucositis, complicated by a methadone-fluconazole interaction, leading to a switch to micafungin. Her diabetes required insulin due to steroid-induced hyperglycemia, and she received a blood transfusion for symptomatic microcytic anemia. IVIG was administered for immunodeficiency. Her pain improved with optimized analgesia, including increased pregabalin. She stabilized, completed treatment, and was discharged home with follow-up in oncology, neuro-ophthalmology, and immunology.\",\n    \"problems\": [\n      \"Other malignant lymphomas, unspecified site, extranodal and solid organ sites\",\n      \"Common variable immunodeficiency\",\n      \"Diabetes mellitus without mention of complication, type II or unspecified type, uncontrolled\",\n      \"Other chronic pain\",\n      \"Iron deficiency anemia, unspecified\",\n      \"Esophagitis, unspecified\",\n      \"Unspecified otitis media\",\n      \"Candidiasis of mouth\",\n      \"Asthma, unspecified type, unspecified\",\n      \"Depressive disorder, not elsewhere classified\",\n      \"Anxiety state, unspecified\",\n      \"Colostomy status\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1777291978,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5025,
+      "prompt_tokens": 25059,
+      "total_tokens": 30084,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}
