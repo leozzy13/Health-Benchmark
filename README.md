@@ -56,7 +56,7 @@ Override dataset, model, or output paths:
 python main.py generate-patient \
   --mimiciv-dir /path/to/mimic-iv \
   --mimiciv-note-dir /path/to/mimic-iv-notes \
-  --output-root /path/to/output \
+  --output-root /path/to/output/benchmark \
   --subject-id 10000032 \
   --model gpt-5.2
 ```
@@ -87,32 +87,33 @@ python main.py evaluate --patient-manifest /path/to/patients.txt --provider vllm
 ```text
 output/
   top_100_eligible_patients.csv
-  <subject_id>/
-    combined_conversation.json
-    patient_summary.json
-    cross_admission_qa.json
-    benchmark_qa.json
-    <hadm_id>/
-      formed_packet.json
-      prompt_record.json
-      conversation.json
-      summary.json
-      qa.json
-    evaluation/
-      config.json
-      context_stats.json
-      benchmark_snapshot.json
-      comparison/
-        leaderboard.csv
-        leaderboard.json
-        summary.md
-      qwen3.5-4b/
-      qwen3.5-9b/
-      qwen3.5-27b/
+  benchmark/
+    <subject_id>/
+      combined_conversation.json
+      patient_summary.json
+      cross_admission_qa.json
+      benchmark_qa.json
+      <hadm_id>/
+        formed_packet.json
+        prompt_record.json
+        conversation.json
+        summary.json
+        qa.json
+      evaluation/
+        config.json
+        context_stats.json
+        benchmark_snapshot.json
+        comparison/
+          leaderboard.csv
+          leaderboard.json
+          summary.md
+        qwen3.5-4b/
+        qwen3.5-9b/
+        qwen3.5-27b/
 ```
 
-Per-patient generation writes to `output/_tmp/<subject_id>/` first and only replaces `output/<subject_id>/` after a successful run.
-QA generation writes to `output/_tmp/qa_<subject_id>/` first and only replaces QA artifacts on success.
+Per-patient generation writes to `output/benchmark/_tmp/<subject_id>/` first and only replaces `output/benchmark/<subject_id>/` after a successful run.
+QA generation writes to `output/benchmark/_tmp/qa_<subject_id>/` first and only replaces QA artifacts on success.
 
 ## Notes
 - Admission-level QA now writes exactly `3` questions per admission
@@ -122,5 +123,5 @@ QA generation writes to `output/_tmp/qa_<subject_id>/` first and only replaces Q
 - Patient-level cross-admission QA count is derived from admission count as `3 * admission_count`
 - Exactly `1/3` of cross-admission QA items are adversarial short-answer questions
 - `qa.json` and `cross_admission_qa.json` keep grouped regular-then-adversarial ordering; `benchmark_qa.json` is the final deterministic shuffle
-- Evaluation reads `combined_conversation.json` plus `benchmark_qa.json`, uses fixed 10-question batches, and writes model-separated outputs under `output/<subject_id>/evaluation/`
+- Evaluation reads `combined_conversation.json` plus `benchmark_qa.json`, uses fixed 10-question batches, and writes model-separated outputs under `output/benchmark/<subject_id>/evaluation/`
 - Evaluation scores answerable questions with normalized token overlap precision/recall/F1 and adversarial questions with abstention accuracy against `the question is not answerable`

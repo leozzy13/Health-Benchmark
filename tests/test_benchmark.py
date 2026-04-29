@@ -727,9 +727,9 @@ class BenchmarkTestCase(unittest.TestCase):
 
     def test_render_prompt_uses_higher_soft_ranges_for_staged_admissions(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        staged_root = repo_root / "output" / "_tmp" / "11826927"
+        staged_root = repo_root / "output" / "benchmark" / "_tmp" / "11826927"
         if not staged_root.exists():
-            staged_root = repo_root / "output" / "11826927"
+            staged_root = repo_root / "output" / "benchmark" / "11826927"
         cases = {
             "22736328": [50, 70],
             "25650592": [60, 85],
@@ -2416,12 +2416,12 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("/projects/p33194/health-benchmark", script)
         self.assertIn("/projects/p33194/health-benchmark/data/mimic-iv", script)
         self.assertIn("/projects/p33194/health-benchmark/data/mimic-iv-notes", script)
-        self.assertIn("/projects/p33194/medbench-output", script)
-        self.assertIn("/projects/p33194/hf_cache", script)
+        self.assertIn("/projects/p33194/health-benchmark/output/benchmark", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/hf_cache", script)
         self.assertIn("/hpc/software/mamba/24.3.0", script)
-        self.assertIn("/projects/p33194/envs/medbench-qwen", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench-qwen", script)
         self.assertIn("/software/singularity/3.8.1/bin/singularity", script)
-        self.assertIn("/projects/p33194/containers/vllm-openai_latest.sif", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/containers/vllm-openai_latest.sif", script)
         self.assertIn("/gpfs/projects", script)
         self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", script)
         self.assertIn("#SBATCH --gres=gpu:4", script)
@@ -2558,7 +2558,7 @@ class BenchmarkTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
             csv_path = temp_root / "top_100_eligible_patients.csv"
-            quest_output_root = temp_root / "medbench-output"
+            quest_output_root = temp_root / "benchmark"
             quest_output_root.mkdir()
 
             with csv_path.open("w", newline="", encoding="utf-8") as handle:
@@ -2619,12 +2619,12 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("/projects/p33194/health-benchmark", script)
         self.assertIn("/projects/p33194/health-benchmark/data/mimic-iv", script)
         self.assertIn("/projects/p33194/health-benchmark/data/mimic-iv-notes", script)
-        self.assertIn("/projects/p33194/medbench-output", script)
-        self.assertIn("/projects/p33194/hf_cache", script)
+        self.assertIn("/projects/p33194/health-benchmark/output/benchmark", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/hf_cache", script)
         self.assertIn("/hpc/software/mamba/24.3.0", script)
-        self.assertIn("/projects/p33194/envs/medbench-qwen", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench-qwen", script)
         self.assertIn("/software/singularity/3.8.1/bin/singularity", script)
-        self.assertIn("/projects/p33194/containers/vllm-openai_latest.sif", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/containers/vllm-openai_latest.sif", script)
         self.assertIn("/gpfs/projects", script)
         self.assertIn('MODEL="${MODEL:-Qwen/Qwen3-235B-A22B-Instruct-2507-FP8}"', script)
         self.assertIn('MAX_MODEL_LEN="${MAX_MODEL_LEN:-49152}"', script)

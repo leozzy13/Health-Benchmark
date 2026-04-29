@@ -102,7 +102,7 @@ def build_default_config(project_dir: Path) -> BenchmarkConfig:
     data_dir = repo_root / "data"
     default_hosp = data_dir / "mimic-iv" / "hosp"
     default_note = data_dir / "mimic-iv-notes"
-    default_output = repo_root / "output"
+    default_output = repo_root / "output" / "benchmark"
 
     dataset_cfg = raw.get("dataset", {})
     output_cfg = raw.get("output", {})
