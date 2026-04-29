@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -111,6 +111,7 @@ class ModelArtifactPaths:
     question_batches_json: Path
     raw_predictions_jsonl: Path
     scored_predictions_jsonl: Path
+    llm_judgments_jsonl: Path
     summary_json: Path
     errors_jsonl: Path
 
@@ -120,6 +121,7 @@ class ModelArtifactPaths:
             "question_batches_json": str(self.question_batches_json),
             "raw_predictions_jsonl": str(self.raw_predictions_jsonl),
             "scored_predictions_jsonl": str(self.scored_predictions_jsonl),
+            "llm_judgments_jsonl": str(self.llm_judgments_jsonl),
             "summary_json": str(self.summary_json),
             "errors_jsonl": str(self.errors_jsonl),
         }
@@ -136,3 +138,29 @@ class AnswerBatchResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     answers: list[AnswerItem]
+
+
+class AnswerableJudgeItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    qa_id: str
+    score: Literal[0, 0.5, 1]
+
+
+class AnswerableJudgeBatchResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    judgments: list[AnswerableJudgeItem]
+
+
+class AdversarialJudgeItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    qa_id: str
+    score: Literal[0, 1]
+
+
+class AdversarialJudgeBatchResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    judgments: list[AdversarialJudgeItem]

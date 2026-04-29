@@ -77,10 +77,12 @@ def score_predictions(
                 "abstention_accuracy": None,
                 "per_question_score": 0.0,
                 "used_comma_fallback": False,
+                "llm_judge_score": None,
             }
         )
         if prediction is None:
             row["status"] = answer_failures.get(question.qa_id, "missing_prediction")
+            row["llm_judge_score"] = 0.0
             scored_rows.append(row)
             continue
         if question.is_adversarial:
@@ -120,6 +122,9 @@ def build_top_level_metrics(scored_rows: list[dict[str, Any]]) -> dict[str, Any]
         "macro_recall_answerable": _macro_mean(answerable_rows, "recall"),
         "macro_f1_answerable": _macro_mean(answerable_rows, "f1"),
         "adversarial_accuracy": _macro_mean(adversarial_rows, "abstention_accuracy"),
+        "macro_llm_score_answerable": _mean_score(answerable_rows, "llm_judge_score"),
+        "adversarial_llm_accuracy": _mean_score(adversarial_rows, "llm_judge_score"),
+        "llm_score": _mean_score(scored_rows, "llm_judge_score"),
         "overall_score": round(
             mean(float(row.get("per_question_score") or 0.0) for row in scored_rows),
             4,
@@ -151,12 +156,13 @@ def _aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     adversarial_rows = [row for row in rows if bool(row.get("is_adversarial"))]
     return {
         "count": len(rows),
-        "answerable_count": len(answerable_rows),
-        "adversarial_count": len(adversarial_rows),
         "macro_precision_answerable": _macro_mean(answerable_rows, "precision"),
         "macro_recall_answerable": _macro_mean(answerable_rows, "recall"),
         "macro_f1_answerable": _macro_mean(answerable_rows, "f1"),
         "adversarial_accuracy": _macro_mean(adversarial_rows, "abstention_accuracy"),
+        "macro_llm_score_answerable": _mean_score(answerable_rows, "llm_judge_score"),
+        "adversarial_llm_accuracy": _mean_score(adversarial_rows, "llm_judge_score"),
+        "llm_score": _mean_score(rows, "llm_judge_score"),
         "overall_score": round(
             mean(float(row.get("per_question_score") or 0.0) for row in rows),
             4,
@@ -170,6 +176,13 @@ def _macro_mean(rows: list[dict[str, Any]], field: str) -> float:
     values = [float(row[field]) for row in rows if row.get(field) is not None]
     if not values:
         return 0.0
+    return round(mean(values), 4)
+
+
+def _mean_score(rows: list[dict[str, Any]], field: str) -> float:
+    if not rows:
+        return 0.0
+    values = [0.0 if row.get(field) is None else float(row[field]) for row in rows]
     return round(mean(values), 4)
 
 

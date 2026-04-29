@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from ..scripts.config import build_default_config
-from .config import build_settings
+from .config import EVALUATION_STAGE_CHOICES, build_settings
 from .loader import resolve_patient_root
 from .pipeline import TemporalEvaluationPipeline
 
@@ -24,6 +24,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-root", help="Override the output root directory.")
     parser.add_argument("--provider", choices=PROVIDER_CHOICES, help="Evaluation provider override. Defaults to vllm.")
     parser.add_argument("--base-url", help="OpenAI-compatible base URL override.")
+    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the fixed Qwen/Qwen3.5-27B judge.")
+    parser.add_argument(
+        "--stage",
+        choices=EVALUATION_STAGE_CHOICES,
+        default="full",
+        help=argparse.SUPPRESS,
+    )
     parser.add_argument("--api-key-env", help="Environment variable name for the evaluation API key.")
     parser.add_argument("--models", nargs="+", help="Optional model override. Defaults to the Qwen3.5 trio.")
     parser.add_argument("--replace-existing", action="store_true", help="Replace existing evaluation outputs for requested models.")
@@ -47,8 +54,10 @@ def main(argv: list[str] | None = None) -> int:
         base_config,
         provider=args.provider,
         base_url=args.base_url,
+        judge_base_url=args.judge_base_url,
         api_key_env=args.api_key_env,
         models=args.models,
+        stage=args.stage,
         replace_existing=True if args.replace_existing else None,
     )
     pipeline = TemporalEvaluationPipeline(base_config, settings)

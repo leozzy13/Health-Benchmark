@@ -4,8 +4,6 @@ import json
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from .types import CANONICAL_ABSTENTION_ANSWER
-
 
 @dataclass(frozen=True)
 class RenderedAnswerPrompt:
@@ -24,7 +22,6 @@ def render_answer_prompt(
         "Use only the provided conversation.",
         "Keep every answer short.",
         "Use wording from the conversation when possible.",
-        f"If the answer is not supported by the conversation, reply exactly: {CANONICAL_ABSTENTION_ANSWER!r}.",
         'You must return strict JSON with the schema {"answers": [{"qa_id": "...", "prediction": "..."}]}.',
         "Return exactly one answer per provided qa_id.",
         "The response is invalid if any qa_id is omitted, repeated, or changed.",

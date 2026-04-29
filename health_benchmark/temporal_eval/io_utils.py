@@ -14,6 +14,18 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    records: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        records.append(json.loads(line))
+    return records
+
+
 def replace_dir(path: Path, *, replace_existing: bool) -> None:
     if path.exists():
         if not replace_existing:
@@ -48,6 +60,7 @@ def write_model_outputs(
     question_batches: dict[str, Any],
     raw_predictions: list[dict[str, Any]],
     scored_predictions: list[dict[str, Any]],
+    llm_judgments: list[dict[str, Any]],
     summary_payload: dict[str, Any],
     error_records: list[dict[str, Any]],
 ) -> None:
@@ -61,6 +74,7 @@ def write_model_outputs(
         question_batches_json=staging_dir / "question_batches.json",
         raw_predictions_jsonl=staging_dir / "raw_predictions.jsonl",
         scored_predictions_jsonl=staging_dir / "scored_predictions.jsonl",
+        llm_judgments_jsonl=staging_dir / "llm_judgments.jsonl",
         summary_json=staging_dir / "summary.json",
         errors_jsonl=staging_dir / "errors.jsonl",
     )
@@ -68,6 +82,7 @@ def write_model_outputs(
     write_json(staged.question_batches_json, question_batches)
     write_jsonl(staged.raw_predictions_jsonl, raw_predictions)
     write_jsonl(staged.scored_predictions_jsonl, scored_predictions)
+    write_jsonl(staged.llm_judgments_jsonl, llm_judgments)
     write_json(staged.summary_json, summary_payload)
     write_jsonl(staged.errors_jsonl, error_records)
     replace_dir(paths.model_dir, replace_existing=replace_existing)

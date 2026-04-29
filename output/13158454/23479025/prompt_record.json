@@ -1,0 +1,787 @@
+{
+  "subject_id": "13158454",
+  "hadm_id": "23479025",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-18T00:24:31Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 6 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2191-07-12 18:19:00 to 2191-07-18 15:48:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2188-06-18 17:08:00",
+    "admission_end": "2188-06-20 18:08:00",
+    "summary_paragraph": "A 68-year-old woman with a complex medical history including chronic diastolic heart failure, type II diabetes, chronic kidney disease, rheumatoid arthritis, and chronic pain following knee replacement was readmitted due to persistent right-sided chest pain after multiple falls. She presented with worsening fatigue and dark urine. Evaluation revealed acute kidney injury and a urinary tract infection, likely exacerbated by chronic narcotic use and dehydration. Chest imaging showed no rib fractures but confirmed bibasilar atelectasis. She was treated with antibiotics and supportive care, with improvement in renal function and resolution of infection. Given her recurrent falls and difficulty managing pain and mobility at home, she agreed to a post-discharge rehabilitation stay focused on physical therapy, pain management, and fall prevention. She was discharged stable with follow-up plans and a coordinated transition to rehab.",
+    "problems": [
+      "Acute kidney failure, unspecified",
+      "Urinary tract infection, site not specified",
+      "Chronic diastolic heart failure",
+      "Regional enteritis of large intestine",
+      "Congestive heart failure, unspecified",
+      "Friedländer's bacillus infection in conditions classified elsewhere and of unspecified site",
+      "Other chest pain",
+      "Other chronic pain",
+      "Long-term (current) use of other medications",
+      "Esophageal reflux",
+      "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+      "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+      "Chronic kidney disease, unspecified",
+      "Disorder of bone and cartilage, unspecified",
+      "Cervical spondylosis without myelopathy",
+      "Knee joint replacement",
+      "Difficulty in walking",
+      "Other and unspecified alcohol dependence, in remission",
+      "Rheumatoid arthritis",
+      "Coronary atherosclerosis of native coronary artery",
+      "Percutaneous transluminal coronary angioplasty status"
+    ]
+  },
+  "stay_days": 6,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2191-07-18 00:00:00): Name:  ___              Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Dilaudid (PF)\n \nAttending: ___.\n \nChief Complaint:\nVomiting, hypontremia\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\n___ y/o female with CAD, CKD, CHF, and DM, s/p 2 recent \nadmissions for hyponatremia (felt to be hypovolemic), now \npresenting with worsening hyponatremia along with \nnausea/vomiting x 3 days. \n\nToday, she presented to her PCP for ___. \nShe was found to have a sodium of 124 and complained of \nnausea/vomiting x 3 days. The vomiting has been once per day, \nsmall volume NBNB, and occurs after taking her medications in \nthe morning. Otherwise, she complains of worsening lower \nextremity edema and associated pain. She denies fever, chills, \nSOB, orthopnea, PND, chest pain, and constipation/diarrhea. Her \nPCP noted she had increased edema, and was thought to possibly \nhave decreased effective circulating volume ___ CHF and \ncirrhosis.  \n\nPt was recently admitted from ___ for presyncope, \nhyponatremia and hyperkalemia. Her pre-sycope was felt to be \nsecondary to orthostasis, her hyponatremia thought possibly \nsecondary to hypvolemia given improvement with IVF (though low \nurine osm, and high UOP argues against this), and her \nhyperkalemia was felt secondary to decreased sodium delivery to \nthe distal tubule in setting of hyponatremia. Her torsemide was \ndiscontinued, and her TSH and cortisol were normal. \n \nIn the ED, initial vitals were: 97.3 74 124/97 18 100% RA. Labs \nwere significant for Mg 1.5, Cr 1.4, Na 124, HCT 28.5. Pt was \ngiven acetaminophen. CXR was performed and showed bibasilar \natelectasis. VS upon transfer: 98.4 88 176/87 20 100% RA.   \n \nOn the floor, patient complained of increased edema and pain \n(L>R) in her lower extremity. Patient also noted frequent \nurination. She urinates large volumes ___ times per day. She \nestimates she drinks 1L of water per day. She denies any \ndysuria. \n \nReview of systems:  \n(+) Per HPI  \n(-) Denies fever, chills, recent weight loss. Denies  rhinorrhea \nor congestion. Denies cough, shortness of breath. Denies chest \npain or tightness, palpitations. Denies nausea, vomiting, \ndiarrhea, constipation or abdominal pain. No recent change in \nbowel or bladder habits. No dysuria. Denies arthralgias or \nmyalgias.\n \nPast Medical History:\n# Coronary artery disease s/p RCA w/ bare metal stent on ___\n# Systolic CHF   \n# Hypertension  \n# h/o idiopathic dilated CMP, now resolved  \n# Chronic Kidney Disease Stage III  (Cr~1.4 at baseline)  \n# DM Type II on insulin  \n# Anemia of chronic disease\n# Pulmonary embolus in ___  \n# Crohn's Disease: h/o pancolitis w/o small bowel involvement\n# Peptic ulcer disease  \n# Alcoholic cirrhosis  \n# History of GI bleed of unclear etiology (___)  \n# GERD  \n# Chronic pancreatitis  \n# h/o Candidal esophagitis\n# h/o CDiff colitis (___) \n# Rheumatoid arthritis  \n# Total right knee replacement with subsequent chronic pain    \n# h/o MRSA right knee wound infection s/p knee replacement \n# Cervical disc disease  \n# L5/S1 radiculopathy with anterolisthesis of L4 on L5   \n# Osteopenia    \n\n \nSocial History:\n___\nFamily History:\nMom died of colon cancer. Father with DM requiring bilateral \nbelow the knee amputation. One sister has had cervical \ncancer(cured) and rheumatoid arthritis. Son with stroke ___ years \nago. Extensive family history of hypertension. \n \nPhysical Exam:\nON ADMISSION:\n=================================\nVitals: T98.2 BP167/74 P89 RR18 100RA\nGeneral: ___, obese, pleasant, no acute distress.\nHEENT: Sclera anicteric. Moist mucous membranes. Oropharynx \nclear.\nNeck: Supple, no JVD.\nCV: Distant heart sounds. Normal S1, S2. No S3, S4 or murmurs.\nLungs: Decreased breath sounds at the bases but otherwise clear \nto auscultation bilaterally.\nAbdomen: +BS, soft, obese, nontender to palpation. No \nhepatomegaly.\nGU: No foley.\nExt: Warm and well perfused. Pulses 2+. Trace pitting edema in \nextremities bilaterally. Left calf tender to palpation without \npalpable cords. No asterixis.\nNeuro: A+Ox3. Grossly intact.\nSkin: No rash.\n \nON DISCHARGE:\n===================================\nVitals: T97.7 BP153/78 P84 R20 100RA\nI/O: ___ net neg 1.2L.\nGeneral: Obese, pleasant woman lying in bed in no acute \ndistress.\nHEENT: Sclera anicteric. Moist mucous membranes. Oropharynx \nclear.\nNeck: Supple, JVP difficult to assess due to body habitus.\nCV: RRR, normal S1, S2. No S3, S4 or murmurs.\nLungs: Clear to auscultation bilaterally with equally decreased \nbreath sounds.\nAbdomen: +BS, soft, obese, nontender to palpation.\nExt: Warm and well perfused. Pulses 2+. Trace pitting edema in \nextremities bilaterally. \nNeuro: A+Ox3. Motor and sensory exam grossly intact. \n\n \nPertinent Results:\nON ADMISSION:\n===================================\n___ 02:57PM BLOOD WBC-3.9* RBC-2.80* Hgb-9.1* Hct-28.5* \nMCV-102* MCH-32.4* MCHC-31.9 RDW-13.7 Plt ___\n___ 02:57PM BLOOD Glucose-107* UreaN-11 Creat-1.3* Na-120* \nK-5.2* Cl-90* HCO3-25 AnGap-10\n\nURINE:\n==================================\n___ 04:15PM URINE Color-Straw Appear-Clear Sp ___\n___ 04:15PM URINE Blood-NEG Nitrite-NEG Protein-100 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-7.0 Leuks-NEG\n___ 04:15PM URINE RBC-<1 WBC-<1 Bacteri-FEW Yeast-NONE \nEpi-0\n___ 04:15PM URINE Hours-RANDOM UreaN-115 Creat-28 Na-32 \nK-18 Cl-28\n___ 04:15PM URINE Osmolal-144\n\nON DISCHARGE:\n===================================\n___ 02:43PM URINE Hours-RANDOM Creat-189 Na-57 K-49 Cl-25\n___ 02:43PM URINE Osmolal-394\n\nSTUDIES:\n===================================\nCXR (___)\nLow lung volumes that accentuate the bronchovascular markings.  \nGiven this, there may be pulmonary vascular congestion. \nBibasilar atelectasis.\n\nECHO (___)\nThe left atrium and right atrium are normal in cavity size. No \natrial septal defect is seen by 2D or color Doppler. Left \nventricular wall thicknesses and cavity size are normal. There \nis mild regional left ventricular systolic dysfunction with \nsevere hypokinesis of the basal inferior wall. The remaining \nsegments contract normally with borderline global systolic \nfunction (LVEF = 50-55%). Tissue Doppler imaging suggests an \nincreased left ventricular filling pressure (PCWP>18mmHg). Right \nventricular chamber size and free wall motion are normal. The \ndiameters of aorta at the sinus, ascending and arch levels are \nnormal. The aortic valve leaflets (3) are mildly thickened but \naortic stenosis is not present. Trace aortic regurgitation is \nseen. The mitral valve leaflets are mildly thickened. There is \nno mitral valve prolapse. Trivial mitral regurgitation is seen. \nThe tricuspid valve leaflets are mildly thickened. There is \nborderline pulmonary artery systolic hypertension. There is no \npericardial effusion. \n\nIMPRESSION: Normal left ventricular size with inferior basal \nhypokinesis c/w CAD. Elevated LV filling pressure. Normal right \nventricular systolic function. Borderline pulmonary \nhypertension.\n\nSHOULDER XR (___)\nShoulder x-ray examination with mild degenerative changes.\n\nCARDIAC STRESS (___)\nINTERPRETATION: This ___ year old IDDM woman with h/o HTN, CKD, \nand \ndCHF; s/p RCA stent in ___ was referred to the lab for \nevaluation of \nchest pain and abnormal ECHO. The patient was administered 0.142 \n\nmg/kg/min of Persantine over four minutes. No chest, neck, back, \nor arm \ndiscomforts were reported by the patient throughout the study. \nThere \nwere no significant ST segment changes throughout the study. The \nrhythm \nwas sinus with rare, isolated VPBs throughout the study. \nBaseline \nsystolic hypertension with an appropriate hemodynamic response \nto the \ninfusion. Post-MIBI, the Persantine was reversed with 125 mg of \nAminophylline IV. \n  \nIMPRESSION: No anginal type symptoms or ischemic EKG changes. \nBaseline \nsystolic hypertension. Nuclear report sent separately. \n\nCARDIAC PERFUSION SCAN (___)\nRest and stress perfusion images reveals no clear focal decrease \nin\ntracer uptake throughout the left ventricular myocardium.  \nGated images reveal normal wall motion.  \nThe calculated left ventricular ejection fraction is 34% \n(previously 40%). \n\n \nBrief Hospital Course:\n___ y/o female with CAD, CHF, CKD, and DM2 who was admitted for \nhyponatremia.\n\n# Hyponatremia/Polydipsia:\nEtiology of hyponatremia secondary to polydipsia as the patient \nadmitted to drinking excess water. She is afraid she will need \ndialysis in the future, therefore drinks water whenever she \nfeels her urine output is not adequate. This is supported by \ndilute urine osmolality on admission (144). The patient was \nplaced on fluid restriction of 1.5L and her sodium trended to \nnormal upon discharge. Patient also has an element of volume \noverload secondary to systolic CHF. Therefore, torsemide was \nrestarted at her previous dose (5mg). The patient was informed \nthat her kidney function is stable, and she should continue with \n2L fluid restriction.\n\n# Hyperkalemia:\nK+ peaked at 5.6 during this admission. EKG did not have any \nhyperacute T waves. Per OMR, the patient may type IV distal RTA. \nThis is evidenced by history of hyperkalemia as well as urine pH \n>5. Irbesartan was decreased by half to prevent further episodes \nof hyperkalemia. The patient was also restarted on torsemide.\n\n# Systolic CHF:\nSecondary to coronary artery disease. Repeat echo with EF \n50-55%, though EF was 34% on perfusion stress test. BNP was \nelevated, though at baseline. Patient appeared asymptomatic and \ncompensated, though volume status was difficult to assess due to \nbody habitus. The patient's carvedilol was increased to 25mg BID \nas she was hypertensive. Irbesartan dose was also decreased in \nhalf. Patient was restarted on torsemide 5mg (previous home \ndose). \n\n# Coronary artery disease:\nThe patient had one episode of chest pain with radiation down \nher left arm. EKG and troponins were negative. Echocardiogram \nshowed decreased EF and new hypokinesis in the inferior walls. \nStress test did not produce angina or EKG changes. Perfusion \nstress test was unremarkable. The patient was continued on \naspirin and simvastatin. Cardiology was consulted and felt \npatient may have an element of demand ischemia in the setting of \nhypertension. Therefore, carvedilol dose was increased to 25mg \nBID. Patient was also started on imdur 30mg. \n\n# Hypertension: \nPatient was hypertensive with SBP up to 180s. Therefore \ncarvedilol dose was increased to 25mg BID. Irbesartan was \ndecreased to 37.5mg due to hyprekalemia. Imdur 30mg was also \nstarted. \n\n# Chronic Kidney Disease Stage III: \nThe patient's baseline Cr is 1.4, though ranges from 1.3-1.6. As \nabove, counseled patient that her Cr has remained stable and we \ndon't anticipate her needing dialysis in the near future.\n\n# DM Type II on insulin:\nHbA1c 6.7 in ___. The patient only takes glargine when her \nFSBG is >200. The patient's sugars were well controlled and she \nnever required insulin. \n \n# Anemia of chronic disease: \nH/H remained stable. She was continued on ferrous sulfate. \n\n# Crohn's Disease: \nThe patient was continued on sulfasalazine and ciprofloxacin.\n\n# Peptic ulcer disease:\nPatient was continued on omeprazole.\n\n# Alcoholic cirrhosis: \nNo evidence of decompensation. Last EGD ___ with no evidence \nvarices. \n\n# Chronic pancreatitis: \nContinued on creon.\n\nTRANSITIONAL ISSUES:\n- The patient will follow up with Cardiology.\n- Please repeat Chem 7 at ___ appointment.\n- Encourage patient to adhere to 2L fluid restriction. \n- Carvedilol dose increased to 25mg BID.\n- Patient started on imdur 30mg as patient remained \nhypertensive.\n- Irbesartan dose decreased to 37.5mg due to hyperkalemia, and \npatient has a history of type IV renal tubular acidosis. \n- Patient restarted on torsemide 5mg. \n- Consider decreasing aspirin dose to 81mg. \n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Albuterol Inhaler ___ PUFF IH Q6H:PRN wheezing, sob \n2. Aspirin 325 mg PO DAILY \n3. Benzonatate 100 mg PO TID:PRN cough \n4. Carvedilol 12.5 mg PO BID \n5. Ciprofloxacin HCl 250 mg PO Q12H \n6. Creon 12 2 CAP PO TID W/MEALS \n7. Docusate Sodium 100 mg PO BID \n8. Ferrous Sulfate 325 mg PO DAILY \n9. Fish Oil (Omega 3) 1000 mg PO BID \n10. FoLIC Acid 1 mg PO DAILY \n11. Gabapentin 800 mg PO TID \n12. Hydrocortisone Cream 1% 1 Appl TP BID:PRN itch \n13. Lactulose 30 mL PO Q8H:PRN constipation \n14. Lidocaine 5% Ointment 1 Appl TP ONCE \n15. Lidocaine 5% Patch 1 PTCH TD QAM \n16. Nitroglycerin SL 0.4 mg SL PRN angina \n17. Omeprazole 20 mg PO BID \n18. OxycoDONE (Immediate Release)  10 mg PO Q4H:PRN pain \n19. OxyCODONE SR (OxyconTIN) 15 mg PO Q12H \n20. Polyethylene Glycol 17 g PO DAILY \n21. Simethicone 80 mg PO BID:PRN gas, bloating \n22. Simvastatin 20 mg PO DAILY \n23. Sodium Bicarbonate 650 mg PO BID \n24. SulfaSALAzine_ 1500 mg PO BID \n25. irbesartan 75 mg oral daily \n26. magnesium chloride 71.5 mg oral BID \n27. Zenpep (lipase-protease-amylase) 20,000-68,000 -109,000 unit \noral TID with meals \n28. Glargine 10 Units Bedtime\n\n \nDischarge Medications:\n1. Albuterol Inhaler ___ PUFF IH Q6H:PRN wheezing, sob \n2. Aspirin 325 mg PO DAILY \n3. Ciprofloxacin HCl 250 mg PO Q12H \n4. Creon 12 2 CAP PO TID W/MEALS \n5. Ferrous Sulfate 325 mg PO DAILY \n6. FoLIC Acid 1 mg PO DAILY \n7. Gabapentin 800 mg PO TID \n8. Lactulose 30 mL PO Q8H:PRN constipation \n9. Lidocaine 5% Patch 1 PTCH TD QAM \n10. Nitroglycerin SL 0.4 mg SL PRN angina \n11. Omeprazole 20 mg PO BID \n12. OxycoDONE (Immediate Release)  10 mg PO Q4H:PRN pain \n13. OxyCODONE SR (OxyconTIN) 15 mg PO Q12H \n14. Polyethylene Glycol 17 g PO DAILY \n15. Simethicone 80 mg PO BID:PRN gas, bloating \n16. Simvastatin 20 mg PO DAILY \n17. Sodium Bicarbonate 650 mg PO BID \n18. SulfaSALAzine_ 1500 mg PO BID \n19. Isosorbide Mononitrate (Extended Release) 30 mg PO DAILY \nRX *isosorbide mononitrate 30 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n20. Benzonatate 100 mg PO TID:PRN cough \n21. Docusate Sodium 100 mg PO BID \n22. Fish Oil (Omega 3) 1000 mg PO BID \n23. Hydrocortisone Cream 1% 1 Appl TP BID:PRN itch \n24. Lidocaine 5% Ointment 1 Appl TP ONCE \n25. magnesium chloride 71.5 mg oral BID \n26. Zenpep (lipase-protease-amylase) 20,000-68,000 -109,000 unit \noral TID with meals \n27. Carvedilol 25 mg PO BID \n28. Glargine 10 Units Bedtime\n29. irbesartan 37.5 mg oral daily \n30. Torsemide 5 mg PO DAILY \nRX *torsemide 5 mg 1 tablet(s) by mouth daily Disp #*30 Tablet \nRefills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPRIMARY DIAGNOSIS:\nPolydipsia\nHyponatremia\n\nSECONDARY DIAGNOSIS:\nSystolic CHF, compensated\nHypertension \n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - requires assistance or aid (walker \nor cane).\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure caring for you at ___ \n___. As you recall, you were admitted with nausea and \nvomiting. Your sodium was found to be low, which is likely the \ncause of your symptoms. Your low sodium is due to your excess \nwater intake. Your kidney function tests have been stable, \ntherefore we do not anticipate you needing dialysis in the near \nfuture. Please limit your water intake to 2L per day (equivalent \nto the size of one large soda bottle). As discussed, excess \nwater will cause your sodium to be low, which can be dangerous. \nIt can also cause your heart function to worsen.\n\nYou also had some chest pain in the hospital. EKGs and lab tests \nindicate no acute damage to your heart. You had a stress test, \nwhich showed your heart function is decreased from prior tests. \nBecause of this, we increased the dose of carvedilol and started \nyou on a new blood pressure medication called imdur. Your \nirbesartan dose was decreased by half to prevent your potassium \ntoo be high. We also restarted you on torsemide to decrease \nswelling in your legs. We recommend you to weigh yourself every \nmorning, and call your doctor if your weight increases more than \n3lbs.  \n\nPlease see below for medication changes and follow up \nappointments. We are glad you are feeling better and we wish you \nthe best! \n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Hyposmolality and/or hyponatremia\n- Chronic systolic heart failure\n- Regional enteritis of unspecified site\n- Alcoholic cirrhosis of liver\n- Anemia of other chronic disease\n- Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\n- Chronic pancreatitis\n- Nausea with vomiting\n- Polydipsia\n- Hyperpotassemia\n- Pain in joint, shoulder region\n- Other chest pain\n- Pain in limb\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified\n- Chronic kidney disease, Stage III (moderate)\n- Coronary atherosclerosis of native coronary artery\n- Percutaneous transluminal coronary angioplasty status\n- Long-term (current) use of insulin\n- Personal history of peptic ulcer disease\n- Esophageal reflux\n- Rheumatoid arthritis\n- Personal history of tobacco use\n- Family history of malignant neoplasm of gastrointestinal tract\n- Obesity, unspecified\n- Body Mass Index 36.0-36.9, adult",
+  "supporting_context_block": "Radiology:\n- 2191-07-12 16:52:00: EXAM: Chest, frontal and lateral views. CLINICAL INFORMATION: CHF and worsening lower extremity edema and hyponatremia. ___. FINDINGS: Frontal and lateral views of the chest were obtained. There are low lung volumes t...\n- 2191-07-15 18:48:00: EXAMINATION: SHOULDER ___ VIEWS NON TRAUMA LEFT INDICATION: ___ y/o female with CAD, CKD, dCHF, ETOH cirrhosis, ___ edema, s/p 2 recent admissions for hyponatremia (felt to be hypovolemic), now presenting with worseni...\n\nProcedures:\n- None recorded.\n\nMicrobiology:\n- None recorded.",
+  "formed_packet": {
+    "subject_id": "13158454",
+    "hadm_id": "23479025",
+    "admission_start": "2191-07-12 18:19:00",
+    "admission_end": "2191-07-18 15:48:00",
+    "previous_admission_summary": {
+      "admission_start": "2188-06-18 17:08:00",
+      "admission_end": "2188-06-20 18:08:00",
+      "summary_paragraph": "A 68-year-old woman with a complex medical history including chronic diastolic heart failure, type II diabetes, chronic kidney disease, rheumatoid arthritis, and chronic pain following knee replacement was readmitted due to persistent right-sided chest pain after multiple falls. She presented with worsening fatigue and dark urine. Evaluation revealed acute kidney injury and a urinary tract infection, likely exacerbated by chronic narcotic use and dehydration. Chest imaging showed no rib fractures but confirmed bibasilar atelectasis. She was treated with antibiotics and supportive care, with improvement in renal function and resolution of infection. Given her recurrent falls and difficulty managing pain and mobility at home, she agreed to a post-discharge rehabilitation stay focused on physical therapy, pain management, and fall prevention. She was discharged stable with follow-up plans and a coordinated transition to rehab.",
+      "problems": [
+        "Acute kidney failure, unspecified",
+        "Urinary tract infection, site not specified",
+        "Chronic diastolic heart failure",
+        "Regional enteritis of large intestine",
+        "Congestive heart failure, unspecified",
+        "Friedländer's bacillus infection in conditions classified elsewhere and of unspecified site",
+        "Other chest pain",
+        "Other chronic pain",
+        "Long-term (current) use of other medications",
+        "Esophageal reflux",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "Chronic kidney disease, unspecified",
+        "Disorder of bone and cartilage, unspecified",
+        "Cervical spondylosis without myelopathy",
+        "Knee joint replacement",
+        "Difficulty in walking",
+        "Other and unspecified alcohol dependence, in remission",
+        "Rheumatoid arthritis",
+        "Coronary atherosclerosis of native coronary artery",
+        "Percutaneous transluminal coronary angioplasty status"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "13158454-DS-52",
+        "note_seq": 52,
+        "charttime": "2191-07-18 00:00:00",
+        "storetime": "2191-07-18 17:42:00",
+        "text": " \nName:  ___              Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Dilaudid (PF)\n \nAttending: ___.\n \nChief Complaint:\nVomiting, hypontremia\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\n___ y/o female with CAD, CKD, CHF, and DM, s/p 2 recent \nadmissions for hyponatremia (felt to be hypovolemic), now \npresenting with worsening hyponatremia along with \nnausea/vomiting x 3 days. \n\nToday, she presented to her PCP for ___. \nShe was found to have a sodium of 124 and complained of \nnausea/vomiting x 3 days. The vomiting has been once per day, \nsmall volume NBNB, and occurs after taking her medications in \nthe morning. Otherwise, she complains of worsening lower \nextremity edema and associated pain. She denies fever, chills, \nSOB, orthopnea, PND, chest pain, and constipation/diarrhea. Her \nPCP noted she had increased edema, and was thought to possibly \nhave decreased effective circulating volume ___ CHF and \ncirrhosis.  \n\nPt was recently admitted from ___ for presyncope, \nhyponatremia and hyperkalemia. Her pre-sycope was felt to be \nsecondary to orthostasis, her hyponatremia thought possibly \nsecondary to hypvolemia given improvement with IVF (though low \nurine osm, and high UOP argues against this), and her \nhyperkalemia was felt secondary to decreased sodium delivery to \nthe distal tubule in setting of hyponatremia. Her torsemide was \ndiscontinued, and her TSH and cortisol were normal. \n \nIn the ED, initial vitals were: 97.3 74 124/97 18 100% RA. Labs \nwere significant for Mg 1.5, Cr 1.4, Na 124, HCT 28.5. Pt was \ngiven acetaminophen. CXR was performed and showed bibasilar \natelectasis. VS upon transfer: 98.4 88 176/87 20 100% RA.   \n \nOn the floor, patient complained of increased edema and pain \n(L>R) in her lower extremity. Patient also noted frequent \nurination. She urinates large volumes ___ times per day. She \nestimates she drinks 1L of water per day. She denies any \ndysuria. \n \nReview of systems:  \n(+) Per HPI  \n(-) Denies fever, chills, recent weight loss. Denies  rhinorrhea \nor congestion. Denies cough, shortness of breath. Denies chest \npain or tightness, palpitations. Denies nausea, vomiting, \ndiarrhea, constipation or abdominal pain. No recent change in \nbowel or bladder habits. No dysuria. Denies arthralgias or \nmyalgias.\n \nPast Medical History:\n# Coronary artery disease s/p RCA w/ bare metal stent on ___\n# Systolic CHF   \n# Hypertension  \n# h/o idiopathic dilated CMP, now resolved  \n# Chronic Kidney Disease Stage III  (Cr~1.4 at baseline)  \n# DM Type II on insulin  \n# Anemia of chronic disease\n# Pulmonary embolus in ___  \n# Crohn's Disease: h/o pancolitis w/o small bowel involvement\n# Peptic ulcer disease  \n# Alcoholic cirrhosis  \n# History of GI bleed of unclear etiology (___)  \n# GERD  \n# Chronic pancreatitis  \n# h/o Candidal esophagitis\n# h/o CDiff colitis (___) \n# Rheumatoid arthritis  \n# Total right knee replacement with subsequent chronic pain    \n# h/o MRSA right knee wound infection s/p knee replacement \n# Cervical disc disease  \n# L5/S1 radiculopathy with anterolisthesis of L4 on L5   \n# Osteopenia    \n\n \nSocial History:\n___\nFamily History:\nMom died of colon cancer. Father with DM requiring bilateral \nbelow the knee amputation. One sister has had cervical \ncancer(cured) and rheumatoid arthritis. Son with stroke ___ years \nago. Extensive family history of hypertension. \n \nPhysical Exam:\nON ADMISSION:\n=================================\nVitals: T98.2 BP167/74 P89 RR18 100RA\nGeneral: ___, obese, pleasant, no acute distress.\nHEENT: Sclera anicteric. Moist mucous membranes. Oropharynx \nclear.\nNeck: Supple, no JVD.\nCV: Distant heart sounds. Normal S1, S2. No S3, S4 or murmurs.\nLungs: Decreased breath sounds at the bases but otherwise clear \nto auscultation bilaterally.\nAbdomen: +BS, soft, obese, nontender to palpation. No \nhepatomegaly.\nGU: No foley.\nExt: Warm and well perfused. Pulses 2+. Trace pitting edema in \nextremities bilaterally. Left calf tender to palpation without \npalpable cords. No asterixis.\nNeuro: A+Ox3. Grossly intact.\nSkin: No rash.\n \nON DISCHARGE:\n===================================\nVitals: T97.7 BP153/78 P84 R20 100RA\nI/O: ___ net neg 1.2L.\nGeneral: Obese, pleasant woman lying in bed in no acute \ndistress.\nHEENT: Sclera anicteric. Moist mucous membranes. Oropharynx \nclear.\nNeck: Supple, JVP difficult to assess due to body habitus.\nCV: RRR, normal S1, S2. No S3, S4 or murmurs.\nLungs: Clear to auscultation bilaterally with equally decreased \nbreath sounds.\nAbdomen: +BS, soft, obese, nontender to palpation.\nExt: Warm and well perfused. Pulses 2+. Trace pitting edema in \nextremities bilaterally. \nNeuro: A+Ox3. Motor and sensory exam grossly intact. \n\n \nPertinent Results:\nON ADMISSION:\n===================================\n___ 02:57PM BLOOD WBC-3.9* RBC-2.80* Hgb-9.1* Hct-28.5* \nMCV-102* MCH-32.4* MCHC-31.9 RDW-13.7 Plt ___\n___ 02:57PM BLOOD Glucose-107* UreaN-11 Creat-1.3* Na-120* \nK-5.2* Cl-90* HCO3-25 AnGap-10\n\nURINE:\n==================================\n___ 04:15PM URINE Color-Straw Appear-Clear Sp ___\n___ 04:15PM URINE Blood-NEG Nitrite-NEG Protein-100 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-7.0 Leuks-NEG\n___ 04:15PM URINE RBC-<1 WBC-<1 Bacteri-FEW Yeast-NONE \nEpi-0\n___ 04:15PM URINE Hours-RANDOM UreaN-115 Creat-28 Na-32 \nK-18 Cl-28\n___ 04:15PM URINE Osmolal-144\n\nON DISCHARGE:\n===================================\n___ 02:43PM URINE Hours-RANDOM Creat-189 Na-57 K-49 Cl-25\n___ 02:43PM URINE Osmolal-394\n\nSTUDIES:\n===================================\nCXR (___)\nLow lung volumes that accentuate the bronchovascular markings.  \nGiven this, there may be pulmonary vascular congestion. \nBibasilar atelectasis.\n\nECHO (___)\nThe left atrium and right atrium are normal in cavity size. No \natrial septal defect is seen by 2D or color Doppler. Left \nventricular wall thicknesses and cavity size are normal. There \nis mild regional left ventricular systolic dysfunction with \nsevere hypokinesis of the basal inferior wall. The remaining \nsegments contract normally with borderline global systolic \nfunction (LVEF = 50-55%). Tissue Doppler imaging suggests an \nincreased left ventricular filling pressure (PCWP>18mmHg). Right \nventricular chamber size and free wall motion are normal. The \ndiameters of aorta at the sinus, ascending and arch levels are \nnormal. The aortic valve leaflets (3) are mildly thickened but \naortic stenosis is not present. Trace aortic regurgitation is \nseen. The mitral valve leaflets are mildly thickened. There is \nno mitral valve prolapse. Trivial mitral regurgitation is seen. \nThe tricuspid valve leaflets are mildly thickened. There is \nborderline pulmonary artery systolic hypertension. There is no \npericardial effusion. \n\nIMPRESSION: Normal left ventricular size with inferior basal \nhypokinesis c/w CAD. Elevated LV filling pressure. Normal right \nventricular systolic function. Borderline pulmonary \nhypertension.\n\nSHOULDER XR (___)\nShoulder x-ray examination with mild degenerative changes.\n\nCARDIAC STRESS (___)\nINTERPRETATION: This ___ year old IDDM woman with h/o HTN, CKD, \nand \ndCHF; s/p RCA stent in ___ was referred to the lab for \nevaluation of \nchest pain and abnormal ECHO. The patient was administered 0.142 \n\nmg/kg/min of Persantine over four minutes. No chest, neck, back, \nor arm \ndiscomforts were reported by the patient throughout the study. \nThere \nwere no significant ST segment changes throughout the study. The \nrhythm \nwas sinus with rare, isolated VPBs throughout the study. \nBaseline \nsystolic hypertension with an appropriate hemodynamic response \nto the \ninfusion. Post-MIBI, the Persantine was reversed with 125 mg of \nAminophylline IV. \n  \nIMPRESSION: No anginal type symptoms or ischemic EKG changes. \nBaseline \nsystolic hypertension. Nuclear report sent separately. \n\nCARDIAC PERFUSION SCAN (___)\nRest and stress perfusion images reveals no clear focal decrease \nin\ntracer uptake throughout the left ventricular myocardium.  \nGated images reveal normal wall motion.  \nThe calculated left ventricular ejection fraction is 34% \n(previously 40%). \n\n \nBrief Hospital Course:\n___ y/o female with CAD, CHF, CKD, and DM2 who was admitted for \nhyponatremia.\n\n# Hyponatremia/Polydipsia:\nEtiology of hyponatremia secondary to polydipsia as the patient \nadmitted to drinking excess water. She is afraid she will need \ndialysis in the future, therefore drinks water whenever she \nfeels her urine output is not adequate. This is supported by \ndilute urine osmolality on admission (144). The patient was \nplaced on fluid restriction of 1.5L and her sodium trended to \nnormal upon discharge. Patient also has an element of volume \noverload secondary to systolic CHF. Therefore, torsemide was \nrestarted at her previous dose (5mg). The patient was informed \nthat her kidney function is stable, and she should continue with \n2L fluid restriction.\n\n# Hyperkalemia:\nK+ peaked at 5.6 during this admission. EKG did not have any \nhyperacute T waves. Per OMR, the patient may type IV distal RTA. \nThis is evidenced by history of hyperkalemia as well as urine pH \n>5. Irbesartan was decreased by half to prevent further episodes \nof hyperkalemia. The patient was also restarted on torsemide.\n\n# Systolic CHF:\nSecondary to coronary artery disease. Repeat echo with EF \n50-55%, though EF was 34% on perfusion stress test. BNP was \nelevated, though at baseline. Patient appeared asymptomatic and \ncompensated, though volume status was difficult to assess due to \nbody habitus. The patient's carvedilol was increased to 25mg BID \nas she was hypertensive. Irbesartan dose was also decreased in \nhalf. Patient was restarted on torsemide 5mg (previous home \ndose). \n\n# Coronary artery disease:\nThe patient had one episode of chest pain with radiation down \nher left arm. EKG and troponins were negative. Echocardiogram \nshowed decreased EF and new hypokinesis in the inferior walls. \nStress test did not produce angina or EKG changes. Perfusion \nstress test was unremarkable. The patient was continued on \naspirin and simvastatin. Cardiology was consulted and felt \npatient may have an element of demand ischemia in the setting of \nhypertension. Therefore, carvedilol dose was increased to 25mg \nBID. Patient was also started on imdur 30mg. \n\n# Hypertension: \nPatient was hypertensive with SBP up to 180s. Therefore \ncarvedilol dose was increased to 25mg BID. Irbesartan was \ndecreased to 37.5mg due to hyprekalemia. Imdur 30mg was also \nstarted. \n\n# Chronic Kidney Disease Stage III: \nThe patient's baseline Cr is 1.4, though ranges from 1.3-1.6. As \nabove, counseled patient that her Cr has remained stable and we \ndon't anticipate her needing dialysis in the near future.\n\n# DM Type II on insulin:\nHbA1c 6.7 in ___. The patient only takes glargine when her \nFSBG is >200. The patient's sugars were well controlled and she \nnever required insulin. \n \n# Anemia of chronic disease: \nH/H remained stable. She was continued on ferrous sulfate. \n\n# Crohn's Disease: \nThe patient was continued on sulfasalazine and ciprofloxacin.\n\n# Peptic ulcer disease:\nPatient was continued on omeprazole.\n\n# Alcoholic cirrhosis: \nNo evidence of decompensation. Last EGD ___ with no evidence \nvarices. \n\n# Chronic pancreatitis: \nContinued on creon.\n\nTRANSITIONAL ISSUES:\n- The patient will follow up with Cardiology.\n- Please repeat Chem 7 at ___ appointment.\n- Encourage patient to adhere to 2L fluid restriction. \n- Carvedilol dose increased to 25mg BID.\n- Patient started on imdur 30mg as patient remained \nhypertensive.\n- Irbesartan dose decreased to 37.5mg due to hyperkalemia, and \npatient has a history of type IV renal tubular acidosis. \n- Patient restarted on torsemide 5mg. \n- Consider decreasing aspirin dose to 81mg. \n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Albuterol Inhaler ___ PUFF IH Q6H:PRN wheezing, sob \n2. Aspirin 325 mg PO DAILY \n3. Benzonatate 100 mg PO TID:PRN cough \n4. Carvedilol 12.5 mg PO BID \n5. Ciprofloxacin HCl 250 mg PO Q12H \n6. Creon 12 2 CAP PO TID W/MEALS \n7. Docusate Sodium 100 mg PO BID \n8. Ferrous Sulfate 325 mg PO DAILY \n9. Fish Oil (Omega 3) 1000 mg PO BID \n10. FoLIC Acid 1 mg PO DAILY \n11. Gabapentin 800 mg PO TID \n12. Hydrocortisone Cream 1% 1 Appl TP BID:PRN itch \n13. Lactulose 30 mL PO Q8H:PRN constipation \n14. Lidocaine 5% Ointment 1 Appl TP ONCE \n15. Lidocaine 5% Patch 1 PTCH TD QAM \n16. Nitroglycerin SL 0.4 mg SL PRN angina \n17. Omeprazole 20 mg PO BID \n18. OxycoDONE (Immediate Release)  10 mg PO Q4H:PRN pain \n19. OxyCODONE SR (OxyconTIN) 15 mg PO Q12H \n20. Polyethylene Glycol 17 g PO DAILY \n21. Simethicone 80 mg PO BID:PRN gas, bloating \n22. Simvastatin 20 mg PO DAILY \n23. Sodium Bicarbonate 650 mg PO BID \n24. SulfaSALAzine_ 1500 mg PO BID \n25. irbesartan 75 mg oral daily \n26. magnesium chloride 71.5 mg oral BID \n27. Zenpep (lipase-protease-amylase) 20,000-68,000 -109,000 unit \noral TID with meals \n28. Glargine 10 Units Bedtime\n\n \nDischarge Medications:\n1. Albuterol Inhaler ___ PUFF IH Q6H:PRN wheezing, sob \n2. Aspirin 325 mg PO DAILY \n3. Ciprofloxacin HCl 250 mg PO Q12H \n4. Creon 12 2 CAP PO TID W/MEALS \n5. Ferrous Sulfate 325 mg PO DAILY \n6. FoLIC Acid 1 mg PO DAILY \n7. Gabapentin 800 mg PO TID \n8. Lactulose 30 mL PO Q8H:PRN constipation \n9. Lidocaine 5% Patch 1 PTCH TD QAM \n10. Nitroglycerin SL 0.4 mg SL PRN angina \n11. Omeprazole 20 mg PO BID \n12. OxycoDONE (Immediate Release)  10 mg PO Q4H:PRN pain \n13. OxyCODONE SR (OxyconTIN) 15 mg PO Q12H \n14. Polyethylene Glycol 17 g PO DAILY \n15. Simethicone 80 mg PO BID:PRN gas, bloating \n16. Simvastatin 20 mg PO DAILY \n17. Sodium Bicarbonate 650 mg PO BID \n18. SulfaSALAzine_ 1500 mg PO BID \n19. Isosorbide Mononitrate (Extended Release) 30 mg PO DAILY \nRX *isosorbide mononitrate 30 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n20. Benzonatate 100 mg PO TID:PRN cough \n21. Docusate Sodium 100 mg PO BID \n22. Fish Oil (Omega 3) 1000 mg PO BID \n23. Hydrocortisone Cream 1% 1 Appl TP BID:PRN itch \n24. Lidocaine 5% Ointment 1 Appl TP ONCE \n25. magnesium chloride 71.5 mg oral BID \n26. Zenpep (lipase-protease-amylase) 20,000-68,000 -109,000 unit \noral TID with meals \n27. Carvedilol 25 mg PO BID \n28. Glargine 10 Units Bedtime\n29. irbesartan 37.5 mg oral daily \n30. Torsemide 5 mg PO DAILY \nRX *torsemide 5 mg 1 tablet(s) by mouth daily Disp #*30 Tablet \nRefills:*0\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPRIMARY DIAGNOSIS:\nPolydipsia\nHyponatremia\n\nSECONDARY DIAGNOSIS:\nSystolic CHF, compensated\nHypertension \n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - requires assistance or aid (walker \nor cane).\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nIt was a pleasure caring for you at ___ \n___. As you recall, you were admitted with nausea and \nvomiting. Your sodium was found to be low, which is likely the \ncause of your symptoms. Your low sodium is due to your excess \nwater intake. Your kidney function tests have been stable, \ntherefore we do not anticipate you needing dialysis in the near \nfuture. Please limit your water intake to 2L per day (equivalent \nto the size of one large soda bottle). As discussed, excess \nwater will cause your sodium to be low, which can be dangerous. \nIt can also cause your heart function to worsen.\n\nYou also had some chest pain in the hospital. EKGs and lab tests \nindicate no acute damage to your heart. You had a stress test, \nwhich showed your heart function is decreased from prior tests. \nBecause of this, we increased the dose of carvedilol and started \nyou on a new blood pressure medication called imdur. Your \nirbesartan dose was decreased by half to prevent your potassium \ntoo be high. We also restarted you on torsemide to decrease \nswelling in your legs. We recommend you to weigh yourself every \nmorning, and call your doctor if your weight increases more than \n3lbs.  \n\nPlease see below for medication changes and follow up \nappointments. We are glad you are feeling better and we wish you \nthe best! \n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "13158454-RR-411",
+        "charttime": "2191-07-12 16:52:00",
+        "storetime": "2191-07-12 18:36:00",
+        "text": "EXAM:  Chest, frontal and lateral views.\n\nCLINICAL INFORMATION:  CHF and worsening lower extremity edema and\nhyponatremia.\n\n___.\n\nFINDINGS:  Frontal and lateral views of the chest were obtained.  There are\nlow lung volumes that accentuate the bronchovascular markings.  Given this,\nthere appears to be mild-to-moderate pulmonary vascular congestion.  Very mild\nvascular congestion.  There is mild right basilar atelectasis.  No large\npleural effusions are seen.  The cardiac and mediastinal silhouettes are\nstable.  There is compression deformity in the upper lumbar spine, not well\nassessed, but also seen on the prior study.\n\nIMPRESSION:  Low lung volumes which accentuate the bronchovascular markings. \nGiven this, there may be pulmonary vascular congestion.  Bibasilar\natelectasis.\n"
+      },
+      {
+        "note_id": "13158454-RR-412",
+        "charttime": "2191-07-15 18:48:00",
+        "storetime": "2191-07-16 01:33:00",
+        "text": "EXAMINATION:  SHOULDER ___ VIEWS NON TRAUMA LEFT\n\nINDICATION:  ___ y/o female with CAD, CKD, dCHF, ETOH cirrhosis, ___ edema, s/p\n2 recent admissions for hyponatremia (felt to be hypovolemic), now presenting\nwith worsening hyponatremia along with nausea/vomiting x 3 days. Now with\nsevere left chest/shoulder MSK pain  // Soft tissue/bony abnormalities?\n\nTECHNIQUE:  LeftSHOULDER,  VIEWS\n\nCOMPARISON:  None\n\nFINDINGS: \n\nNo fracture, dislocation, is detected involving the shoulder.  The\nacromio-clavicular and glenohumeral joints are congruent.  The acromio-humeral\ndistance is preserved.  No suspicious focal lytic or sclerotic lesion is\nidentified.  There mild degenerative changes. With small osteophyte\n\nIMPRESSION: \n\nShoulder x-ray examination with mild degenerative changes.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "2761",
+        "icd_version": 9,
+        "long_title": "Hyposmolality and/or hyponatremia",
+        "normalized_time": "2191-07-18 14:48:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "42822",
+        "icd_version": 9,
+        "long_title": "Chronic systolic heart failure",
+        "normalized_time": "2191-07-18 14:50:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "5559",
+        "icd_version": 9,
+        "long_title": "Regional enteritis of unspecified site",
+        "normalized_time": "2191-07-18 14:53:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "5712",
+        "icd_version": 9,
+        "long_title": "Alcoholic cirrhosis of liver",
+        "normalized_time": "2191-07-18 14:55:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "28529",
+        "icd_version": 9,
+        "long_title": "Anemia of other chronic disease",
+        "normalized_time": "2191-07-18 14:58:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "25000",
+        "icd_version": 9,
+        "long_title": "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2191-07-18 15:00:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "5771",
+        "icd_version": 9,
+        "long_title": "Chronic pancreatitis",
+        "normalized_time": "2191-07-18 15:03:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "78701",
+        "icd_version": 9,
+        "long_title": "Nausea with vomiting",
+        "normalized_time": "2191-07-18 15:05:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "7835",
+        "icd_version": 9,
+        "long_title": "Polydipsia",
+        "normalized_time": "2191-07-18 15:08:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "2767",
+        "icd_version": 9,
+        "long_title": "Hyperpotassemia",
+        "normalized_time": "2191-07-18 15:10:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "71941",
+        "icd_version": 9,
+        "long_title": "Pain in joint, shoulder region",
+        "normalized_time": "2191-07-18 15:13:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "78659",
+        "icd_version": 9,
+        "long_title": "Other chest pain",
+        "normalized_time": "2191-07-18 15:15:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "7295",
+        "icd_version": 9,
+        "long_title": "Pain in limb",
+        "normalized_time": "2191-07-18 15:18:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "40390",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "normalized_time": "2191-07-18 15:20:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "5853",
+        "icd_version": 9,
+        "long_title": "Chronic kidney disease, Stage III (moderate)",
+        "normalized_time": "2191-07-18 15:23:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "41401",
+        "icd_version": 9,
+        "long_title": "Coronary atherosclerosis of native coronary artery",
+        "normalized_time": "2191-07-18 15:25:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "V4582",
+        "icd_version": 9,
+        "long_title": "Percutaneous transluminal coronary angioplasty status",
+        "normalized_time": "2191-07-18 15:28:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2191-07-18 15:30:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "V1271",
+        "icd_version": 9,
+        "long_title": "Personal history of peptic ulcer disease",
+        "normalized_time": "2191-07-18 15:33:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2191-07-18 15:35:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "7140",
+        "icd_version": 9,
+        "long_title": "Rheumatoid arthritis",
+        "normalized_time": "2191-07-18 15:38:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "V1582",
+        "icd_version": 9,
+        "long_title": "Personal history of tobacco use",
+        "normalized_time": "2191-07-18 15:40:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "V160",
+        "icd_version": 9,
+        "long_title": "Family history of malignant neoplasm of gastrointestinal tract",
+        "normalized_time": "2191-07-18 15:43:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "27800",
+        "icd_version": 9,
+        "long_title": "Obesity, unspecified",
+        "normalized_time": "2191-07-18 15:45:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "V8536",
+        "icd_version": 9,
+        "long_title": "Body Mass Index 36.0-36.9, adult",
+        "normalized_time": "2191-07-18 15:48:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [],
+    "microbiology": [],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 14993,
+    "output_tokens": 5210,
+    "total_tokens": 20203
+  },
+  "response_id": "chatcmpl-b8518c77314010f3",
+  "latency_ms": 93027,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2191-07-12 18:30:00",
+        "speaker": "Doctor",
+        "text": "Hello, I’m Dr. Lee. I’ll be your doctor during this stay. You came in because of nausea and vomiting, and your sodium level was low. Can you tell me more about what’s been going on?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2191-07-12 18:31:00",
+        "speaker": "Patient",
+        "text": "Yes, I’ve been feeling sick in the morning, especially after taking my pills. I throw up once a day, small amount. I’ve also noticed my legs are more swollen than usual."
+      },
+      {
+        "turn_number": 3,
+        "time": "2191-07-12 18:32:00",
+        "speaker": "Doctor",
+        "text": "I see. And how much are you drinking each day?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2191-07-12 18:33:00",
+        "speaker": "Patient",
+        "text": "I drink about a liter, maybe a bit more. I try to drink when I feel like I’m not peeing enough. I’m scared I might need dialysis someday."
+      },
+      {
+        "turn_number": 5,
+        "time": "2191-07-12 18:34:00",
+        "speaker": "Doctor",
+        "text": "That’s understandable, but drinking too much water can actually lower your sodium. Your labs show very dilute urine, which supports that. We’ll help you manage this with a fluid limit."
+      },
+      {
+        "turn_number": 6,
+        "time": "2191-07-12 18:35:00",
+        "speaker": "Patient",
+        "text": "So I’m making my sodium worse by drinking more?"
+      },
+      {
+        "turn_number": 7,
+        "time": "2191-07-12 18:36:00",
+        "speaker": "Doctor",
+        "text": "Exactly. Your kidneys are still working well, and we don’t expect you’ll need dialysis. But too much water dilutes your sodium, which can cause nausea and even confusion. We’ll start you on a 1.5-liter fluid restriction."
+      },
+      {
+        "turn_number": 8,
+        "time": "2191-07-12 18:37:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll try. But my legs are really swollen. Is that related?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2191-07-12 18:38:00",
+        "speaker": "Doctor",
+        "text": "Yes, your heart isn’t pumping as strongly as it should. That can cause fluid to build up. We’re going to restart your water pill—torsemide—to help with the swelling."
+      },
+      {
+        "turn_number": 10,
+        "time": "2191-07-12 18:39:00",
+        "speaker": "Patient",
+        "text": "I stopped it last time because of the potassium issue."
+      },
+      {
+        "turn_number": 11,
+        "time": "2191-07-12 18:40:00",
+        "speaker": "Doctor",
+        "text": "Good point. Your potassium did go up, which we think is due to a kidney issue called type IV RTA. We’re lowering your irbesartan dose to help prevent that. The benefits of the diuretic outweigh the risks now."
+      },
+      {
+        "turn_number": 12,
+        "time": "2191-07-12 18:41:00",
+        "speaker": "Patient",
+        "text": "Alright, I trust you."
+      },
+      {
+        "turn_number": 13,
+        "time": "2191-07-13 09:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your sodium is slowly improving—from 120 to 124. Still low, but heading in the right direction. We’ll keep the fluid restriction."
+      },
+      {
+        "turn_number": 14,
+        "time": "2191-07-13 09:16:00",
+        "speaker": "Patient",
+        "text": "That’s good. I’ve been sticking to the limit. But I had some chest pain yesterday—left side, down my arm."
+      },
+      {
+        "turn_number": 15,
+        "time": "2191-07-13 09:17:00",
+        "speaker": "Doctor",
+        "text": "I saw that. We checked an EKG and troponin—both were normal. No sign of a heart attack. But your echo showed some new wall motion issues in the lower part of your heart."
+      },
+      {
+        "turn_number": 16,
+        "time": "2191-07-13 09:18:00",
+        "speaker": "Patient",
+        "text": "Is my heart getting worse?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2191-07-13 09:19:00",
+        "speaker": "Doctor",
+        "text": "Possibly. Your ejection fraction was 50–55% on echo, but only 34% on the nuclear stress test. That’s a concern. We’re increasing your carvedilol to help protect your heart and starting a new medication—imdur—for blood pressure and heart workload."
+      },
+      {
+        "turn_number": 18,
+        "time": "2191-07-13 09:20:00",
+        "speaker": "Patient",
+        "text": "Why the difference in the EF numbers?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2191-07-13 09:21:00",
+        "speaker": "Doctor",
+        "text": "Different tests measure it differently. The nuclear scan is more sensitive. The drop suggests your heart isn’t pumping as well as before, possibly due to high blood pressure or demand ischemia."
+      },
+      {
+        "turn_number": 20,
+        "time": "2191-07-13 09:22:00",
+        "speaker": "Patient",
+        "text": "I’ve been having high blood pressure?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2191-07-13 09:23:00",
+        "speaker": "Doctor",
+        "text": "Yes, your systolic has been in the 170s–180s. That’s why we’re adjusting your meds. The carvedilol increase and imdur should help. We also lowered your irbesartan to avoid high potassium."
+      },
+      {
+        "turn_number": 22,
+        "time": "2191-07-14 10:05:00",
+        "speaker": "Doctor",
+        "text": "Your potassium peaked at 5.6, but it’s coming down. No EKG changes, so we’re not worried about immediate danger. The lower irbesartan dose should help keep it stable."
+      },
+      {
+        "turn_number": 23,
+        "time": "2191-07-14 10:06:00",
+        "speaker": "Patient",
+        "text": "Is that why I felt so weak last time I was in?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2191-07-14 10:07:00",
+        "speaker": "Doctor",
+        "text": "Possibly. High potassium can cause weakness and even heart rhythm issues. But we caught it early. Your kidneys are contributing, so we’re being careful with your meds."
+      },
+      {
+        "turn_number": 25,
+        "time": "2191-07-14 10:08:00",
+        "speaker": "Patient",
+        "text": "And my Crohn’s and pancreatitis? Are those okay?"
+      },
+      {
+        "turn_number": 26,
+        "time": "2191-07-14 10:09:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’re keeping your usual meds—sulfasalazine, cipro, and Creon. No signs of flare or malabsorption. Your sugars have been stable too, so no need for extra insulin."
+      },
+      {
+        "turn_number": 27,
+        "time": "2191-07-15 09:30:00",
+        "speaker": "Doctor",
+        "text": "We did a chest X-ray when you came in. It showed some atelectasis—collapsed lung areas—probably from shallow breathing due to pain or immobility."
+      },
+      {
+        "turn_number": 28,
+        "time": "2191-07-15 09:31:00",
+        "speaker": "Patient",
+        "text": "I’ve had some shoulder pain too. Left side."
+      },
+      {
+        "turn_number": 29,
+        "time": "2191-07-15 09:32:00",
+        "speaker": "Doctor",
+        "text": "We got an X-ray of your shoulder. It shows mild arthritis—nothing new or broken. We’ll keep managing it with gabapentin and pain meds as needed."
+      },
+      {
+        "turn_number": 30,
+        "time": "2191-07-15 09:33:00",
+        "speaker": "Patient",
+        "text": "Thank you. I was worried it might be something serious."
+      },
+      {
+        "turn_number": 31,
+        "time": "2191-07-16 08:45:00",
+        "speaker": "Doctor",
+        "text": "Good news—your sodium is now 132, and your urine is more concentrated. That means the fluid restriction is working."
+      },
+      {
+        "turn_number": 32,
+        "time": "2191-07-16 08:46:00",
+        "speaker": "Patient",
+        "text": "That’s great! Can I go home soon?"
+      },
+      {
+        "turn_number": 33,
+        "time": "2191-07-16 08:47:00",
+        "speaker": "Doctor",
+        "text": "We’re close. We want to make sure your heart and blood pressure are stable. We’ve adjusted your meds—higher carvedilol, new imdur, lower irbesartan, and torsemide back on."
+      },
+      {
+        "turn_number": 34,
+        "time": "2191-07-16 08:48:00",
+        "speaker": "Patient",
+        "text": "And I need to stay on 2 liters of fluid?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2191-07-16 08:49:00",
+        "speaker": "Doctor",
+        "text": "Yes, long-term. Your kidneys are stable—creatinine around 1.4—so no dialysis needed. But too much water will keep lowering your sodium."
+      },
+      {
+        "turn_number": 36,
+        "time": "2191-07-16 08:50:00",
+        "speaker": "Patient",
+        "text": "I’ll stick to the bottle I brought—marked at 2 liters."
+      },
+      {
+        "turn_number": 37,
+        "time": "2191-07-16 08:51:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Also, weigh yourself daily. If you gain more than 3 pounds in a day, call your doctor—it could mean fluid buildup."
+      },
+      {
+        "turn_number": 38,
+        "time": "2191-07-17 09:00:00",
+        "speaker": "Doctor",
+        "text": "All your labs are stable. Sodium is 135, potassium 4.8, creatinine 1.4. We’re planning to discharge you tomorrow."
+      },
+      {
+        "turn_number": 39,
+        "time": "2191-07-17 09:01:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. What about follow-up?"
+      },
+      {
+        "turn_number": 40,
+        "time": "2191-07-17 09:02:00",
+        "speaker": "Doctor",
+        "text": "You’ll see cardiology soon. They’ll review your stress test and heart function. We’ll also repeat your basic blood panel at your next appointment."
+      },
+      {
+        "turn_number": 41,
+        "time": "2191-07-17 09:03:00",
+        "speaker": "Patient",
+        "text": "And my pain meds? I still have joint and leg pain."
+      },
+      {
+        "turn_number": 42,
+        "time": "2191-07-17 09:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, you can continue oxycodone as needed, gabapentin, and the lidocaine patch. But avoid morphine or Dilaudid—we noted your allergy."
+      },
+      {
+        "turn_number": 43,
+        "time": "2191-07-17 09:05:00",
+        "speaker": "Patient",
+        "text": "I remember—caused bad itching before."
+      },
+      {
+        "turn_number": 44,
+        "time": "2191-07-17 09:06:00",
+        "speaker": "Doctor",
+        "text": "Exactly. Otherwise, all your other meds continue as listed. We’ll send a full summary to your PCP."
+      },
+      {
+        "turn_number": 45,
+        "time": "2191-07-18 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. You’re cleared to go home today. You look much better—no nausea, sodium normal, swelling improved."
+      },
+      {
+        "turn_number": 46,
+        "time": "2191-07-18 08:01:00",
+        "speaker": "Patient",
+        "text": "I feel better. Thank you for explaining everything."
+      },
+      {
+        "turn_number": 47,
+        "time": "2191-07-18 08:02:00",
+        "speaker": "Doctor",
+        "text": "Of course. Remember: 2-liter fluid limit, daily weights, take your meds as adjusted, and call if you have chest pain, shortness of breath, or rapid weight gain."
+      },
+      {
+        "turn_number": 48,
+        "time": "2191-07-18 08:03:00",
+        "speaker": "Patient",
+        "text": "And follow up with cardiology?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2191-07-18 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, they’ll contact you. We also recommend checking your blood sugar regularly, even though you didn’t need insulin this time."
+      },
+      {
+        "turn_number": 50,
+        "time": "2191-07-18 08:05:00",
+        "speaker": "Patient",
+        "text": "I will. I’m glad my kidneys are okay."
+      },
+      {
+        "turn_number": 51,
+        "time": "2191-07-18 08:06:00",
+        "speaker": "Doctor",
+        "text": "They are stable. Just keep up with the plan, and you should do well. We’ll see you in follow-up if needed."
+      },
+      {
+        "turn_number": 52,
+        "time": "2191-07-18 08:07:00",
+        "speaker": "Patient",
+        "text": "Thank you, Doctor."
+      },
+      {
+        "turn_number": 53,
+        "time": "2191-07-18 08:08:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Take care, and feel better soon."
+      },
+      {
+        "turn_number": 54,
+        "time": "2191-07-18 08:09:00",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 55,
+        "time": "2191-07-18 08:10:00",
+        "speaker": "Doctor",
+        "text": "Nurse will bring your discharge papers and prescriptions shortly."
+      },
+      {
+        "turn_number": 56,
+        "time": "2191-07-18 08:11:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll wait for them."
+      },
+      {
+        "turn_number": 57,
+        "time": "2191-07-18 08:12:00",
+        "speaker": "Doctor",
+        "text": "One last thing—your chest X-ray showed atelectasis, but that often improves with deep breathing and mobility. Try to walk a little each day."
+      },
+      {
+        "turn_number": 58,
+        "time": "2191-07-18 08:13:00",
+        "speaker": "Patient",
+        "text": "I’ll do that. I’ve been using my walker more today."
+      },
+      {
+        "turn_number": 59,
+        "time": "2191-07-18 08:14:00",
+        "speaker": "Doctor",
+        "text": "Excellent. Keep it up. You’re doing great."
+      },
+      {
+        "turn_number": 60,
+        "time": "2191-07-18 08:15:00",
+        "speaker": "Patient",
+        "text": "Thanks again for all your help."
+      },
+      {
+        "turn_number": 61,
+        "time": "2191-07-18 08:16:00",
+        "speaker": "Doctor",
+        "text": "You’re very welcome. Take care of yourself."
+      },
+      {
+        "turn_number": 62,
+        "time": "2191-07-18 08:17:00",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 63,
+        "time": "2191-07-18 08:18:00",
+        "speaker": "Doctor",
+        "text": "Have a safe trip home."
+      },
+      {
+        "turn_number": 64,
+        "time": "2191-07-18 08:19:00",
+        "speaker": "Patient",
+        "text": "Thank you."
+      },
+      {
+        "turn_number": 65,
+        "time": "2191-07-18 08:20:00",
+        "speaker": "Doctor",
+        "text": "We’ll be in touch if anything comes up."
+      },
+      {
+        "turn_number": 66,
+        "time": "2191-07-18 08:21:00",
+        "speaker": "Patient",
+        "text": "Alright."
+      },
+      {
+        "turn_number": 67,
+        "time": "2191-07-18 08:22:00",
+        "speaker": "Doctor",
+        "text": "Take care."
+      }
+    ],
+    "summary": {
+      "admission_start": "2191-07-12 18:19:00",
+      "admission_end": "2191-07-18 15:48:00",
+      "summary_paragraph": "A 68-year-old woman with a history of systolic heart failure, coronary artery disease, chronic kidney disease, diabetes, and alcoholic cirrhosis was admitted for hyponatremia and nausea. She had been drinking excess water due to fear of kidney failure, leading to polydipsia and low sodium. Fluid restriction improved her sodium levels, and she was restarted on torsemide for volume overload. She experienced an episode of chest pain, prompting cardiac testing that showed reduced ejection fraction on nuclear stress test; carvedilol was increased and imdur started. Hypertension and hyperkalemia led to dose adjustments in irbesartan. Her condition stabilized, and she was discharged home with instructions on fluid limits, daily weights, and cardiology follow-up.",
+      "problems": [
+        "Hyposmolality and/or hyponatremia",
+        "Chronic systolic heart failure",
+        "Polydipsia",
+        "Hyperpotassemia",
+        "Hypertension",
+        "Chronic kidney disease, Stage III (moderate)",
+        "Coronary atherosclerosis of native coronary artery",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Alcoholic cirrhosis of liver",
+        "Chronic pancreatitis",
+        "Regional enteritis of unspecified site",
+        "Other chest pain",
+        "Pain in limb",
+        "Pain in joint, shoulder region"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-b8518c77314010f3",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2191-07-12 18:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hello, I’m Dr. Lee. I’ll be your doctor during this stay. You came in because of nausea and vomiting, and your sodium level was low. Can you tell me more about what’s been going on?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2191-07-12 18:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I’ve been feeling sick in the morning, especially after taking my pills. I throw up once a day, small amount. I’ve also noticed my legs are more swollen than usual.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2191-07-12 18:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And how much are you drinking each day?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2191-07-12 18:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I drink about a liter, maybe a bit more. I try to drink when I feel like I’m not peeing enough. I’m scared I might need dialysis someday.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2191-07-12 18:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s understandable, but drinking too much water can actually lower your sodium. Your labs show very dilute urine, which supports that. We’ll help you manage this with a fluid limit.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2191-07-12 18:35:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I’m making my sodium worse by drinking more?\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2191-07-12 18:36:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. Your kidneys are still working well, and we don’t expect you’ll need dialysis. But too much water dilutes your sodium, which can cause nausea and even confusion. We’ll start you on a 1.5-liter fluid restriction.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2191-07-12 18:37:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll try. But my legs are really swollen. Is that related?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2191-07-12 18:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your heart isn’t pumping as strongly as it should. That can cause fluid to build up. We’re going to restart your water pill—torsemide—to help with the swelling.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2191-07-12 18:39:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I stopped it last time because of the potassium issue.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2191-07-12 18:40:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good point. Your potassium did go up, which we think is due to a kidney issue called type IV RTA. We’re lowering your irbesartan dose to help prevent that. The benefits of the diuretic outweigh the risks now.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2191-07-12 18:41:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Alright, I trust you.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2191-07-13 09:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your sodium is slowly improving—from 120 to 124. Still low, but heading in the right direction. We’ll keep the fluid restriction.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2191-07-13 09:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s good. I’ve been sticking to the limit. But I had some chest pain yesterday—left side, down my arm.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2191-07-13 09:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I saw that. We checked an EKG and troponin—both were normal. No sign of a heart attack. But your echo showed some new wall motion issues in the lower part of your heart.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2191-07-13 09:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is my heart getting worse?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2191-07-13 09:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly. Your ejection fraction was 50–55% on echo, but only 34% on the nuclear stress test. That’s a concern. We’re increasing your carvedilol to help protect your heart and starting a new medication—imdur—for blood pressure and heart workload.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2191-07-13 09:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Why the difference in the EF numbers?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2191-07-13 09:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Different tests measure it differently. The nuclear scan is more sensitive. The drop suggests your heart isn’t pumping as well as before, possibly due to high blood pressure or demand ischemia.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2191-07-13 09:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been having high blood pressure?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2191-07-13 09:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your systolic has been in the 170s–180s. That’s why we’re adjusting your meds. The carvedilol increase and imdur should help. We also lowered your irbesartan to avoid high potassium.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2191-07-14 10:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your potassium peaked at 5.6, but it’s coming down. No EKG changes, so we’re not worried about immediate danger. The lower irbesartan dose should help keep it stable.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2191-07-14 10:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that why I felt so weak last time I was in?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2191-07-14 10:07:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly. High potassium can cause weakness and even heart rhythm issues. But we caught it early. Your kidneys are contributing, so we’re being careful with your meds.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2191-07-14 10:08:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my Crohn’s and pancreatitis? Are those okay?\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2191-07-14 10:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’re keeping your usual meds—sulfasalazine, cipro, and Creon. No signs of flare or malabsorption. Your sugars have been stable too, so no need for extra insulin.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2191-07-15 09:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did a chest X-ray when you came in. It showed some atelectasis—collapsed lung areas—probably from shallow breathing due to pain or immobility.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2191-07-15 09:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had some shoulder pain too. Left side.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2191-07-15 09:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We got an X-ray of your shoulder. It shows mild arthritis—nothing new or broken. We’ll keep managing it with gabapentin and pain meds as needed.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2191-07-15 09:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I was worried it might be something serious.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2191-07-16 08:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good news—your sodium is now 132, and your urine is more concentrated. That means the fluid restriction is working.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2191-07-16 08:46:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great! Can I go home soon?\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2191-07-16 08:47:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re close. We want to make sure your heart and blood pressure are stable. We’ve adjusted your meds—higher carvedilol, new imdur, lower irbesartan, and torsemide back on.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2191-07-16 08:48:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And I need to stay on 2 liters of fluid?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2191-07-16 08:49:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, long-term. Your kidneys are stable—creatinine around 1.4—so no dialysis needed. But too much water will keep lowering your sodium.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2191-07-16 08:50:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll stick to the bottle I brought—marked at 2 liters.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2191-07-16 08:51:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Also, weigh yourself daily. If you gain more than 3 pounds in a day, call your doctor—it could mean fluid buildup.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2191-07-17 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All your labs are stable. Sodium is 135, potassium 4.8, creatinine 1.4. We’re planning to discharge you tomorrow.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2191-07-17 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. What about follow-up?\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2191-07-17 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll see cardiology soon. They’ll review your stress test and heart function. We’ll also repeat your basic blood panel at your next appointment.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2191-07-17 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my pain meds? I still have joint and leg pain.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2191-07-17 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, you can continue oxycodone as needed, gabapentin, and the lidocaine patch. But avoid morphine or Dilaudid—we noted your allergy.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2191-07-17 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I remember—caused bad itching before.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2191-07-17 09:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. Otherwise, all your other meds continue as listed. We’ll send a full summary to your PCP.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2191-07-18 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. You’re cleared to go home today. You look much better—no nausea, sodium normal, swelling improved.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2191-07-18 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I feel better. Thank you for explaining everything.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2191-07-18 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Of course. Remember: 2-liter fluid limit, daily weights, take your meds as adjusted, and call if you have chest pain, shortness of breath, or rapid weight gain.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2191-07-18 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And follow up with cardiology?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2191-07-18 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, they’ll contact you. We also recommend checking your blood sugar regularly, even though you didn’t need insulin this time.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2191-07-18 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I’m glad my kidneys are okay.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2191-07-18 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"They are stable. Just keep up with the plan, and you should do well. We’ll see you in follow-up if needed.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2191-07-18 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Doctor.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2191-07-18 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Take care, and feel better soon.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2191-07-18 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2191-07-18 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Nurse will bring your discharge papers and prescriptions shortly.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2191-07-18 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll wait for them.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2191-07-18 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—your chest X-ray showed atelectasis, but that often improves with deep breathing and mobility. Try to walk a little each day.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2191-07-18 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll do that. I’ve been using my walker more today.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2191-07-18 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Excellent. Keep it up. You’re doing great.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2191-07-18 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks again for all your help.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2191-07-18 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re very welcome. Take care of yourself.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2191-07-18 08:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2191-07-18 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Have a safe trip home.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2191-07-18 08:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2191-07-18 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll be in touch if anything comes up.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2191-07-18 08:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Alright.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2191-07-18 08:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2191-07-12 18:19:00\",\n    \"admission_end\": \"2191-07-18 15:48:00\",\n    \"summary_paragraph\": \"A 68-year-old woman with a history of systolic heart failure, coronary artery disease, chronic kidney disease, diabetes, and alcoholic cirrhosis was admitted for hyponatremia and nausea. She had been drinking excess water due to fear of kidney failure, leading to polydipsia and low sodium. Fluid restriction improved her sodium levels, and she was restarted on torsemide for volume overload. She experienced an episode of chest pain, prompting cardiac testing that showed reduced ejection fraction on nuclear stress test; carvedilol was increased and imdur started. Hypertension and hyperkalemia led to dose adjustments in irbesartan. Her condition stabilized, and she was discharged home with instructions on fluid limits, daily weights, and cardiology follow-up.\",\n    \"problems\": [\n      \"Hyposmolality and/or hyponatremia\",\n      \"Chronic systolic heart failure\",\n      \"Polydipsia\",\n      \"Hyperpotassemia\",\n      \"Hypertension\",\n      \"Chronic kidney disease, Stage III (moderate)\",\n      \"Coronary atherosclerosis of native coronary artery\",\n      \"Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\",\n      \"Alcoholic cirrhosis of liver\",\n      \"Chronic pancreatitis\",\n      \"Regional enteritis of unspecified site\",\n      \"Other chest pain\",\n      \"Pain in limb\",\n      \"Pain in joint, shoulder region\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776471871,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5210,
+      "prompt_tokens": 14993,
+      "total_tokens": 20203,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

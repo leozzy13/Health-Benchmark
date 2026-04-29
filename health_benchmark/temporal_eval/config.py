@@ -4,7 +4,7 @@ import copy
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 from ..scripts.config import BenchmarkConfig, resolve_llm_base_url
 from .types import EvaluationPaths, ModelArtifactPaths, ModelSpec
@@ -13,6 +13,7 @@ from .types import EvaluationPaths, ModelArtifactPaths, ModelSpec
 DEFAULT_OUTPUT_DIR_NAME = "evaluation"
 DEFAULT_BATCH_SIZE = 10
 DEFAULT_MAX_OUTPUT_TOKENS = 1024
+DEFAULT_JUDGE_MAX_OUTPUT_TOKENS = 1024
 DEFAULT_SAFE_MARGIN_TOKENS = 1024
 DEFAULT_PROVIDER = "vllm"
 DEFAULT_MODEL_SPECS: tuple[ModelSpec, ...] = (
@@ -46,21 +47,36 @@ MODEL_ALIASES: dict[str, ModelSpec] = {
         spec.model_name.split("/")[-1].lower(),
     )
 }
+JUDGE_MODEL_SPEC = ModelSpec(
+    model_name="Qwen/Qwen3.5-27B",
+    slug="qwen3.5-27b",
+    tensor_parallel_size=2,
+    max_model_len=131072,
+)
+EVALUATION_STAGE_CHOICES: tuple[Literal["full", "answers", "judge"], ...] = (
+    "full",
+    "answers",
+    "judge",
+)
 
 
 @dataclass(frozen=True)
 class EvaluationSettings:
+    stage: Literal["full", "answers", "judge"]
     provider: str
     base_url: str | None
+    judge_base_url: str | None
     api_key_env: str
     timeout_seconds: int
     max_output_tokens: int
+    judge_max_output_tokens: int
     safe_margin_tokens: int
     batch_size: int
     replace_existing: bool
     save_raw_response: bool
     tokenizer_name: str | None
     model_specs: tuple[ModelSpec, ...]
+    judge_model_spec: ModelSpec
 
 
 def slugify_model_name(model_name: str) -> str:
@@ -103,18 +119,31 @@ def build_settings(
     api_key_env: str | None,
     models: Sequence[str] | None,
     replace_existing: bool | None,
+    judge_base_url: str | None = None,
+    stage: Literal["full", "answers", "judge"] = "full",
     timeout_seconds: int | None = None,
     max_output_tokens: int | None = None,
     safe_margin_tokens: int | None = None,
 ) -> EvaluationSettings:
+    resolved_stage = str(stage or "full").strip().lower()
+    if resolved_stage not in EVALUATION_STAGE_CHOICES:
+        raise ValueError(
+            f"stage must be one of {list(EVALUATION_STAGE_CHOICES)}, got: {stage}"
+        )
     resolved_provider = str(provider or DEFAULT_PROVIDER).strip().lower()
     resolved_base_url = resolve_llm_base_url(
         resolved_provider,
         base_url if base_url is not None else base_config.llm.base_url,
     )
     return EvaluationSettings(
+        stage=resolved_stage,
         provider=resolved_provider,
         base_url=resolved_base_url,
+        judge_base_url=(
+            None
+            if judge_base_url is None
+            else resolve_llm_base_url(resolved_provider, judge_base_url)
+        ),
         api_key_env=str(api_key_env or base_config.llm.api_key_env),
         timeout_seconds=int(
             base_config.llm.timeout_seconds if timeout_seconds is None else timeout_seconds
@@ -122,6 +151,7 @@ def build_settings(
         max_output_tokens=int(
             DEFAULT_MAX_OUTPUT_TOKENS if max_output_tokens is None else max_output_tokens
         ),
+        judge_max_output_tokens=int(DEFAULT_JUDGE_MAX_OUTPUT_TOKENS),
         safe_margin_tokens=int(
             DEFAULT_SAFE_MARGIN_TOKENS if safe_margin_tokens is None else safe_margin_tokens
         ),
@@ -134,6 +164,7 @@ def build_settings(
         save_raw_response=bool(base_config.runtime.save_raw_response),
         tokenizer_name=base_config.llm.tokenizer_name,
         model_specs=resolve_model_specs(models),
+        judge_model_spec=JUDGE_MODEL_SPEC,
     )
 
 
@@ -157,6 +188,7 @@ def build_model_artifact_paths(paths: EvaluationPaths, model_spec: ModelSpec) ->
         question_batches_json=model_dir / "question_batches.json",
         raw_predictions_jsonl=model_dir / "raw_predictions.jsonl",
         scored_predictions_jsonl=model_dir / "scored_predictions.jsonl",
+        llm_judgments_jsonl=model_dir / "llm_judgments.jsonl",
         summary_json=model_dir / "summary.json",
         errors_jsonl=model_dir / "errors.jsonl",
     )

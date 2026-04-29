@@ -1,0 +1,735 @@
+{
+  "subject_id": "14033331",
+  "hadm_id": "22049262",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T12:46:23Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 4 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2120-03-27 05:57:00 to 2120-03-30 19:20:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2119-11-17 02:38:00",
+    "admission_end": "2119-11-24 17:00:00",
+    "summary_paragraph": "The patient was admitted from a skilled nursing facility due to positive blood cultures growing Staphylococcus, likely from a tunnel site infection of her tunneled dialysis catheter. She was asymptomatic but treated with intravenous vancomycin. The infected catheter was removed and a new left internal jugular tunneled dialysis line was placed. Repeat blood cultures remained negative, and a transthoracic echocardiogram showed no evidence of endocarditis. She completed a full course of antibiotics with dialysis and was monitored for wound care related to calciphylaxis, with no surgical intervention needed. She experienced mild musculoskeletal chest pain, which was evaluated and deemed non-cardiac. The patient was discharged to an extended care facility to complete her antibiotic course with ongoing dialysis and wound management.",
+    "problems": [
+      "Bloodstream infection due to central venous catheter",
+      "End stage renal disease",
+      "Bacteremia",
+      "Staphylococcus infection in conditions classified elsewhere and of unspecified site, other staphylococcus",
+      "Chronic diastolic heart failure",
+      "Congestive heart failure, unspecified",
+      "Late effects of cerebrovascular disease, hemiplegia affecting unspecified side",
+      "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+      "Renal dialysis status",
+      "Long-term (current) use of insulin",
+      "Asthma, unspecified type, unspecified",
+      "Degenerative skin disorders",
+      "Epilepsy, unspecified, without mention of intractable epilepsy",
+      "Long-term (current) use of antibiotics",
+      "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+      "Old myocardial infarction",
+      "Aortocoronary bypass status",
+      "Morbid obesity",
+      "Other chest pain",
+      "Personal history of pulmonary embolism",
+      "Anemia, unspecified"
+    ]
+  },
+  "stay_days": 4,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2120-03-30 00:00:00): Name:  ___.                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nAspirin / Compazine / spironolactone / latex / Tylenol / milk\n \nAttending: ___.\n \nChief Complaint:\nDyspnea, Chest Pain\n \nMajor Surgical or Invasive Procedure:\nHemodialysis\n\n \nHistory of Present Illness:\n___ yo F CAD s/p CABG, HTN, HLD, ESRD on ___ HD with LUE AVG, and \nHx of DVT/PE on Warfarin here with SOB, cough, and experienced \n20 min of chest pain during routine dialysis session today. \nPatient reports feeling pain in her chest for approximately 3 \ndays, which worsened while in dialysis, however she was able to \ncomplete full HD session.  The patient denied any diaphoresis, \nsternal/radiating chest pain, lightheadeness/dizziness, \nnausea/vomit.  She did note some shortness of breath, sore \nthroat and a history of GERD.  \n\nIn the ED, initial VS were 98.7 75 165/73 16 100% RA.  Labs \nnotable for WBC 9.7 with a normal differential, Hgb 11.9 \n(baseline 8.5), plts 131, lytes notable for HCO3 27, K 5.7 \n(moderately hemolyzed),  Troponin 0.11 -> 0.13 (baseline 0.08), \nand Lactate 1.6.  BNP was 8232.  CXR notable for mild pulmonary \nedema.  Renal was consulted and recommended ruling out for ACS, \nno need for emergent HD. EKG with known RBBB and no new ischemic \nchanges (reviewed by me), Troponin elevated 0.11 to 0.13 \n(baseline 0.08). No medications were administered.  \n\nTransfer VS were 98.2 61 186/49 21 100% RA.  On arrival to the \nfloor the patient had no acute complaints. \n\n \nPast Medical History:\n- ESRD ___ DM/HTN on HD (now dialyzed via L IJ tunneled HD cath) \n \n- CAD s/p CABG ___ (s/p MI (___)  \n- Diastolic Heart Failure (LVEF >55%)  \n- CVA ___ with residual left hemiparesis),  \n- DM2, insulin dependent  \n- HTN  \n- Hx of GI bleed  \n- Asthma  \n- morbid obesity  \n- Left UE AV graft ___  \n- L IJ tunneled HD cath placement ___  \n- Attempted LUE AV graft revision ___  \n- CABG (LIMA-LAD, SVG-OM1, SVG-OM2, c/b non-healing sternal  \nincision wound) ___  \n- Hx of PE on coumadin  \n\n \nSocial History:\n___\nFamily History:\nNo family history of early MI, arrhythmia, cardiomyopathies, or  \n\nsudden cardiac death.  \n- Mother: ___, unsure of cause of death, no reported CAD  \n- Father: Died in ___ from trauma after falling off a horse  \n \n\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM: \n======================== \nVS - 98.8  61  218/75 17  RA\nGENERAL: morbidly obese AA female in bed\nHEENT: AT/NC, EOMI, anicteric sclera, MMM  \nCARDIAC: systolic murmur,regular rate and rhythm, no rubs, or \ngallops  \nLUNG: bibasilar crackles, no wheezes, rales, or rhonchi  \nABDOMEN: \nEXTREMITIES: no cyanosis, clubbing, bilateral extremity edema\nNEURO: alert and oriented, weak but able to move all limbs with \npurpose, sensation intact  \nSKIN: Warm, ulcers as above\n\nDISCHARGE PHYSICAL EXAM:\n=========================\nVS - 97.2 134/40 57  18  97%  \nGENERAL: morbidly obese AA female in bed during morning dialysis \nappointment\nHEENT: AT/NC, EOMI, anicteric sclera, MMM  \nCARDIAC: systolic murmur,regular rate and rhythm, no rubs, or \ngallops  \nLUNG: Anterior auscultation, clear to auscultation, good air \nmovement, no wheezes, rales, or rhonchi  \nABDOMEN: soft, tenderness to moderate palpation at epigastrium \nand lower quadrants, and around areas of previous \nulceration/abdominal wounds; bowel sounds present  \nEXTREMITIES: no cyanosis, clubbing or pitting 2+ edema. \nNEURO: alert and oriented, though slow in response\nSKIN: Warm, bilateral healed ulcers on abdomen.\nAccess: Left IJ tunneled line clean dry and intact\n\n \nPertinent Results:\nAdmission Labs:\n================\n___ 03:15AM BLOOD WBC-9.7 RBC-3.79* Hgb-11.9 Hct-38.8 \nMCV-102* MCH-31.4 MCHC-30.7* RDW-15.2 RDWSD-58.0* Plt ___\n___ 03:15AM BLOOD Glucose-80 UreaN-29* Creat-4.4*# Na-138 \nK-5.7* Cl-100 HCO3-27 AnGap-17\n___ 03:15AM BLOOD proBNP-8232*\n___ 03:15AM BLOOD cTropnT-0.11*\n___ 12:50PM BLOOD cTropnT-0.13*\n___ 07:36PM BLOOD cTropnT-0.12*\n___ 07:54AM BLOOD Calcium-10.5* Phos-4.3 Mg-1.9\n___ 03:24AM BLOOD Lactate-1.6\n\nPertinent Findings:\n===================\n\nECG ___: Poor baseline. Normal sinus rhythm. Right bundle-branch \nblock and left posterior hemiblock. Compared to the previous \ntracing of ___ there is no significant change. \n\nCXR ___: \nMild pulmonary vascular congestion and pulmonary edema. \n\nUltrafiltratoin ___: \nRemoved 4.1L during session\n\nDischarge Labs\n================\n___ 01:00PM BLOOD WBC-7.2 RBC-3.80* Hgb-12.1 Hct-38.5 \nMCV-101* MCH-31.8 MCHC-31.4* RDW-14.8 RDWSD-55.8* Plt ___\n___ 01:00PM BLOOD Glucose-86 UreaN-12 Creat-2.7*# Na-134 \nK-4.1 Cl-95* HCO3-27 AnGap-16\n___ 01:00PM BLOOD Calcium-9.7 Phos-2.4*# Mg-1.___ year old female CAD s/p CABG in ___, DM, and ESRD on HD, \nHx of calciphylaxis, CVA, HTN, and seizure, who presented with \nof chest pain and shortness of breath. \n\nACTIVE\n--------\n\n# Chest Pain: Patient developed acute onset shortness of breath \nand chest pain during dialysis. Found to have mildly elevated \ntroponin (0.13, baseline 0.08), but EKG showed no significant \nchanges from baseline and trops subsequently downtrended.  She \nappeared hypervolemic on exam, and notably above dry weight.  \nUltrafiltration removed 4.1 L of fluid and patient reported \nsignificant improvement in chest pain and resolution of \nshortness of breath.  This was ultimately attributed to demand \nischemia in the setting of hypervolemia \n\n# Shortness of Breath: No episodes of desaturation. CXR as \ndiscussed above showed vascular congestion consistent with \nhypervolemia.  After fluid removal with ultrafiltration, \nsymptoms resolved.  She was kept of strict fluid intake <2L day. \n\n\n# Hypertension: Patient was found to be hypertensive into the \n200s with shortness of breath.  After ultrafiltration her SBP \ndecreased into the the 130s.  She remained normotensive for the \nrest of her hospital course.  She continued her home \nantihypertensives: Metoprolol Tartrate 12.5 mg PO daily and \nIsosorbide Dinitrate 30 mg PO daily.\n\n# ESRD/HD: In addition to ultrafiltration patient continued \ndaily nephrocaps, sevelamer 1600 PO TID and three times weekly \nscheduled HD. \n\nCHRONIC\n----------\n#Anemia: Above goal with hemoglobin/hematocrit 11.0 and 35.9. \nContinued with iron sucrose.\n\n#Seizures: Well controlled with home dose of Keppra throughout \ninpatient stay.\n\n#Diabetes: Patient is T2DM insulin dependent. HgBa1c 6.0, may be \ntoo tightly controlled. Will consider lowering insulin. \n- Continue ISS\n- Finger sticks with meals and at bedtime  \n\n#CAD/HLD: Patient was continued on home dose of atorvastatin \n10mg daily.\n\nTRANSITIONAL ISSUES:\n====================\n- Patient will require daily weights to ensure maintaining her \ndry weight. If she has greater than 1 pound increase per day \nover 3 days or greater than 5 pounds over 1 week, her PCP should \nbe called.\n- Patient is deconditioned, will benefit from aggressive ___\n- Patient has a history of calciphylaxis, she will require \nongoing sevelamer Carbonate 800 mg PO TID with meals.\n \nMedications on Admission:\nThe Preadmission Medication list may be inaccurate and requires \nfuther investigation.\n1. Albuterol Inhaler 2 PUFF IH Q6H:PRN short of breath \n2. Allopurinol ___ mg PO EVERY OTHER DAY \n3. Atorvastatin 10 mg PO QPM \n4. Bisacodyl 10 mg PR QHS:PRN constipation \n5. Clopidogrel 75 mg PO DAILY \n6. Docusate Sodium 100 mg PO DAILY \n7. Fentanyl Patch 62 mcg/h TD Q72H \n8. Gabapentin 400 mg PO TID \n9. Insulin SC \n      Sliding Scale\nInsulin SC Sliding Scale using HUM Insulin\n10. LeVETiracetam 500 mg PO BID \n11. LeVETiracetam 500 mg PO ___ \n12. Lidocaine 5% Patch 1 PTCH TD QAM \n13. Metoprolol Tartrate 12.5 mg PO DAILY \n14. Nephrocaps 1 CAP PO DAILY \n15. Nystatin Ointment 1 Appl TP QID:PRN rash \n16. Polyethylene Glycol 17 g PO DAILY \n17. Senna 8.6 mg PO BID:PRN consutpation \n18. Clotrimazole Cream 1 Appl TP BID \n19. Isosorbide Dinitrate 30 mg PO TID \n20. Miconazole Powder 2% 1 Appl TP TID rash \n21. Silver Sulfadiazine 1% Cream 1 Appl TP TID \n22. Sulfameth/Trimethoprim DS 1 TAB PO BID \n23. Ondansetron 4 mg PO Q8H:PRN nausea \n24. Vancomycin 1000 mg IV Q 12H \n25. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n26. HYDROmorphone (Dilaudid) 4 mg PO Q2PRN pain \n\n \nDischarge Medications:\n1. Albuterol Inhaler 2 PUFF IH Q6H:PRN short of breath \n2. Allopurinol ___ mg PO EVERY OTHER DAY \n3. Atorvastatin 10 mg PO QPM \n4. Bisacodyl 10 mg PR QHS:PRN constipation \n5. Clopidogrel 75 mg PO DAILY \n6. Clotrimazole Cream 1 Appl TP BID \n7. Docusate Sodium 100 mg PO DAILY \n8. Fentanyl Patch 62 mcg/h TD Q72H \n9. Gabapentin 400 mg PO TID \n10. Heparin 5000 UNIT SC TID \n11. Isosorbide Dinitrate 30 mg PO TID \n12. LeVETiracetam 500 mg PO BID \n13. LeVETiracetam 250 mg PO ___ \n14. Lidocaine 5% Patch 1 PTCH TD QAM \n15. Insulin SC \n      Sliding Scale\nInsulin SC Sliding Scale using HUM Insulin\n16. Metoprolol Tartrate 12.5 mg PO DAILY \n17. Miconazole Powder 2% 1 Appl TP TID rash \n18. Nephrocaps 1 CAP PO DAILY \n19. Nystatin Ointment 1 Appl TP QID:PRN rash \n20. Ondansetron 4 mg PO Q8H:PRN nausea \n21. Polyethylene Glycol 17 g PO DAILY \n22. Senna 8.6 mg PO BID:PRN consutpation \n23. sevelamer CARBONATE 800 mg PO TID W/MEALS \n24. Silver Sulfadiazine 1% Cream 1 Appl TP TID \n25. Sulfameth/Trimethoprim DS 1 TAB PO BID \n26. HYDROmorphone (Dilaudid) ___ mg PO Q2PRN pain \n27. Nepro Carb Steady (nut.tx.impaired renal fxn,soy) 0.08-1.80 \ngram-kcal/mL oral TID \n28. Omeprazole 20 mg PO DAILY \n29. Salonpas (camphor-methyl salicyl-menthol;<br>methyl \nsalicylate-menthol) ___ % topical Q24H \n\n \nDischarge Disposition:\nExtended Care\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary\n- Pulmonary edema secondary to hypervolemia\n\nSecondary\n- End Stage Renal disease - Hemodialysis\n- Type 2 Diabetes Mellitus\n- Anemia ___ kidney disease\n- Hypertension\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted to ___ with \nnew onset chest pain and shortness of breath while receiving \nhemodialysis. EKG and lab tests showed no signs of heart attack. \n You appeared to have extra fluid on exam and were weighed \nmultiple pounds about your normal \"\"dry\"\" weight. Ultrafiltration \nremoved 4.1 liters of extra fluid off and your breathing and \nchest pain significantly improved.  It is important to weigh \nyourself every morning, call MD if weight goes up more than 3 \nlbs.  It is also very important to adhere to a low-salt diet to \nprevent fluid retention.\n\nIt was a pleasure taking care of you at ___.  We wish you the \nbest with your recovery. If you have any questions about the \ncare you recieved, please do not hesitate to ask.\n\nSincerely,\nYour ___ Care Team\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Other chest pain\n- Other respiratory abnormalities\n- Pulmonary congestion and hypostasis\n- Other fluid overload\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease\n- End stage renal disease\n- Anemia in chronic kidney disease\n- Other convulsions\n- Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled\n- Coronary atherosclerosis of unspecified type of vessel, native or graft\n- Other and unspecified hyperlipidemia\n- Esophageal reflux\n- Degenerative skin disorders\n- Chronic diastolic heart failure\n- Congestive heart failure, unspecified\n- Late effects of cerebrovascular disease, hemiplegia affecting unspecified side\n- Asthma, unspecified type, unspecified\n- Morbid obesity\n- Old myocardial infarction\n- Body Mass Index 32.0-32.9, adult\n- Long-term (current) use of anticoagulants\n- Aortocoronary bypass status\n- Personal history of pulmonary embolism\n- Personal history of venous thrombosis and embolism\n- Long-term (current) use of insulin",
+  "supporting_context_block": "Radiology:\n- None recorded.\n\nProcedures:\n- 2120-03-27 12:00:00: Hemodialysis\n- 2120-03-27 12:00:00: Hemodialysis\n- 2120-03-27 12:00:00: Hemodialysis\n\nMicrobiology:\n- None recorded.",
+  "formed_packet": {
+    "subject_id": "14033331",
+    "hadm_id": "22049262",
+    "admission_start": "2120-03-27 05:57:00",
+    "admission_end": "2120-03-30 19:20:00",
+    "previous_admission_summary": {
+      "admission_start": "2119-11-17 02:38:00",
+      "admission_end": "2119-11-24 17:00:00",
+      "summary_paragraph": "The patient was admitted from a skilled nursing facility due to positive blood cultures growing Staphylococcus, likely from a tunnel site infection of her tunneled dialysis catheter. She was asymptomatic but treated with intravenous vancomycin. The infected catheter was removed and a new left internal jugular tunneled dialysis line was placed. Repeat blood cultures remained negative, and a transthoracic echocardiogram showed no evidence of endocarditis. She completed a full course of antibiotics with dialysis and was monitored for wound care related to calciphylaxis, with no surgical intervention needed. She experienced mild musculoskeletal chest pain, which was evaluated and deemed non-cardiac. The patient was discharged to an extended care facility to complete her antibiotic course with ongoing dialysis and wound management.",
+      "problems": [
+        "Bloodstream infection due to central venous catheter",
+        "End stage renal disease",
+        "Bacteremia",
+        "Staphylococcus infection in conditions classified elsewhere and of unspecified site, other staphylococcus",
+        "Chronic diastolic heart failure",
+        "Congestive heart failure, unspecified",
+        "Late effects of cerebrovascular disease, hemiplegia affecting unspecified side",
+        "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Renal dialysis status",
+        "Long-term (current) use of insulin",
+        "Asthma, unspecified type, unspecified",
+        "Degenerative skin disorders",
+        "Epilepsy, unspecified, without mention of intractable epilepsy",
+        "Long-term (current) use of antibiotics",
+        "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "Old myocardial infarction",
+        "Aortocoronary bypass status",
+        "Morbid obesity",
+        "Other chest pain",
+        "Personal history of pulmonary embolism",
+        "Anemia, unspecified"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "14033331-DS-49",
+        "note_seq": 49,
+        "charttime": "2120-03-30 00:00:00",
+        "storetime": "2120-04-02 22:41:00",
+        "text": " \nName:  ___.                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nAspirin / Compazine / spironolactone / latex / Tylenol / milk\n \nAttending: ___.\n \nChief Complaint:\nDyspnea, Chest Pain\n \nMajor Surgical or Invasive Procedure:\nHemodialysis\n\n \nHistory of Present Illness:\n___ yo F CAD s/p CABG, HTN, HLD, ESRD on ___ HD with LUE AVG, and \nHx of DVT/PE on Warfarin here with SOB, cough, and experienced \n20 min of chest pain during routine dialysis session today. \nPatient reports feeling pain in her chest for approximately 3 \ndays, which worsened while in dialysis, however she was able to \ncomplete full HD session.  The patient denied any diaphoresis, \nsternal/radiating chest pain, lightheadeness/dizziness, \nnausea/vomit.  She did note some shortness of breath, sore \nthroat and a history of GERD.  \n\nIn the ED, initial VS were 98.7 75 165/73 16 100% RA.  Labs \nnotable for WBC 9.7 with a normal differential, Hgb 11.9 \n(baseline 8.5), plts 131, lytes notable for HCO3 27, K 5.7 \n(moderately hemolyzed),  Troponin 0.11 -> 0.13 (baseline 0.08), \nand Lactate 1.6.  BNP was 8232.  CXR notable for mild pulmonary \nedema.  Renal was consulted and recommended ruling out for ACS, \nno need for emergent HD. EKG with known RBBB and no new ischemic \nchanges (reviewed by me), Troponin elevated 0.11 to 0.13 \n(baseline 0.08). No medications were administered.  \n\nTransfer VS were 98.2 61 186/49 21 100% RA.  On arrival to the \nfloor the patient had no acute complaints. \n\n \nPast Medical History:\n- ESRD ___ DM/HTN on HD (now dialyzed via L IJ tunneled HD cath) \n \n- CAD s/p CABG ___ (s/p MI (___)  \n- Diastolic Heart Failure (LVEF >55%)  \n- CVA ___ with residual left hemiparesis),  \n- DM2, insulin dependent  \n- HTN  \n- Hx of GI bleed  \n- Asthma  \n- morbid obesity  \n- Left UE AV graft ___  \n- L IJ tunneled HD cath placement ___  \n- Attempted LUE AV graft revision ___  \n- CABG (LIMA-LAD, SVG-OM1, SVG-OM2, c/b non-healing sternal  \nincision wound) ___  \n- Hx of PE on coumadin  \n\n \nSocial History:\n___\nFamily History:\nNo family history of early MI, arrhythmia, cardiomyopathies, or  \n\nsudden cardiac death.  \n- Mother: ___, unsure of cause of death, no reported CAD  \n- Father: Died in ___ from trauma after falling off a horse  \n \n\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM: \n======================== \nVS - 98.8  61  218/75 17  RA\nGENERAL: morbidly obese AA female in bed\nHEENT: AT/NC, EOMI, anicteric sclera, MMM  \nCARDIAC: systolic murmur,regular rate and rhythm, no rubs, or \ngallops  \nLUNG: bibasilar crackles, no wheezes, rales, or rhonchi  \nABDOMEN: \nEXTREMITIES: no cyanosis, clubbing, bilateral extremity edema\nNEURO: alert and oriented, weak but able to move all limbs with \npurpose, sensation intact  \nSKIN: Warm, ulcers as above\n\nDISCHARGE PHYSICAL EXAM:\n=========================\nVS - 97.2 134/40 57  18  97%  \nGENERAL: morbidly obese AA female in bed during morning dialysis \nappointment\nHEENT: AT/NC, EOMI, anicteric sclera, MMM  \nCARDIAC: systolic murmur,regular rate and rhythm, no rubs, or \ngallops  \nLUNG: Anterior auscultation, clear to auscultation, good air \nmovement, no wheezes, rales, or rhonchi  \nABDOMEN: soft, tenderness to moderate palpation at epigastrium \nand lower quadrants, and around areas of previous \nulceration/abdominal wounds; bowel sounds present  \nEXTREMITIES: no cyanosis, clubbing or pitting 2+ edema. \nNEURO: alert and oriented, though slow in response\nSKIN: Warm, bilateral healed ulcers on abdomen.\nAccess: Left IJ tunneled line clean dry and intact\n\n \nPertinent Results:\nAdmission Labs:\n================\n___ 03:15AM BLOOD WBC-9.7 RBC-3.79* Hgb-11.9 Hct-38.8 \nMCV-102* MCH-31.4 MCHC-30.7* RDW-15.2 RDWSD-58.0* Plt ___\n___ 03:15AM BLOOD Glucose-80 UreaN-29* Creat-4.4*# Na-138 \nK-5.7* Cl-100 HCO3-27 AnGap-17\n___ 03:15AM BLOOD proBNP-8232*\n___ 03:15AM BLOOD cTropnT-0.11*\n___ 12:50PM BLOOD cTropnT-0.13*\n___ 07:36PM BLOOD cTropnT-0.12*\n___ 07:54AM BLOOD Calcium-10.5* Phos-4.3 Mg-1.9\n___ 03:24AM BLOOD Lactate-1.6\n\nPertinent Findings:\n===================\n\nECG ___: Poor baseline. Normal sinus rhythm. Right bundle-branch \nblock and left posterior hemiblock. Compared to the previous \ntracing of ___ there is no significant change. \n\nCXR ___: \nMild pulmonary vascular congestion and pulmonary edema. \n\nUltrafiltratoin ___: \nRemoved 4.1L during session\n\nDischarge Labs\n================\n___ 01:00PM BLOOD WBC-7.2 RBC-3.80* Hgb-12.1 Hct-38.5 \nMCV-101* MCH-31.8 MCHC-31.4* RDW-14.8 RDWSD-55.8* Plt ___\n___ 01:00PM BLOOD Glucose-86 UreaN-12 Creat-2.7*# Na-134 \nK-4.1 Cl-95* HCO3-27 AnGap-16\n___ 01:00PM BLOOD Calcium-9.7 Phos-2.4*# Mg-1.___ year old female CAD s/p CABG in ___, DM, and ESRD on HD, \nHx of calciphylaxis, CVA, HTN, and seizure, who presented with \nof chest pain and shortness of breath. \n\nACTIVE\n--------\n\n# Chest Pain: Patient developed acute onset shortness of breath \nand chest pain during dialysis. Found to have mildly elevated \ntroponin (0.13, baseline 0.08), but EKG showed no significant \nchanges from baseline and trops subsequently downtrended.  She \nappeared hypervolemic on exam, and notably above dry weight.  \nUltrafiltration removed 4.1 L of fluid and patient reported \nsignificant improvement in chest pain and resolution of \nshortness of breath.  This was ultimately attributed to demand \nischemia in the setting of hypervolemia \n\n# Shortness of Breath: No episodes of desaturation. CXR as \ndiscussed above showed vascular congestion consistent with \nhypervolemia.  After fluid removal with ultrafiltration, \nsymptoms resolved.  She was kept of strict fluid intake <2L day. \n\n\n# Hypertension: Patient was found to be hypertensive into the \n200s with shortness of breath.  After ultrafiltration her SBP \ndecreased into the the 130s.  She remained normotensive for the \nrest of her hospital course.  She continued her home \nantihypertensives: Metoprolol Tartrate 12.5 mg PO daily and \nIsosorbide Dinitrate 30 mg PO daily.\n\n# ESRD/HD: In addition to ultrafiltration patient continued \ndaily nephrocaps, sevelamer 1600 PO TID and three times weekly \nscheduled HD. \n\nCHRONIC\n----------\n#Anemia: Above goal with hemoglobin/hematocrit 11.0 and 35.9. \nContinued with iron sucrose.\n\n#Seizures: Well controlled with home dose of Keppra throughout \ninpatient stay.\n\n#Diabetes: Patient is T2DM insulin dependent. HgBa1c 6.0, may be \ntoo tightly controlled. Will consider lowering insulin. \n- Continue ISS\n- Finger sticks with meals and at bedtime  \n\n#CAD/HLD: Patient was continued on home dose of atorvastatin \n10mg daily.\n\nTRANSITIONAL ISSUES:\n====================\n- Patient will require daily weights to ensure maintaining her \ndry weight. If she has greater than 1 pound increase per day \nover 3 days or greater than 5 pounds over 1 week, her PCP should \nbe called.\n- Patient is deconditioned, will benefit from aggressive ___\n- Patient has a history of calciphylaxis, she will require \nongoing sevelamer Carbonate 800 mg PO TID with meals.\n \nMedications on Admission:\nThe Preadmission Medication list may be inaccurate and requires \nfuther investigation.\n1. Albuterol Inhaler 2 PUFF IH Q6H:PRN short of breath \n2. Allopurinol ___ mg PO EVERY OTHER DAY \n3. Atorvastatin 10 mg PO QPM \n4. Bisacodyl 10 mg PR QHS:PRN constipation \n5. Clopidogrel 75 mg PO DAILY \n6. Docusate Sodium 100 mg PO DAILY \n7. Fentanyl Patch 62 mcg/h TD Q72H \n8. Gabapentin 400 mg PO TID \n9. Insulin SC \n      Sliding Scale\nInsulin SC Sliding Scale using HUM Insulin\n10. LeVETiracetam 500 mg PO BID \n11. LeVETiracetam 500 mg PO ___ \n12. Lidocaine 5% Patch 1 PTCH TD QAM \n13. Metoprolol Tartrate 12.5 mg PO DAILY \n14. Nephrocaps 1 CAP PO DAILY \n15. Nystatin Ointment 1 Appl TP QID:PRN rash \n16. Polyethylene Glycol 17 g PO DAILY \n17. Senna 8.6 mg PO BID:PRN consutpation \n18. Clotrimazole Cream 1 Appl TP BID \n19. Isosorbide Dinitrate 30 mg PO TID \n20. Miconazole Powder 2% 1 Appl TP TID rash \n21. Silver Sulfadiazine 1% Cream 1 Appl TP TID \n22. Sulfameth/Trimethoprim DS 1 TAB PO BID \n23. Ondansetron 4 mg PO Q8H:PRN nausea \n24. Vancomycin 1000 mg IV Q 12H \n25. sevelamer CARBONATE 1600 mg PO TID W/MEALS \n26. HYDROmorphone (Dilaudid) 4 mg PO Q2PRN pain \n\n \nDischarge Medications:\n1. Albuterol Inhaler 2 PUFF IH Q6H:PRN short of breath \n2. Allopurinol ___ mg PO EVERY OTHER DAY \n3. Atorvastatin 10 mg PO QPM \n4. Bisacodyl 10 mg PR QHS:PRN constipation \n5. Clopidogrel 75 mg PO DAILY \n6. Clotrimazole Cream 1 Appl TP BID \n7. Docusate Sodium 100 mg PO DAILY \n8. Fentanyl Patch 62 mcg/h TD Q72H \n9. Gabapentin 400 mg PO TID \n10. Heparin 5000 UNIT SC TID \n11. Isosorbide Dinitrate 30 mg PO TID \n12. LeVETiracetam 500 mg PO BID \n13. LeVETiracetam 250 mg PO ___ \n14. Lidocaine 5% Patch 1 PTCH TD QAM \n15. Insulin SC \n      Sliding Scale\nInsulin SC Sliding Scale using HUM Insulin\n16. Metoprolol Tartrate 12.5 mg PO DAILY \n17. Miconazole Powder 2% 1 Appl TP TID rash \n18. Nephrocaps 1 CAP PO DAILY \n19. Nystatin Ointment 1 Appl TP QID:PRN rash \n20. Ondansetron 4 mg PO Q8H:PRN nausea \n21. Polyethylene Glycol 17 g PO DAILY \n22. Senna 8.6 mg PO BID:PRN consutpation \n23. sevelamer CARBONATE 800 mg PO TID W/MEALS \n24. Silver Sulfadiazine 1% Cream 1 Appl TP TID \n25. Sulfameth/Trimethoprim DS 1 TAB PO BID \n26. HYDROmorphone (Dilaudid) ___ mg PO Q2PRN pain \n27. Nepro Carb Steady (nut.tx.impaired renal fxn,soy) 0.08-1.80 \ngram-kcal/mL oral TID \n28. Omeprazole 20 mg PO DAILY \n29. Salonpas (camphor-methyl salicyl-menthol;<br>methyl \nsalicylate-menthol) ___ % topical Q24H \n\n \nDischarge Disposition:\nExtended Care\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary\n- Pulmonary edema secondary to hypervolemia\n\nSecondary\n- End Stage Renal disease - Hemodialysis\n- Type 2 Diabetes Mellitus\n- Anemia ___ kidney disease\n- Hypertension\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted to ___ with \nnew onset chest pain and shortness of breath while receiving \nhemodialysis. EKG and lab tests showed no signs of heart attack. \n You appeared to have extra fluid on exam and were weighed \nmultiple pounds about your normal \"\"dry\"\" weight. Ultrafiltration \nremoved 4.1 liters of extra fluid off and your breathing and \nchest pain significantly improved.  It is important to weigh \nyourself every morning, call MD if weight goes up more than 3 \nlbs.  It is also very important to adhere to a low-salt diet to \nprevent fluid retention.\n\nIt was a pleasure taking care of you at ___.  We wish you the \nbest with your recovery. If you have any questions about the \ncare you recieved, please do not hesitate to ask.\n\nSincerely,\nYour ___ Care Team\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "78659",
+        "icd_version": 9,
+        "long_title": "Other chest pain",
+        "normalized_time": "2120-03-30 18:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "78609",
+        "icd_version": 9,
+        "long_title": "Other respiratory abnormalities",
+        "normalized_time": "2120-03-30 18:22:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "514",
+        "icd_version": 9,
+        "long_title": "Pulmonary congestion and hypostasis",
+        "normalized_time": "2120-03-30 18:25:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "27669",
+        "icd_version": 9,
+        "long_title": "Other fluid overload",
+        "normalized_time": "2120-03-30 18:27:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "40391",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease",
+        "normalized_time": "2120-03-30 18:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "5856",
+        "icd_version": 9,
+        "long_title": "End stage renal disease",
+        "normalized_time": "2120-03-30 18:32:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "28521",
+        "icd_version": 9,
+        "long_title": "Anemia in chronic kidney disease",
+        "normalized_time": "2120-03-30 18:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "78039",
+        "icd_version": 9,
+        "long_title": "Other convulsions",
+        "normalized_time": "2120-03-30 18:37:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "25040",
+        "icd_version": 9,
+        "long_title": "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2120-03-30 18:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "41400",
+        "icd_version": 9,
+        "long_title": "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "normalized_time": "2120-03-30 18:42:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2120-03-30 18:45:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2120-03-30 18:47:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "7093",
+        "icd_version": 9,
+        "long_title": "Degenerative skin disorders",
+        "normalized_time": "2120-03-30 18:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "42832",
+        "icd_version": 9,
+        "long_title": "Chronic diastolic heart failure",
+        "normalized_time": "2120-03-30 18:52:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "4280",
+        "icd_version": 9,
+        "long_title": "Congestive heart failure, unspecified",
+        "normalized_time": "2120-03-30 18:55:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "43820",
+        "icd_version": 9,
+        "long_title": "Late effects of cerebrovascular disease, hemiplegia affecting unspecified side",
+        "normalized_time": "2120-03-30 18:57:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "49390",
+        "icd_version": 9,
+        "long_title": "Asthma, unspecified type, unspecified",
+        "normalized_time": "2120-03-30 19:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "27801",
+        "icd_version": 9,
+        "long_title": "Morbid obesity",
+        "normalized_time": "2120-03-30 19:02:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "412",
+        "icd_version": 9,
+        "long_title": "Old myocardial infarction",
+        "normalized_time": "2120-03-30 19:05:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "V8532",
+        "icd_version": 9,
+        "long_title": "Body Mass Index 32.0-32.9, adult",
+        "normalized_time": "2120-03-30 19:07:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "V5861",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of anticoagulants",
+        "normalized_time": "2120-03-30 19:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "V4581",
+        "icd_version": 9,
+        "long_title": "Aortocoronary bypass status",
+        "normalized_time": "2120-03-30 19:12:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "V1255",
+        "icd_version": 9,
+        "long_title": "Personal history of pulmonary embolism",
+        "normalized_time": "2120-03-30 19:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "V1251",
+        "icd_version": 9,
+        "long_title": "Personal history of venous thrombosis and embolism",
+        "normalized_time": "2120-03-30 19:17:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2120-03-30 19:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2120-03-27",
+        "icd_code": "3995",
+        "icd_version": 9,
+        "long_title": "Hemodialysis",
+        "normalized_time": "2120-03-27 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 2,
+        "chartdate": "2120-03-27",
+        "icd_code": "3995",
+        "icd_version": 9,
+        "long_title": "Hemodialysis",
+        "normalized_time": "2120-03-27 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 3,
+        "chartdate": "2120-03-27",
+        "icd_code": "3995",
+        "icd_version": 9,
+        "long_title": "Hemodialysis",
+        "normalized_time": "2120-03-27 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 11785,
+    "output_tokens": 4398,
+    "total_tokens": 16183
+  },
+  "response_id": "chatcmpl-b0a3aa4f846fd5c1",
+  "latency_ms": 77585,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2120-03-27 06:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. I'm Dr. Lee, one of your doctors here. You were brought in after having chest pain during dialysis. Can you tell me what happened?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2120-03-27 06:02:00",
+        "speaker": "Patient",
+        "text": "Yes, during my dialysis session this morning, I felt a tightness in my chest. It lasted about 20 minutes. I’ve had some chest discomfort for the past few days, but it got worse then."
+      },
+      {
+        "turn_number": 3,
+        "time": "2120-03-27 06:04:00",
+        "speaker": "Doctor",
+        "text": "I see. Did you feel dizzy, sweaty, or nauseous during the pain?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2120-03-27 06:05:00",
+        "speaker": "Patient",
+        "text": "No, not really. Just short of breath and a sore throat. I thought maybe it was heartburn again."
+      },
+      {
+        "turn_number": 5,
+        "time": "2120-03-27 06:07:00",
+        "speaker": "Doctor",
+        "text": "Okay. We checked your EKG and it didn’t show any new changes. Your troponin, a blood test for heart strain, was slightly elevated but not high enough to confirm a heart attack."
+      },
+      {
+        "turn_number": 6,
+        "time": "2120-03-27 06:09:00",
+        "speaker": "Patient",
+        "text": "So it’s not my heart? I was worried because of my past history."
+      },
+      {
+        "turn_number": 7,
+        "time": "2120-03-27 06:11:00",
+        "speaker": "Doctor",
+        "text": "Given your history of heart disease and bypass surgery, we take any chest pain seriously. But your EKG is stable, and your symptoms improved after removing fluid during dialysis."
+      },
+      {
+        "turn_number": 8,
+        "time": "2120-03-27 06:13:00",
+        "speaker": "Patient",
+        "text": "I did feel better after dialysis. But why did this happen?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2120-03-27 06:15:00",
+        "speaker": "Doctor",
+        "text": "You were retaining extra fluid. Your blood pressure was very high—over 200—and your lungs had some fluid buildup. We think the chest pain was due to your heart working harder than usual because of the extra fluid."
+      },
+      {
+        "turn_number": 10,
+        "time": "2120-03-27 06:17:00",
+        "speaker": "Patient",
+        "text": "Oh, so it’s because I was too full of fluid?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2120-03-27 06:18:00",
+        "speaker": "Doctor",
+        "text": "Exactly. We call it demand ischemia—your heart needed more oxygen than it could get because it was under stress from the fluid overload."
+      },
+      {
+        "turn_number": 12,
+        "time": "2120-03-27 06:20:00",
+        "speaker": "Patient",
+        "text": "That makes sense. How much fluid did we remove?"
+      },
+      {
+        "turn_number": 13,
+        "time": "2120-03-27 06:21:00",
+        "speaker": "Doctor",
+        "text": "About 4.1 liters during your session. That’s over 9 pounds. You’re feeling better now, right?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2120-03-27 06:23:00",
+        "speaker": "Patient",
+        "text": "Yes, I can breathe much easier. My chest feels lighter."
+      },
+      {
+        "turn_number": 15,
+        "time": "2120-03-27 06:25:00",
+        "speaker": "Doctor",
+        "text": "That’s great. We’ll keep monitoring your weight and make sure you stay close to your dry weight."
+      },
+      {
+        "turn_number": 16,
+        "time": "2120-03-27 06:27:00",
+        "speaker": "Patient",
+        "text": "I know I should watch my salt. Did I slip up?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2120-03-27 06:29:00",
+        "speaker": "Doctor",
+        "text": "It’s possible. Even small amounts of salt can make your body hold onto fluid. We’ll go over your diet before you leave."
+      },
+      {
+        "turn_number": 18,
+        "time": "2120-03-27 12:05:00",
+        "speaker": "Doctor",
+        "text": "Hi again. You just finished your dialysis session. How are you feeling now?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2120-03-27 12:07:00",
+        "speaker": "Patient",
+        "text": "Still feeling better. No chest pain at all now."
+      },
+      {
+        "turn_number": 20,
+        "time": "2120-03-27 12:09:00",
+        "speaker": "Doctor",
+        "text": "Good. Your repeat troponin came down slightly—from 0.13 to 0.12—so that’s reassuring. No sign of ongoing heart damage."
+      },
+      {
+        "turn_number": 21,
+        "time": "2120-03-27 12:11:00",
+        "speaker": "Patient",
+        "text": "And my breathing?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2120-03-27 12:13:00",
+        "speaker": "Doctor",
+        "text": "Your chest X-ray showed mild fluid in the lungs, but after dialysis, your lungs are clearing. You’re not desaturating, which is good."
+      },
+      {
+        "turn_number": 23,
+        "time": "2120-03-27 12:15:00",
+        "speaker": "Patient",
+        "text": "I’m glad. I was scared it was another heart attack."
+      },
+      {
+        "turn_number": 24,
+        "time": "2120-03-27 12:17:00",
+        "speaker": "Doctor",
+        "text": "We understand. But all signs point to fluid overload, not a blocked artery. We’ll keep you on your usual heart meds—metoprolol and isosorbide—to help control your blood pressure and heart workload."
+      },
+      {
+        "turn_number": 25,
+        "time": "2120-03-28 07:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. I’m checking in. How did you sleep?"
+      },
+      {
+        "turn_number": 26,
+        "time": "2120-03-28 07:02:00",
+        "speaker": "Patient",
+        "text": "Okay. I had to use two pillows, but I didn’t wake up gasping or anything."
+      },
+      {
+        "turn_number": 27,
+        "time": "2120-03-28 07:04:00",
+        "speaker": "Doctor",
+        "text": "That’s progress. Your blood pressure is much better—134 over 40 this morning. Down from over 200."
+      },
+      {
+        "turn_number": 28,
+        "time": "2120-03-28 07:06:00",
+        "speaker": "Patient",
+        "text": "That’s a big drop. Is that normal?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2120-03-28 07:08:00",
+        "speaker": "Doctor",
+        "text": "Yes, now that the extra fluid is gone. We’ll keep you on strict fluid limits—less than 2 liters a day."
+      },
+      {
+        "turn_number": 30,
+        "time": "2120-03-28 07:10:00",
+        "speaker": "Patient",
+        "text": "I’ll do my best. What about my insulin? My sugars have been low."
+      },
+      {
+        "turn_number": 31,
+        "time": "2120-03-28 07:12:00",
+        "speaker": "Doctor",
+        "text": "Good point. Your hemoglobin A1c is 6.0, which is excellent, but might be too low for someone with your health conditions. We may reduce your insulin dose slightly to avoid lows."
+      },
+      {
+        "turn_number": 32,
+        "time": "2120-03-28 07:14:00",
+        "speaker": "Patient",
+        "text": "That would help. I’ve been checking my sugars like I’m supposed to."
+      },
+      {
+        "turn_number": 33,
+        "time": "2120-03-28 07:16:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Keep doing that—before meals and at bedtime. We’ll adjust as needed."
+      },
+      {
+        "turn_number": 34,
+        "time": "2120-03-28 12:05:00",
+        "speaker": "Doctor",
+        "text": "You’re due for dialysis again today. Any new symptoms?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2120-03-28 12:07:00",
+        "speaker": "Patient",
+        "text": "No chest pain. Just a little belly tenderness, especially near my old wounds."
+      },
+      {
+        "turn_number": 36,
+        "time": "2120-03-28 12:09:00",
+        "speaker": "Doctor",
+        "text": "We noted that on exam. It’s likely from old ulcers or scar tissue. Nothing concerning, but we’ll keep an eye on it."
+      },
+      {
+        "turn_number": 37,
+        "time": "2120-03-28 12:11:00",
+        "speaker": "Patient",
+        "text": "And my skin creams? I use several at home."
+      },
+      {
+        "turn_number": 38,
+        "time": "2120-03-28 12:13:00",
+        "speaker": "Doctor",
+        "text": "Yes, you’ll continue the silver sulfadiazine and miconazole for your skin. And sevelamer with meals to control phosphorus—especially important with your history of calciphylaxis."
+      },
+      {
+        "turn_number": 39,
+        "time": "2120-03-28 12:15:00",
+        "speaker": "Patient",
+        "text": "I remember. I take it with every meal."
+      },
+      {
+        "turn_number": 40,
+        "time": "2120-03-29 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your labs look good. Hemoglobin is stable, potassium is down to 4.1, and creatinine improved."
+      },
+      {
+        "turn_number": 41,
+        "time": "2120-03-29 08:02:00",
+        "speaker": "Patient",
+        "text": "That’s good. Does that mean I can go home soon?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2120-03-29 08:04:00",
+        "speaker": "Doctor",
+        "text": "We’re planning for discharge tomorrow. You’ll go to an extended care facility for a bit to continue recovery and dialysis."
+      },
+      {
+        "turn_number": 43,
+        "time": "2120-03-29 08:06:00",
+        "speaker": "Patient",
+        "text": "Okay. Will I need to watch my weight there?"
+      },
+      {
+        "turn_number": 44,
+        "time": "2120-03-29 08:08:00",
+        "speaker": "Doctor",
+        "text": "Yes. We want you to weigh yourself every morning. If you gain more than a pound a day for three days, or five pounds in a week, call your doctor."
+      },
+      {
+        "turn_number": 45,
+        "time": "2120-03-29 08:10:00",
+        "speaker": "Patient",
+        "text": "Got it. And low salt, right?"
+      },
+      {
+        "turn_number": 46,
+        "time": "2120-03-29 08:12:00",
+        "speaker": "Doctor",
+        "text": "Exactly. No added salt, avoid processed foods, and stick to your fluid limit."
+      },
+      {
+        "turn_number": 47,
+        "time": "2120-03-30 09:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Today’s the day. You’re doing well—lungs are clear, blood pressure stable, and symptoms resolved."
+      },
+      {
+        "turn_number": 48,
+        "time": "2120-03-30 09:02:00",
+        "speaker": "Patient",
+        "text": "I’m ready. Thank you for taking care of me."
+      },
+      {
+        "turn_number": 49,
+        "time": "2120-03-30 09:04:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Remember: daily weights, low salt, and keep up with your dialysis. Your sevelamer dose has been adjusted to 800 mg with meals."
+      },
+      {
+        "turn_number": 50,
+        "time": "2120-03-30 09:06:00",
+        "speaker": "Patient",
+        "text": "I’ll make sure to take it. And I’ll watch for any chest pain or trouble breathing."
+      },
+      {
+        "turn_number": 51,
+        "time": "2120-03-30 09:08:00",
+        "speaker": "Doctor",
+        "text": "Exactly. Call your doctor if anything changes. You’re also on heparin shots now to prevent clots, since you’re not as mobile."
+      },
+      {
+        "turn_number": 52,
+        "time": "2120-03-30 09:10:00",
+        "speaker": "Patient",
+        "text": "I can do that. Will I see my regular doctor soon?"
+      },
+      {
+        "turn_number": 53,
+        "time": "2120-03-30 09:12:00",
+        "speaker": "Doctor",
+        "text": "Yes, follow-up is scheduled. They’ll monitor your heart, diabetes, and skin. Take care."
+      },
+      {
+        "turn_number": 54,
+        "time": "2120-03-30 09:14:00",
+        "speaker": "Patient",
+        "text": "Thank you, Doctor. I feel much better."
+      }
+    ],
+    "summary": {
+      "admission_start": "2120-03-27 05:57:00",
+      "admission_end": "2120-03-30 19:20:00",
+      "summary_paragraph": "The patient was admitted with acute chest pain and shortness of breath during a dialysis session. Evaluation revealed mild troponin elevation without EKG changes, hypertension, and signs of fluid overload including pulmonary edema on imaging. Symptoms were attributed to demand ischemia secondary to hypervolemia. Ultrafiltration removed 4.1 liters of fluid, leading to resolution of symptoms and improvement in vital signs and labs. She remained stable throughout the hospital stay with controlled blood pressure, improved respiratory status, and no further cardiac events. She was discharged to an extended care facility with instructions for strict fluid and salt restriction, daily weight monitoring, and continuation of home medications with adjustments to sevelamer and insulin dosing.",
+      "problems": [
+        "Other chest pain",
+        "Other respiratory abnormalities",
+        "Pulmonary congestion and hypostasis",
+        "Other fluid overload",
+        "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease",
+        "End stage renal disease",
+        "Anemia in chronic kidney disease",
+        "Other convulsions",
+        "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Coronary atherosclerosis of unspecified type of vessel, native or graft",
+        "Other and unspecified hyperlipidemia",
+        "Esophageal reflux",
+        "Degenerative skin disorders",
+        "Chronic diastolic heart failure",
+        "Congestive heart failure, unspecified",
+        "Late effects of cerebrovascular disease, hemiplegia affecting unspecified side",
+        "Asthma, unspecified type, unspecified",
+        "Morbid obesity",
+        "Old myocardial infarction",
+        "Body Mass Index 32.0-32.9, adult",
+        "Long-term (current) use of anticoagulants",
+        "Aortocoronary bypass status",
+        "Personal history of pulmonary embolism",
+        "Personal history of venous thrombosis and embolism",
+        "Long-term (current) use of insulin"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-b0a3aa4f846fd5c1",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2120-03-27 06:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. I'm Dr. Lee, one of your doctors here. You were brought in after having chest pain during dialysis. Can you tell me what happened?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2120-03-27 06:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, during my dialysis session this morning, I felt a tightness in my chest. It lasted about 20 minutes. I’ve had some chest discomfort for the past few days, but it got worse then.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2120-03-27 06:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. Did you feel dizzy, sweaty, or nauseous during the pain?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2120-03-27 06:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, not really. Just short of breath and a sore throat. I thought maybe it was heartburn again.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2120-03-27 06:07:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. We checked your EKG and it didn’t show any new changes. Your troponin, a blood test for heart strain, was slightly elevated but not high enough to confirm a heart attack.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2120-03-27 06:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s not my heart? I was worried because of my past history.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2120-03-27 06:11:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Given your history of heart disease and bypass surgery, we take any chest pain seriously. But your EKG is stable, and your symptoms improved after removing fluid during dialysis.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2120-03-27 06:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I did feel better after dialysis. But why did this happen?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2120-03-27 06:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You were retaining extra fluid. Your blood pressure was very high—over 200—and your lungs had some fluid buildup. We think the chest pain was due to your heart working harder than usual because of the extra fluid.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2120-03-27 06:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh, so it’s because I was too full of fluid?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2120-03-27 06:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. We call it demand ischemia—your heart needed more oxygen than it could get because it was under stress from the fluid overload.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2120-03-27 06:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That makes sense. How much fluid did we remove?\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2120-03-27 06:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"About 4.1 liters during your session. That’s over 9 pounds. You’re feeling better now, right?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2120-03-27 06:23:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I can breathe much easier. My chest feels lighter.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2120-03-27 06:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s great. We’ll keep monitoring your weight and make sure you stay close to your dry weight.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2120-03-27 06:27:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know I should watch my salt. Did I slip up?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2120-03-27 06:29:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s possible. Even small amounts of salt can make your body hold onto fluid. We’ll go over your diet before you leave.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2120-03-27 12:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi again. You just finished your dialysis session. How are you feeling now?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2120-03-27 12:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Still feeling better. No chest pain at all now.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2120-03-27 12:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. Your repeat troponin came down slightly—from 0.13 to 0.12—so that’s reassuring. No sign of ongoing heart damage.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2120-03-27 12:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my breathing?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2120-03-27 12:13:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your chest X-ray showed mild fluid in the lungs, but after dialysis, your lungs are clearing. You’re not desaturating, which is good.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2120-03-27 12:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m glad. I was scared it was another heart attack.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2120-03-27 12:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We understand. But all signs point to fluid overload, not a blocked artery. We’ll keep you on your usual heart meds—metoprolol and isosorbide—to help control your blood pressure and heart workload.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2120-03-28 07:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. I’m checking in. How did you sleep?\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2120-03-28 07:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I had to use two pillows, but I didn’t wake up gasping or anything.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2120-03-28 07:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s progress. Your blood pressure is much better—134 over 40 this morning. Down from over 200.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2120-03-28 07:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a big drop. Is that normal?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2120-03-28 07:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, now that the extra fluid is gone. We’ll keep you on strict fluid limits—less than 2 liters a day.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2120-03-28 07:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll do my best. What about my insulin? My sugars have been low.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2120-03-28 07:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good point. Your hemoglobin A1c is 6.0, which is excellent, but might be too low for someone with your health conditions. We may reduce your insulin dose slightly to avoid lows.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2120-03-28 07:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That would help. I’ve been checking my sugars like I’m supposed to.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2120-03-28 07:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Keep doing that—before meals and at bedtime. We’ll adjust as needed.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2120-03-28 12:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re due for dialysis again today. Any new symptoms?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2120-03-28 12:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No chest pain. Just a little belly tenderness, especially near my old wounds.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2120-03-28 12:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noted that on exam. It’s likely from old ulcers or scar tissue. Nothing concerning, but we’ll keep an eye on it.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2120-03-28 12:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my skin creams? I use several at home.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2120-03-28 12:13:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, you’ll continue the silver sulfadiazine and miconazole for your skin. And sevelamer with meals to control phosphorus—especially important with your history of calciphylaxis.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2120-03-28 12:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I remember. I take it with every meal.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2120-03-29 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your labs look good. Hemoglobin is stable, potassium is down to 4.1, and creatinine improved.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2120-03-29 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s good. Does that mean I can go home soon?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2120-03-29 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re planning for discharge tomorrow. You’ll go to an extended care facility for a bit to continue recovery and dialysis.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2120-03-29 08:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. Will I need to watch my weight there?\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2120-03-29 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. We want you to weigh yourself every morning. If you gain more than a pound a day for three days, or five pounds in a week, call your doctor.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2120-03-29 08:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. And low salt, right?\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2120-03-29 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. No added salt, avoid processed foods, and stick to your fluid limit.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2120-03-30 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Today’s the day. You’re doing well—lungs are clear, blood pressure stable, and symptoms resolved.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2120-03-30 09:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m ready. Thank you for taking care of me.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2120-03-30 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Remember: daily weights, low salt, and keep up with your dialysis. Your sevelamer dose has been adjusted to 800 mg with meals.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2120-03-30 09:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll make sure to take it. And I’ll watch for any chest pain or trouble breathing.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2120-03-30 09:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. Call your doctor if anything changes. You’re also on heparin shots now to prevent clots, since you’re not as mobile.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2120-03-30 09:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I can do that. Will I see my regular doctor soon?\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2120-03-30 09:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, follow-up is scheduled. They’ll monitor your heart, diabetes, and skin. Take care.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2120-03-30 09:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Doctor. I feel much better.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2120-03-27 05:57:00\",\n    \"admission_end\": \"2120-03-30 19:20:00\",\n    \"summary_paragraph\": \"The patient was admitted with acute chest pain and shortness of breath during a dialysis session. Evaluation revealed mild troponin elevation without EKG changes, hypertension, and signs of fluid overload including pulmonary edema on imaging. Symptoms were attributed to demand ischemia secondary to hypervolemia. Ultrafiltration removed 4.1 liters of fluid, leading to resolution of symptoms and improvement in vital signs and labs. She remained stable throughout the hospital stay with controlled blood pressure, improved respiratory status, and no further cardiac events. She was discharged to an extended care facility with instructions for strict fluid and salt restriction, daily weight monitoring, and continuation of home medications with adjustments to sevelamer and insulin dosing.\",\n    \"problems\": [\n      \"Other chest pain\",\n      \"Other respiratory abnormalities\",\n      \"Pulmonary congestion and hypostasis\",\n      \"Other fluid overload\",\n      \"Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease\",\n      \"End stage renal disease\",\n      \"Anemia in chronic kidney disease\",\n      \"Other convulsions\",\n      \"Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled\",\n      \"Coronary atherosclerosis of unspecified type of vessel, native or graft\",\n      \"Other and unspecified hyperlipidemia\",\n      \"Esophageal reflux\",\n      \"Degenerative skin disorders\",\n      \"Chronic diastolic heart failure\",\n      \"Congestive heart failure, unspecified\",\n      \"Late effects of cerebrovascular disease, hemiplegia affecting unspecified side\",\n      \"Asthma, unspecified type, unspecified\",\n      \"Morbid obesity\",\n      \"Old myocardial infarction\",\n      \"Body Mass Index 32.0-32.9, adult\",\n      \"Long-term (current) use of anticoagulants\",\n      \"Aortocoronary bypass status\",\n      \"Personal history of pulmonary embolism\",\n      \"Personal history of venous thrombosis and embolism\",\n      \"Long-term (current) use of insulin\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776948383,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 4398,
+      "prompt_tokens": 11785,
+      "total_tokens": 16183,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

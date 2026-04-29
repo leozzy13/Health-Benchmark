@@ -60,7 +60,9 @@ OUTPUT_SCHEMA_REQUIREMENT = """Return JSON with this shape:
 
 REPAIR_MESSAGE = """The previous response failed validation.
 Return corrected JSON only. Keep the same schema and fix all speaker,
-timestamp, chronology, and summary issues."""
+timestamp, chronology, and summary issues.
+Before returning:
+- rewrite conversation_lines so timestamps are nondecreasing inside the exact packet admission window, turn_number is contiguous starting at 1, summary.admission_start and summary.admission_end exactly copy the packet, and no line has empty text"""
 
 
 @dataclass
@@ -85,7 +87,12 @@ def render_prompt(packet: dict[str, Any], previous_admission_summary: dict[str, 
     storyline_prompt_block = _build_storyline_prompt_block(packet)
     problem_prompt_block = _build_problem_prompt_block(packet)
     supporting_context_block = _build_supporting_context_block(packet)
-    task_message = _build_task_message(stay_days, recommended_turn_range)
+    task_message = _build_task_message(
+        stay_days,
+        recommended_turn_range,
+        admission_start=str(packet.get("admission_start") or ""),
+        admission_end=str(packet.get("admission_end") or ""),
+    )
     user_message = "\n\n".join(
         [
             task_message,
@@ -120,7 +127,13 @@ def append_repair_message(user_message: str, validation_error: str) -> str:
     return "\n\n".join([user_message, REPAIR_MESSAGE, f"Validation errors: {validation_error}"])
 
 
-def _build_task_message(stay_days: int, recommended_turn_range: list[int]) -> str:
+def _build_task_message(
+    stay_days: int,
+    recommended_turn_range: list[int],
+    *,
+    admission_start: str,
+    admission_end: str,
+) -> str:
     return "\n".join(
         [
             "Generate one rich patient-doctor conversation for this admission and one admission summary.",
@@ -128,6 +141,7 @@ def _build_task_message(stay_days: int, recommended_turn_range: list[int]) -> st
             "Generation guidance:",
             f"- Approximate stay length: {stay_days} day(s).",
             f"- Recommended turn range: {recommended_turn_range[0]}-{recommended_turn_range[1]} turns.",
+            f"- Exact admission window: {admission_start} to {admission_end}.",
             "- Focus first on the discharge-note storyline and the core admission problems.",
             "- Use radiology, procedures, and microbiology only as supporting detail when they help the story.",
             "- Do not try to mention every packet item.",
@@ -138,6 +152,7 @@ def _build_task_message(stay_days: int, recommended_turn_range: list[int]) -> st
             "- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.",
             "- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.",
             "- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.",
+            "- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
         ]
     )
 

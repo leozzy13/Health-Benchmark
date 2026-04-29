@@ -5,9 +5,10 @@
 #SBATCH --gres=gpu:4
 #SBATCH --partition=gengpu
 #SBATCH --constraint=sxm
+#SBATCH --exclude=qgpu2014
 #SBATCH --mem=256G
 #SBATCH --time=24:00:00
-#SBATCH --output=%x-%j.out
+#SBATCH --output=quest/slurm_logs/%x-%j.out
 
 set -euo pipefail
 
@@ -16,9 +17,11 @@ VLLM_PORT="${VLLM_PORT:-8000}"
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-4}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-49152}"
 REASONING_PARSER="${REASONING_PARSER:-qwen3}"
-VLLM_ENGINE_READY_TIMEOUT_S="${VLLM_ENGINE_READY_TIMEOUT_S:-3600}"
+VLLM_ENGINE_READY_TIMEOUT_S="${VLLM_ENGINE_READY_TIMEOUT_S:-7200}"
+RETRY_LIMIT="${RETRY_LIMIT:-3}"
 READY_CHECK_SLEEP_SECONDS="${READY_CHECK_SLEEP_SECONDS:-5}"
 READY_CHECK_ATTEMPTS="${READY_CHECK_ATTEMPTS:-$(( (VLLM_ENGINE_READY_TIMEOUT_S + READY_CHECK_SLEEP_SECONDS - 1) / READY_CHECK_SLEEP_SECONDS ))}"
+DEFAULT_EXCLUDED_NODES="qgpu2014"
 DEFAULT_PROJECT_ROOT="/projects/p33194/health-benchmark"
 DEFAULT_MIMICIV_DIR="/projects/p33194/health-benchmark/data/mimic-iv"
 DEFAULT_MIMICIV_NOTE_DIR="/projects/p33194/health-benchmark/data/mimic-iv-notes"
@@ -95,6 +98,15 @@ resolve_optional_env() {
     return 0
   fi
   printf '%s\n' "$default_value"
+}
+
+validate_non_negative_integer() {
+  local label="$1"
+  local value="$2"
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    echo "${label} must be a non-negative integer, got: ${value}" >&2
+    exit 2
+  fi
 }
 
 activate_runtime_env() {
@@ -225,6 +237,8 @@ resolve_repo_root() {
   exit 2
 }
 
+validate_non_negative_integer "RETRY_LIMIT" "$RETRY_LIMIT"
+
 REPO_ROOT="$(resolve_repo_root)"
 MIMICIV_DIR="$(resolve_required_env MIMICIV_DIR MIMIC_IV_DIR "$DEFAULT_MIMICIV_DIR" "MIMIC-IV path")"
 MIMICIV_NOTE_DIR="$(resolve_required_env MIMICIV_NOTE_DIR MIMIC_IV_NOTE_DIR "$DEFAULT_MIMICIV_NOTE_DIR" "MIMIC-IV-Note path")"
@@ -247,16 +261,19 @@ echo "Using MIMIC-IV-Note dir: $MIMICIV_NOTE_DIR"
 echo "Using output root: $OUTPUT_ROOT"
 echo "Using HF_HOME: $HF_HOME"
 echo "Using HUGGINGFACE_HUB_CACHE: $HUGGINGFACE_HUB_CACHE"
+echo "Using launcher default excluded nodes: $DEFAULT_EXCLUDED_NODES"
+echo "Using vLLM ready timeout: $VLLM_ENGINE_READY_TIMEOUT_S"
+echo "Using generation retry limit: $RETRY_LIMIT"
 activate_runtime_env
 validate_vllm_runtime
 cd "$REPO_ROOT"
 mkdir -p "$OUTPUT_ROOT"
 
-VLLM_LOG="${VLLM_LOG:-$OUTPUT_ROOT/vllm_${SLURM_JOB_ID:-manual}.log}"
+VLLM_LOG="${VLLM_LOG:-$OUTPUT_ROOT/logs/vllm/vllm_${SLURM_JOB_ID:-manual}.log}"
 export VLLM_ENGINE_READY_TIMEOUT_S
 export HF_HOME
 export HUGGINGFACE_HUB_CACHE
-mkdir -p "$HF_HOME" "$HUGGINGFACE_HUB_CACHE"
+mkdir -p "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$(dirname "$VLLM_LOG")"
 
 cleanup() {
   if [[ -n "${VLLM_PID:-}" ]]; then
@@ -303,6 +320,7 @@ RUN_OUTPUT="$(
     --mimiciv-dir "$MIMICIV_DIR" \
     --mimiciv-note-dir "$MIMICIV_NOTE_DIR" \
     --output-root "$OUTPUT_ROOT" \
+    --retry-limit "$RETRY_LIMIT" \
     --subject-ids "$@" 2>&1
 )"
 RUN_STATUS=$?

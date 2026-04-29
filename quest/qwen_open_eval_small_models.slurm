@@ -3,12 +3,12 @@
 #SBATCH --partition=gengpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --constraint=sxm
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=256G
-#SBATCH --output=%x-%j.out
+#SBATCH --output=quest/slurm_logs/%x-%j.out
 
 set -euo pipefail
 
@@ -99,7 +99,7 @@ validate_eval_runtime() {
       required_total_gpu_count=8
       ;;
     small)
-      required_total_gpu_count=1
+      required_total_gpu_count=2
       ;;
     27b_2gpu)
       required_total_gpu_count=2

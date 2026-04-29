@@ -81,7 +81,10 @@ Return corrected JSON only. Keep the same schema and fix all count,
 question_type, answer, admission-evidence, and turn-id issues.
 If the prompt allows only one question_type, every item must use that exact question_type.
 For cross-admission QA, every item must satisfy the exact requested item count
-and cite at least 2 unique admissions."""
+and cite at least 2 unique admissions.
+For cross-admission QA, evidence.admissions must copy only the exact
+admission_id_for_evidence_only values already present in the prompt context.
+Do not invent, alter, extend, or reformat admission ids."""
 
 
 @dataclass
@@ -243,6 +246,8 @@ def render_cross_admission_regular_qa_prompt(
             "- The question should sound natural and should not mention raw identifiers.",
             "- Evidence must list only the admissions actually used.",
             "- Evidence must cite at least 2 unique admissions for every item.",
+            "- evidence.admissions must use only the exact admission_id_for_evidence_only values already present in the provided context.",
+            "- Do not invent, alter, extend, or reformat admission ids.",
             "",
             "Chronological admission summaries:",
             context_json,
@@ -298,6 +303,8 @@ def render_cross_admission_adversarial_qa_prompt(
             "- Do not use wording like 'he' or 'she' to refer to the patient or the doctor. Use third-person phrasing such as 'the patient', 'the patient's symptoms', or 'the doctor' when needed.",
             "- Do not use trick wording, double negatives, yes/no questions, or vague references.",
             "- Evidence admissions should be the admissions that create the plausible confusion, not an answer span.",
+            "- evidence.admissions must use only the exact admission_id_for_evidence_only values already present in the provided context.",
+            "- Do not invent, alter, extend, or reformat admission ids.",
             "",
             "Chronological admission summaries:",
             context_json,

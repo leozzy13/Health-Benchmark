@@ -8,7 +8,10 @@ from pathlib import Path
 
 from health_benchmark.scripts import BenchmarkPipeline, build_default_config
 from health_benchmark.scripts.config import resolve_llm_base_url
-from health_benchmark.temporal_eval.config import build_settings as build_evaluation_settings
+from health_benchmark.temporal_eval.config import (
+    EVALUATION_STAGE_CHOICES,
+    build_settings as build_evaluation_settings,
+)
 from health_benchmark.temporal_eval.loader import resolve_patient_targets
 from health_benchmark.temporal_eval.pipeline import TemporalEvaluationPipeline
 
@@ -35,6 +38,7 @@ def _add_common_eval_args(parser: argparse.ArgumentParser) -> None:
         dest="base_url",
         help="Optional OpenAI-compatible base URL override.",
     )
+    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the fixed Qwen/Qwen3.5-27B judge.")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -87,6 +91,12 @@ def build_parser() -> argparse.ArgumentParser:
     eval_target.add_argument("--patient-dir", help="Existing patient directory to evaluate.")
     evaluate.add_argument("--models", nargs="+", help="Optional model override. Defaults to the Qwen3.5 trio.")
     evaluate.add_argument("--replace-existing", action="store_true", help="Replace existing evaluation outputs for requested models.")
+    evaluate.add_argument(
+        "--stage",
+        choices=EVALUATION_STAGE_CHOICES,
+        default="full",
+        help=argparse.SUPPRESS,
+    )
     _add_common_eval_args(evaluate)
 
     return parser
@@ -177,8 +187,10 @@ def main(argv: list[str] | None = None) -> int:
                 config,
                 provider=args.provider,
                 base_url=args.base_url,
+                judge_base_url=args.judge_base_url,
                 api_key_env=args.api_key_env,
                 models=args.models,
+                stage=args.stage,
                 replace_existing=True if args.replace_existing else None,
             )
             eval_pipeline = TemporalEvaluationPipeline(config, settings)

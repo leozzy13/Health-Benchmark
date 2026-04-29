@@ -1,0 +1,951 @@
+{
+  "subject_id": "11236474",
+  "hadm_id": "27882606",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T16:35:16Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 7 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2142-02-05 18:06:00 to 2142-02-12 15:43:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2142-01-29 01:22:00",
+    "admission_end": "2142-02-04 17:55:00",
+    "summary_paragraph": "A 58-year-old woman with type 1 diabetes, chronic systolic heart failure, and bilateral below-knee amputations was admitted for acute renal failure and hyperkalemia discovered during a clinic visit. She was treated for a urinary tract infection caused by Citrobacter freundii, initially with meropenem and later switched to ciprofloxacin based on culture results. Her hyperkalemia resolved with medical management, and her renal function improved with hydration and antibiotics. Due to recurrent UTIs and incomplete bladder emptying, a Foley catheter was placed, and she was referred to urology for clean intermittent catheterization training. She underwent a right BKA revision for a nonhealing ulcer, which healed well. Medication adjustments included increasing metoprolol, starting lisinopril, stopping fluconazole, and reducing vancomycin dose. She was discharged home with nursing services, stable and afebrile, with follow-up arranged across multiple specialties.",
+    "problems": [
+      "Acute kidney failure, unspecified",
+      "Urinary tract infection, site not specified",
+      "Chronic systolic heart failure",
+      "Intestinal infection due to Clostridium difficile",
+      "Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled",
+      "Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled",
+      "Polyneuropathy in diabetes",
+      "Other amputation stump complication",
+      "Neurogenic bladder NOS",
+      "Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms",
+      "Old myocardial infarction",
+      "Hyperpotassemia",
+      "Chronic kidney disease, unspecified",
+      "Urinary incontinence, unspecified",
+      "Long-term (current) use of insulin",
+      "Nausea alone",
+      "Retention of urine, unspecified",
+      "Amputation of limb(s) causing abnormal patient reaction, or later complication, without mention of misadventure at time of operation",
+      "Incontinence of feces"
+    ]
+  },
+  "stay_days": 7,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2142-02-12 00:00:00): Name:  ___                   Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPatient recorded as having No Known Allergies to Drugs\n \nAttending: ___.\n \nChief Complaint:\nfever\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\n___ year old female multiple medical problems including type 1 \ndiabetes, peripheral vascular disease s/p BKA with multiple \nrevisions (most recently ___ and wound infections, ESBL \nklebsiella urosepsis, C.diffile colitis presents with fever. She \nwas recently admitted (discharged yesterday) for acute renal \nfailure, hyperkalemia and UTI. Urine culture was growing > \n100,000 Citrobacter Freundii and she was started on \nciprofloxacin with plan for 14 day course. She was seen by ___ \ntoday, noted to be febrile but without other symptoms. She was \nsent to ED by PCP. \n.  \nIn the ED, initial vs were: 102.1 90 100/60 14 100. Labs notable \nfor CBC of 13.5, lactate 1.5. Potassium of 5.8, EKG unchanged. \nBlood and urine cultures drawn. Plan to admit to floor but \nbecame hypotensive with systolics to the ___. Left \nsubclavian line placed, also w/ PIV.  Given 3L fluid and getting \n___. UA moderately positive. She was evaluated by surgery who \nfelt that stump not likely source of infection. CXR \nunremarkable. Urine and blood culture sent. She was given \nvancomycin, meropenem. She was given insulin, dextrose and \nkayexcelate (put out large volume stool). She was upset that \nbeing admitted so given ativan 1mg IV. Vitals on transfer: 84/45 \n11 100%. \n.  \nOn the floor, patient has chills but no other complaints. \n \nPast Medical History:\n- DM Type 1 (last A1C=12% in ___  \n- PVD s/p bilateral BKAs \n- Systolic CHF (EF=40% in ___\n- NSTEMI in ___  (in the setting of DKA, peak TnT of 1.02)\n- ___ admission to ___ for PEA and MRSA empyema in \nleft lower lobe  \n- Depression  \n- Chronic anemia  \n- Dyslipidemia, hypertriglyceridemia  \n- h/o retinal detachment in OS  \n- H/o ARDS secondary to sepsis\n- Urine has been positive for cocaine on 4 separate occasions in \n___, and twice in ___  \n.\nPast Surgical History:  \n___ L BKA  \n___ R ___ vein BP  \n___ R BKA  \n___ R BKA revision  \n\n \nSocial History:\n___\nFamily History:\nFather with Type 2 DM.\n \nPhysical Exam:\nAdmission PE:\nVitals: CVP 3  123/72  69  18 100%2L NC \nGeneral: ___ female in NAD\nHEENT: Sclera anicteric, MMM, oropharynx clear  \nNeck: supple, JVP at clavicle, no LAD  \nLungs: Clear to auscultation bilaterally, no wheezes, rales, \nrhonchi  \nCV: S1, S2 regular rhythm, normal rate\nAbdomen: soft, NTND, no guarding  \nGU: foley draining clear urine  \nSkin: cool, CVL subclavian in place \nExt: BKA bilaterally, stump without erythema, wound discharge.  \nNeuro: lethargic but arousable, oriented to self, location, year\n\nDischarge PE:\nVitals: T 97.9, BP 158/92, HR 74, RR 16, 100%RA\nLungs: Clear to auscultation bilaterally, no wheezes, rales, \nrhonchi  \nCV: S1, S2 regular rhythm, normal rate, small systolic murmur at \nleft sternal border\nAbdomen: soft, NTND, no guarding   \nExt: BKA bilaterally, stump without erythema, wound discharge.  \nNeuro: alert and oriented\n \nPertinent Results:\n___:\n                             KLEBSIELLA PNEUMONIAE\n                             |   \nAMIKACIN--------------  =>64 R\nAMPICILLIN/SULBACTAM--  =>32 R\nCEFAZOLIN-------------  =>64 R\nCEFEPIME--------------  =>64 R\nCEFTAZIDIME-----------  =>64 R\nCEFTRIAXONE-----------  =>64 R\nCIPROFLOXACIN---------   =>4 R\nGENTAMICIN------------       R\nMEROPENEM-------------  =>16 R\nNITROFURANTOIN--------   256 R\nPIPERACILLIN/TAZO----- =>128 R\nTOBRAMYCIN------------  =>16 R\nTRIMETHOPRIM/SULFA----  =>16 R\n\nUrine Cx ___: No growth\n\nC. Diff from ___: negative\n\nBlood Cx from ___ negative\n\n___ CXR:\nIMPRESSION: Subsegmental atelectasis and/or scarring. \nCardiomegaly. No\nsignificant change.\n\n___: CT contrast pelvis:\nIMPRESSION:\n \n1. Multiple tiny calcifications at the renal hila are most \nlikely vascular.\nPossible small calculus in the right kidney, which is not \ncausing any\nobstruction.\n \n2. Thick-walled bladder with intraluminal air, which may be due \nto recent\ninstrumentation but could also be due to chronic cystitis.\n\n \nBrief Hospital Course:\n___ year old female multiple medical problems including type 1 \ndiabetes, peripheral vascular disease s/p BKA with multiple \nrevisions (most recently ___ and wound infections, ESBL \nklebsiella urosepsis, C.diffile colitis presents with fever and \nhypotension.\n.\n#SEPSIS: She was admitted to the medical ICU given her SIRS \ncriteria (fever, leukocytosis) and hypotension concerning for \nseptic shock. There was suspicion of urinary source of infection \ngiven her risk factors and history of multi-drug resistant \norganisms. She was continued on broad spectrum antibiotics. Her \nfoley catheter was changed. The hypotension was fluid responsive \nand she did not require vasopressors. Her antibiotics were \nnarrowed to Meropenem and PO vancomycin to prevent C. Diff \ncolitis given her history. Her urine ultiamtely grew \npan-resistant Klebsiella Pneumonia.  Even though her urine was \nnot sensitive to meropenem, she improved and had no further \nfevers. ID was consulted for this complicated infection. She \ncompleted an entire 7 day course of antibiotics for her UTI.\n\n#Urinary Incontinence: Neurogenic Bladder Dysfunction from \ndiabetes has put patient at higher risk for developed recurrent \nUTIs. Urology was called and will meet with her outpatient to \nteach her CIC and learn to self-catheterize herself to decrease \nher UTIs. Urology will also present the idea of an appendicela \nconduit if patient continues to get repeated UTIs. Pt went home \nwith diapers until her appointment with urology in 1 day.\n.\n#HISTORY OF C. DIFF COLITIS: She was noted to have large volumes \nof stool, although this was after receiving kayexcelate. C. \ndifficile was sent and returned negative. She was continued \nemperically on PO vancomycin while she was on antibiotics. \n.\n#ACUTE RENAL FAILURE: Baseline creatinine of 1.1-1.2 with \nelevated creatinine to 1.5. Likely pre-renal in setting of \nfever, poor po. Her Cr dropped with fluid hydration and it was \n0.9 on day of discharge.\n.\n#HYPERKALEMIA: Pt's K was elevated on admission, most likely ___ \nARF and lisinopril. Lisinopril was held. Cr improved with IVF.\n.  \n#DIABETES: Patient had several episodes of hyperglycemia up to \nthe 400s and hypoglycemia down to the ___. She was put on an \ninsulin sliding scale throughout her hospitalization with \nadjusted parameters based on her glucose level. Pt has history \nof brittle diabetes per OMR notes, likely explaining her range \nof glucose levels. Pt told to continue her home insulin regimen \nand follow with ___.\n.\n#HYPERTENSION: Her home metoprolol and lisinopril were initially \nheld in seting of SIRS on admission. Metoprolol and lisinopril \nwere added back after pts BP normalized.\n.\n#NEUROPATHY: Continued her home medications for neuropathy.\n \n \nMedications on Admission:\n1. Calcium Acetate 667 mg Capsule Sig: One (1) Capsule PO DAILY\n(Daily).\n2. Citalopram 20 mg Tablet Sig: One (1) Tablet PO DAILY (Daily).\n3. Clonazepam 0.5 mg Tablet Sig: One (1) Tablet PO QHS (once a\nday (at bedtime)) as needed for anxiety.\n4. Gabapentin 400 mg Capsule Sig: One (1) Capsule PO three times\na day.\n5. Lorazepam 0.5 mg Tablet Sig: One (1) Tablet PO twice a day.\n6. Morphine 15 mg Tablet Sig: One (1) Tablet PO Q8H (every 8\nhours) as needed for pain.\n7. Metoprolol Succinate 25 mg Tablet Sustained Release 24 hr\nSig: Four (4) Tablet Sustained Release 24 hr PO DAILY (Daily).\nDisp:*30 Tablet Sustained Release 24 hr(s)* Refills:*0*\n8. Omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1)\nCapsule, Delayed Release(E.C.) PO once a day.\n9. Simvastatin 10 mg Tablet Sig: Two (2) Tablet PO DAILY\n(Daily).\n10. Trazodone 50 mg Tablet Sig: One (1) Tablet PO HS (at\nbedtime) as needed for insomnia.\n11. Aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable\nPO DAILY (Daily).\n12. B Complex-Vitamin C-Folic Acid 1 mg Capsule Sig: One (1) Cap\nPO DAILY (Daily).\n13. Cholecalciferol (Vitamin D3) 400 unit Tablet Sig: Two (2)\nTablet PO DAILY (Daily).\n14. Insulin Glargine 100 unit/mL Solution Sig: Four (4) units\nSubcutaneous QAM.\n15. Insulin Glargine 100 unit/mL Solution Sig: One (1) unit\nSubcutaneous QPM.\n16. Humalog 100 unit/mL Solution Sig: Sliding Scale units\nSubcutaneous every six (6) hours.\n17. Vancomycin 125 mg Capsule Sig: One (1) Capsule PO Q6H (every\n6 hours): LAST DOSE WILL BE AT THE END OF THE DAY ON ___.\n18. Ciprofloxacin 500 mg Tablet Sig: One (1) Tablet PO Q12H\n(every 12 hours): LAST DOSE WILL BE AT THE END OF THE DAY ON\n___.\n19. Lisinopril 5 mg Tablet Sig: One (1) Tablet PO DAILY (Daily).\n \nDischarge Medications:\n1. Outpatient Lab Work\nPlease forward results to Dr. ___ Fax# ___.\n\nLabs Requested on ___ (48 hours after discharge from \nhospital): \n1)Urine Culture-aerobic, Urine Analysis with reflex sediment.\n2)Blood culture x 2.\n2. Calcium Acetate 667 mg Capsule Sig: One (1) Capsule PO DAILY \n(Daily).  \n3. Citalopram 20 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n4. Omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO DAILY (Daily).  \n5. Aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable \nPO DAILY (Daily).  \n6. Cholecalciferol (Vitamin D3) 400 unit Tablet Sig: One (1) \nTablet PO twice a day.  \n7. Multivitamin     Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n8. Morphine 15 mg Tablet Sig: One (1) Tablet PO TID PRN as \nneeded for pain.  \n9. Zolpidem 5 mg Tablet Sig: Two (2) Tablet PO HS (at bedtime) \nas needed for insomnia.  \n10. Metoprolol Succinate 100 mg Tablet Sustained Release 24 hr \nSig: One (1) Tablet Sustained Release 24 hr PO once a day.  \n11. Lisinopril 5 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n12. Insulin Glargine 100 unit/mL Solution Sig: Five (5) U \nSubcutaneous Daily in AM.  \n13. Humalog 100 unit/mL Solution Sig: Use as directed Units \nSubcutaneous four times a day: Use as directed according to your \nInsulin Sliding Scale.  \n14. Morphine 10 mg/5 mL Solution Sig: One (1) Tablespoon PO \nq3hrs PRN as needed for pain.  \n15. B Complex-Vitamin C-Folic Acid ___ mcg Tablet Sig: One (1) \nTablet PO once a day.  \n16. Gabapentin 800 mg Tablet Sig: One (1) Tablet PO three times \na day.  \n17. Hydrocodone-Acetaminophen ___ mg Tablet Sig: One (1) \nTablet PO q4hr PRN as needed for pain.  \n18. Simvastatin 20 mg Tablet Sig: One (1) Tablet PO once a day.  \n\n19. Trazodone 50 mg Tablet Sig: One (1) Tablet PO bedtime PRN as \nneeded for insomnia.  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \n___ Diagnosis:\nUrinary Tract Infection\nSepsis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n\n \nDischarge Instructions:\nIt was a pleasure to care for you during your hospilization here \nat ___.\n\nYou were admitted for a serious infection in your urinary tract \nthat caused your body to drop it's pressure. You were initially \nsent to the Intensive Care Unit until you stabalized. You were \nstarted on broad spectrum antibiotics to eliminate your urinary \ntract infection. You were treated with 7 days of Meropenem \nantibiotic through your veins.\nThe vascular surgeons examined the wounds on your leg and felt \nthat they were healing well and that they were not the source of \nyour infection.\nYou got better during your hospitalization and stopped having \nfevers.\n\nThe Urology doctors saw ___ and ___ you try a new way to \neliminate urine called: self catheterization. They look forward \nto teaching you this technique at an appointment on ___. By \nself-catheterizing yourself, you will eliminate your risk of \nhaving recurrent urinary tract infections. For now, please wear \ndaily diapers to collect your urine until your urology \nappointment.\n\nYou will see the infectious disease doctors in ___ days. \nBeforehand, you must give a urine and  blood culture specimen \n___ days after your discharge from the hospital. Idealy you \nwould do this tomorrow, ___ which is the same day \nas your Urology appointment. Please bring the attached form with \nthe presciption to get a urine culture and urine analysis along \nwith a blood culture. You can get these labs drawn in the \n___ building on the day of your Urology appointment.\n\nThe following changes were made to your medications:\n-Your blood pressure medications (Metoprolol and Lisinopril) \nwere initially held when you were acutely sick. They were \nre-introduced during your hosptialization. You must continue to \ntake these medications every day.\n-Your gabapentin was held during your hospitalization. You can \ncontinue this medicine when you leave the hospital.\n-Your trazadone was not given to you during your \nhospitalization. We gave you Zolpidem to help you sleep. You can \ncontinue your normal sleep regimen when you go home.\n\nPlease continue all of your normal home medications, including \nyour normal insulin regimen. \n\nAt this point, you will not go home on any further antibiotics. \nYou will have an appointment with your infectious disease doctor \nin the next few weeks to monitor you carefully for signs of \ninfection.\n\nIt is very important to continue your medications every day as \nwell as your daily wound dressing changes. Your dressing changes \nonly require dry gauze to any wound that is oozing. All other \nwounds can be open to the air.\n\nPlease make sure you follow up with your primary care doctor, \nyour infectious disease doctor, your new urologist and your \nvascular doctor.\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Urinary tract infection, site not specified\n- Acute kidney failure, unspecified\n- Candidiasis of other urogenital sites\n- Systemic inflammatory response syndrome, unspecified\n- Chronic systolic heart failure\n- Hyposmolality and/or hyponatremia\n- Friedländer's bacillus infection in conditions classified elsewhere and of unspecified site\n- Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms\n- Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled\n- Neurogenic bladder NOS\n- Polyneuropathy in diabetes\n- Diabetes with other specified manifestations, type I [juvenile type], not stated as uncontrolled\n- Hyperpotassemia\n- Other and unspecified agents primarily affecting the cardiovascular system causing adverse effects in therapeutic use\n- Urinary incontinence, unspecified\n- Congestive heart failure, unspecified\n- Peripheral vascular disease, unspecified\n- Long-term (current) use of insulin\n- Old myocardial infarction\n- Other abnormal blood chemistry\n- Other and unspecified hyperlipidemia\n- Pure hyperglyceridemia\n- Anemia, unspecified\n- Depressive disorder, not elsewhere classified\n- Other chronic pain\n- Below knee amputation status\n- Other postprocedural status",
+  "supporting_context_block": "Radiology:\n- 2142-02-05 15:39:00: INDICATION: Fever. COMPARISON: ___. PA AND LATERAL VIEWS OF THE CHEST: Mild cardiomegaly is stable. Mediastinal and hilar contours are normal. Linear opacity over the medial left hemidiaphragm is stable, reflecting at...\n- 2142-02-05 19:52:00: INDICATION: Central line placement, now with sepsis. COMPARISON: ___. SINGLE BEDSIDE FRONTAL RADIOGRAPH OF THE CHEST: A left subclavian central venous line is new, with the tip terminating in the upper portion of the...\n- 2142-02-07 08:29:00: HISTORY: Urinary tract infection. Two views. Comparison with the previous study done ___. Streaky density in the left lower lobe and right upper lobe persist. The lungs appear otherwise clear. The heart appears enlarg...\n- 2142-02-08 15:39:00: CT ABDOMEN AND PELVIS WITHOUT CONTRAST INDICATION: ___ woman with diabetes, peripheral vascular disease, status post bilateral below knee amputations, recurrent UTIs. Assess for kidney stones. COMPARISON: CTU with and...\n\nProcedures:\n- 2142-02-05 12:00:00: Venous catheterization, not elsewhere classified\n\nMicrobiology:\n- 2142-02-06 04:04:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-06 09:23:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-06 10:14:00: STOOL (Feces negative for C. difficile toxin A & B by EIA.            (Reference Range-Negative).)\n- 2142-02-07 06:56:00: URINE | YEAST\n- 2142-02-07 06:56:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-07 09:35:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-09 05:55:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-09 06:20:00: BLOOD CULTURE (NO GROWTH.)\n- 2142-02-09 16:05:00: URINE (NO GROWTH.)\n- 2142-02-12 05:05:00: BLOOD CULTURE (NO GROWTH.)",
+  "formed_packet": {
+    "subject_id": "11236474",
+    "hadm_id": "27882606",
+    "admission_start": "2142-02-05 18:06:00",
+    "admission_end": "2142-02-12 15:43:00",
+    "previous_admission_summary": {
+      "admission_start": "2142-01-29 01:22:00",
+      "admission_end": "2142-02-04 17:55:00",
+      "summary_paragraph": "A 58-year-old woman with type 1 diabetes, chronic systolic heart failure, and bilateral below-knee amputations was admitted for acute renal failure and hyperkalemia discovered during a clinic visit. She was treated for a urinary tract infection caused by Citrobacter freundii, initially with meropenem and later switched to ciprofloxacin based on culture results. Her hyperkalemia resolved with medical management, and her renal function improved with hydration and antibiotics. Due to recurrent UTIs and incomplete bladder emptying, a Foley catheter was placed, and she was referred to urology for clean intermittent catheterization training. She underwent a right BKA revision for a nonhealing ulcer, which healed well. Medication adjustments included increasing metoprolol, starting lisinopril, stopping fluconazole, and reducing vancomycin dose. She was discharged home with nursing services, stable and afebrile, with follow-up arranged across multiple specialties.",
+      "problems": [
+        "Acute kidney failure, unspecified",
+        "Urinary tract infection, site not specified",
+        "Chronic systolic heart failure",
+        "Intestinal infection due to Clostridium difficile",
+        "Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled",
+        "Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled",
+        "Polyneuropathy in diabetes",
+        "Other amputation stump complication",
+        "Neurogenic bladder NOS",
+        "Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms",
+        "Old myocardial infarction",
+        "Hyperpotassemia",
+        "Chronic kidney disease, unspecified",
+        "Urinary incontinence, unspecified",
+        "Long-term (current) use of insulin",
+        "Nausea alone",
+        "Retention of urine, unspecified",
+        "Amputation of limb(s) causing abnormal patient reaction, or later complication, without mention of misadventure at time of operation",
+        "Incontinence of feces"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "11236474-DS-28",
+        "note_seq": 28,
+        "charttime": "2142-02-12 00:00:00",
+        "storetime": "2142-02-12 21:02:00",
+        "text": " \nName:  ___                   Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPatient recorded as having No Known Allergies to Drugs\n \nAttending: ___.\n \nChief Complaint:\nfever\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\n___ year old female multiple medical problems including type 1 \ndiabetes, peripheral vascular disease s/p BKA with multiple \nrevisions (most recently ___ and wound infections, ESBL \nklebsiella urosepsis, C.diffile colitis presents with fever. She \nwas recently admitted (discharged yesterday) for acute renal \nfailure, hyperkalemia and UTI. Urine culture was growing > \n100,000 Citrobacter Freundii and she was started on \nciprofloxacin with plan for 14 day course. She was seen by ___ \ntoday, noted to be febrile but without other symptoms. She was \nsent to ED by PCP. \n.  \nIn the ED, initial vs were: 102.1 90 100/60 14 100. Labs notable \nfor CBC of 13.5, lactate 1.5. Potassium of 5.8, EKG unchanged. \nBlood and urine cultures drawn. Plan to admit to floor but \nbecame hypotensive with systolics to the ___. Left \nsubclavian line placed, also w/ PIV.  Given 3L fluid and getting \n___. UA moderately positive. She was evaluated by surgery who \nfelt that stump not likely source of infection. CXR \nunremarkable. Urine and blood culture sent. She was given \nvancomycin, meropenem. She was given insulin, dextrose and \nkayexcelate (put out large volume stool). She was upset that \nbeing admitted so given ativan 1mg IV. Vitals on transfer: 84/45 \n11 100%. \n.  \nOn the floor, patient has chills but no other complaints. \n \nPast Medical History:\n- DM Type 1 (last A1C=12% in ___  \n- PVD s/p bilateral BKAs \n- Systolic CHF (EF=40% in ___\n- NSTEMI in ___  (in the setting of DKA, peak TnT of 1.02)\n- ___ admission to ___ for PEA and MRSA empyema in \nleft lower lobe  \n- Depression  \n- Chronic anemia  \n- Dyslipidemia, hypertriglyceridemia  \n- h/o retinal detachment in OS  \n- H/o ARDS secondary to sepsis\n- Urine has been positive for cocaine on 4 separate occasions in \n___, and twice in ___  \n.\nPast Surgical History:  \n___ L BKA  \n___ R ___ vein BP  \n___ R BKA  \n___ R BKA revision  \n\n \nSocial History:\n___\nFamily History:\nFather with Type 2 DM.\n \nPhysical Exam:\nAdmission PE:\nVitals: CVP 3  123/72  69  18 100%2L NC \nGeneral: ___ female in NAD\nHEENT: Sclera anicteric, MMM, oropharynx clear  \nNeck: supple, JVP at clavicle, no LAD  \nLungs: Clear to auscultation bilaterally, no wheezes, rales, \nrhonchi  \nCV: S1, S2 regular rhythm, normal rate\nAbdomen: soft, NTND, no guarding  \nGU: foley draining clear urine  \nSkin: cool, CVL subclavian in place \nExt: BKA bilaterally, stump without erythema, wound discharge.  \nNeuro: lethargic but arousable, oriented to self, location, year\n\nDischarge PE:\nVitals: T 97.9, BP 158/92, HR 74, RR 16, 100%RA\nLungs: Clear to auscultation bilaterally, no wheezes, rales, \nrhonchi  \nCV: S1, S2 regular rhythm, normal rate, small systolic murmur at \nleft sternal border\nAbdomen: soft, NTND, no guarding   \nExt: BKA bilaterally, stump without erythema, wound discharge.  \nNeuro: alert and oriented\n \nPertinent Results:\n___:\n                             KLEBSIELLA PNEUMONIAE\n                             |   \nAMIKACIN--------------  =>64 R\nAMPICILLIN/SULBACTAM--  =>32 R\nCEFAZOLIN-------------  =>64 R\nCEFEPIME--------------  =>64 R\nCEFTAZIDIME-----------  =>64 R\nCEFTRIAXONE-----------  =>64 R\nCIPROFLOXACIN---------   =>4 R\nGENTAMICIN------------       R\nMEROPENEM-------------  =>16 R\nNITROFURANTOIN--------   256 R\nPIPERACILLIN/TAZO----- =>128 R\nTOBRAMYCIN------------  =>16 R\nTRIMETHOPRIM/SULFA----  =>16 R\n\nUrine Cx ___: No growth\n\nC. Diff from ___: negative\n\nBlood Cx from ___ negative\n\n___ CXR:\nIMPRESSION: Subsegmental atelectasis and/or scarring. \nCardiomegaly. No\nsignificant change.\n\n___: CT contrast pelvis:\nIMPRESSION:\n \n1. Multiple tiny calcifications at the renal hila are most \nlikely vascular.\nPossible small calculus in the right kidney, which is not \ncausing any\nobstruction.\n \n2. Thick-walled bladder with intraluminal air, which may be due \nto recent\ninstrumentation but could also be due to chronic cystitis.\n\n \nBrief Hospital Course:\n___ year old female multiple medical problems including type 1 \ndiabetes, peripheral vascular disease s/p BKA with multiple \nrevisions (most recently ___ and wound infections, ESBL \nklebsiella urosepsis, C.diffile colitis presents with fever and \nhypotension.\n.\n#SEPSIS: She was admitted to the medical ICU given her SIRS \ncriteria (fever, leukocytosis) and hypotension concerning for \nseptic shock. There was suspicion of urinary source of infection \ngiven her risk factors and history of multi-drug resistant \norganisms. She was continued on broad spectrum antibiotics. Her \nfoley catheter was changed. The hypotension was fluid responsive \nand she did not require vasopressors. Her antibiotics were \nnarrowed to Meropenem and PO vancomycin to prevent C. Diff \ncolitis given her history. Her urine ultiamtely grew \npan-resistant Klebsiella Pneumonia.  Even though her urine was \nnot sensitive to meropenem, she improved and had no further \nfevers. ID was consulted for this complicated infection. She \ncompleted an entire 7 day course of antibiotics for her UTI.\n\n#Urinary Incontinence: Neurogenic Bladder Dysfunction from \ndiabetes has put patient at higher risk for developed recurrent \nUTIs. Urology was called and will meet with her outpatient to \nteach her CIC and learn to self-catheterize herself to decrease \nher UTIs. Urology will also present the idea of an appendicela \nconduit if patient continues to get repeated UTIs. Pt went home \nwith diapers until her appointment with urology in 1 day.\n.\n#HISTORY OF C. DIFF COLITIS: She was noted to have large volumes \nof stool, although this was after receiving kayexcelate. C. \ndifficile was sent and returned negative. She was continued \nemperically on PO vancomycin while she was on antibiotics. \n.\n#ACUTE RENAL FAILURE: Baseline creatinine of 1.1-1.2 with \nelevated creatinine to 1.5. Likely pre-renal in setting of \nfever, poor po. Her Cr dropped with fluid hydration and it was \n0.9 on day of discharge.\n.\n#HYPERKALEMIA: Pt's K was elevated on admission, most likely ___ \nARF and lisinopril. Lisinopril was held. Cr improved with IVF.\n.  \n#DIABETES: Patient had several episodes of hyperglycemia up to \nthe 400s and hypoglycemia down to the ___. She was put on an \ninsulin sliding scale throughout her hospitalization with \nadjusted parameters based on her glucose level. Pt has history \nof brittle diabetes per OMR notes, likely explaining her range \nof glucose levels. Pt told to continue her home insulin regimen \nand follow with ___.\n.\n#HYPERTENSION: Her home metoprolol and lisinopril were initially \nheld in seting of SIRS on admission. Metoprolol and lisinopril \nwere added back after pts BP normalized.\n.\n#NEUROPATHY: Continued her home medications for neuropathy.\n \n \nMedications on Admission:\n1. Calcium Acetate 667 mg Capsule Sig: One (1) Capsule PO DAILY\n(Daily).\n2. Citalopram 20 mg Tablet Sig: One (1) Tablet PO DAILY (Daily).\n3. Clonazepam 0.5 mg Tablet Sig: One (1) Tablet PO QHS (once a\nday (at bedtime)) as needed for anxiety.\n4. Gabapentin 400 mg Capsule Sig: One (1) Capsule PO three times\na day.\n5. Lorazepam 0.5 mg Tablet Sig: One (1) Tablet PO twice a day.\n6. Morphine 15 mg Tablet Sig: One (1) Tablet PO Q8H (every 8\nhours) as needed for pain.\n7. Metoprolol Succinate 25 mg Tablet Sustained Release 24 hr\nSig: Four (4) Tablet Sustained Release 24 hr PO DAILY (Daily).\nDisp:*30 Tablet Sustained Release 24 hr(s)* Refills:*0*\n8. Omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1)\nCapsule, Delayed Release(E.C.) PO once a day.\n9. Simvastatin 10 mg Tablet Sig: Two (2) Tablet PO DAILY\n(Daily).\n10. Trazodone 50 mg Tablet Sig: One (1) Tablet PO HS (at\nbedtime) as needed for insomnia.\n11. Aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable\nPO DAILY (Daily).\n12. B Complex-Vitamin C-Folic Acid 1 mg Capsule Sig: One (1) Cap\nPO DAILY (Daily).\n13. Cholecalciferol (Vitamin D3) 400 unit Tablet Sig: Two (2)\nTablet PO DAILY (Daily).\n14. Insulin Glargine 100 unit/mL Solution Sig: Four (4) units\nSubcutaneous QAM.\n15. Insulin Glargine 100 unit/mL Solution Sig: One (1) unit\nSubcutaneous QPM.\n16. Humalog 100 unit/mL Solution Sig: Sliding Scale units\nSubcutaneous every six (6) hours.\n17. Vancomycin 125 mg Capsule Sig: One (1) Capsule PO Q6H (every\n6 hours): LAST DOSE WILL BE AT THE END OF THE DAY ON ___.\n18. Ciprofloxacin 500 mg Tablet Sig: One (1) Tablet PO Q12H\n(every 12 hours): LAST DOSE WILL BE AT THE END OF THE DAY ON\n___.\n19. Lisinopril 5 mg Tablet Sig: One (1) Tablet PO DAILY (Daily).\n \nDischarge Medications:\n1. Outpatient Lab Work\nPlease forward results to Dr. ___ Fax# ___.\n\nLabs Requested on ___ (48 hours after discharge from \nhospital): \n1)Urine Culture-aerobic, Urine Analysis with reflex sediment.\n2)Blood culture x 2.\n2. Calcium Acetate 667 mg Capsule Sig: One (1) Capsule PO DAILY \n(Daily).  \n3. Citalopram 20 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n4. Omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO DAILY (Daily).  \n5. Aspirin 81 mg Tablet, Chewable Sig: One (1) Tablet, Chewable \nPO DAILY (Daily).  \n6. Cholecalciferol (Vitamin D3) 400 unit Tablet Sig: One (1) \nTablet PO twice a day.  \n7. Multivitamin     Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n8. Morphine 15 mg Tablet Sig: One (1) Tablet PO TID PRN as \nneeded for pain.  \n9. Zolpidem 5 mg Tablet Sig: Two (2) Tablet PO HS (at bedtime) \nas needed for insomnia.  \n10. Metoprolol Succinate 100 mg Tablet Sustained Release 24 hr \nSig: One (1) Tablet Sustained Release 24 hr PO once a day.  \n11. Lisinopril 5 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n12. Insulin Glargine 100 unit/mL Solution Sig: Five (5) U \nSubcutaneous Daily in AM.  \n13. Humalog 100 unit/mL Solution Sig: Use as directed Units \nSubcutaneous four times a day: Use as directed according to your \nInsulin Sliding Scale.  \n14. Morphine 10 mg/5 mL Solution Sig: One (1) Tablespoon PO \nq3hrs PRN as needed for pain.  \n15. B Complex-Vitamin C-Folic Acid ___ mcg Tablet Sig: One (1) \nTablet PO once a day.  \n16. Gabapentin 800 mg Tablet Sig: One (1) Tablet PO three times \na day.  \n17. Hydrocodone-Acetaminophen ___ mg Tablet Sig: One (1) \nTablet PO q4hr PRN as needed for pain.  \n18. Simvastatin 20 mg Tablet Sig: One (1) Tablet PO once a day.  \n\n19. Trazodone 50 mg Tablet Sig: One (1) Tablet PO bedtime PRN as \nneeded for insomnia.  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \n___ Diagnosis:\nUrinary Tract Infection\nSepsis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n\n \nDischarge Instructions:\nIt was a pleasure to care for you during your hospilization here \nat ___.\n\nYou were admitted for a serious infection in your urinary tract \nthat caused your body to drop it's pressure. You were initially \nsent to the Intensive Care Unit until you stabalized. You were \nstarted on broad spectrum antibiotics to eliminate your urinary \ntract infection. You were treated with 7 days of Meropenem \nantibiotic through your veins.\nThe vascular surgeons examined the wounds on your leg and felt \nthat they were healing well and that they were not the source of \nyour infection.\nYou got better during your hospitalization and stopped having \nfevers.\n\nThe Urology doctors saw ___ and ___ you try a new way to \neliminate urine called: self catheterization. They look forward \nto teaching you this technique at an appointment on ___. By \nself-catheterizing yourself, you will eliminate your risk of \nhaving recurrent urinary tract infections. For now, please wear \ndaily diapers to collect your urine until your urology \nappointment.\n\nYou will see the infectious disease doctors in ___ days. \nBeforehand, you must give a urine and  blood culture specimen \n___ days after your discharge from the hospital. Idealy you \nwould do this tomorrow, ___ which is the same day \nas your Urology appointment. Please bring the attached form with \nthe presciption to get a urine culture and urine analysis along \nwith a blood culture. You can get these labs drawn in the \n___ building on the day of your Urology appointment.\n\nThe following changes were made to your medications:\n-Your blood pressure medications (Metoprolol and Lisinopril) \nwere initially held when you were acutely sick. They were \nre-introduced during your hosptialization. You must continue to \ntake these medications every day.\n-Your gabapentin was held during your hospitalization. You can \ncontinue this medicine when you leave the hospital.\n-Your trazadone was not given to you during your \nhospitalization. We gave you Zolpidem to help you sleep. You can \ncontinue your normal sleep regimen when you go home.\n\nPlease continue all of your normal home medications, including \nyour normal insulin regimen. \n\nAt this point, you will not go home on any further antibiotics. \nYou will have an appointment with your infectious disease doctor \nin the next few weeks to monitor you carefully for signs of \ninfection.\n\nIt is very important to continue your medications every day as \nwell as your daily wound dressing changes. Your dressing changes \nonly require dry gauze to any wound that is oozing. All other \nwounds can be open to the air.\n\nPlease make sure you follow up with your primary care doctor, \nyour infectious disease doctor, your new urologist and your \nvascular doctor.\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "11236474-RR-46",
+        "charttime": "2142-02-05 15:39:00",
+        "storetime": "2142-02-05 16:12:00",
+        "text": "INDICATION:  Fever.\n\nCOMPARISON:  ___.\n\nPA AND LATERAL VIEWS OF THE CHEST:  Mild cardiomegaly is stable.  Mediastinal\nand hilar contours are normal.  Linear opacity over the medial left\nhemidiaphragm is stable, reflecting atelectasis or scar.  There is no pleural\neffusion or pneumothorax.   Faint linear medial right upper lobe opacities are\nimproved from the comparison study, consistent with resolving consolidation or\nresolved consolidation with residual atelectasis/scar.  An IVC filter is\nunchanged.\n"
+      },
+      {
+        "note_id": "11236474-RR-47",
+        "charttime": "2142-02-05 19:52:00",
+        "storetime": "2142-02-05 21:32:00",
+        "text": "INDICATION:  Central line placement, now with sepsis.\n\nCOMPARISON:  ___.\n\nSINGLE BEDSIDE FRONTAL RADIOGRAPH OF THE CHEST:  A left subclavian central\nvenous line is new, with the tip terminating in the upper portion of the right\natrium.  There is no pneumothorax or pleural effusion.  Mild cardiomegaly is\nstable.  Mediastinal and hilar contours are also stable.  As before note is\nmade of an IVC filter.\n"
+      },
+      {
+        "note_id": "11236474-RR-48",
+        "charttime": "2142-02-07 08:29:00",
+        "storetime": "2142-02-07 13:52:00",
+        "text": "HISTORY:  Urinary tract infection.\n\nTwo views.  Comparison with the previous study done ___.  Streaky density\nin the left lower lobe and right upper lobe persist.  The lungs appear\notherwise clear.  The heart appears enlarged, although cardiac size may be\nexaggerated by AP technique.  Mediastinal structures are otherwise\nunremarkable.  The bony thorax is grossly intact.  A left subclavian catheter\nremains in place.\n\nIMPRESSION:  Subsegmental atelectasis and/or scarring.  Cardiomegaly.  No\nsignificant change.\n"
+      },
+      {
+        "note_id": "11236474-RR-49",
+        "charttime": "2142-02-08 15:39:00",
+        "storetime": "2142-02-08 22:41:00",
+        "text": "CT ABDOMEN AND PELVIS WITHOUT CONTRAST\n\nINDICATION:  ___ woman with diabetes, peripheral vascular disease,\nstatus post bilateral below knee amputations, recurrent UTIs.  Assess for\nkidney stones.\n\nCOMPARISON:  CTU with and without contrast, ___.\n\nTECHNIQUE:  Axial MDCT images were acquired from the lung bases to the\nsymphysis pubis in the absence of intravenous contrast.  Coronal and sagittal\nreformats were produced and reviewed.\n\nFINDINGS:\n\nCT ABDOMEN WITHOUT CONTRAST:\n\nLinear atelectasis or scarring seen at both lung bases, this is unchanged\ncompared with previous study.  Non-contrast examination of the liver makes it\ndifficult to assess the hypoenhancing lesion previously identified in segment\nVIII, although it is still seen to be present.  No new hepatic lesions\nidentified.  Multiple calculi are seen within the gallbladder, no evidence of\ncholecystitis.  The spleen is unremarkable in appearance.  There are numerous\nsmall calcifications evident at both renal hila.  The majority of these appear\nto be vascular in distribution.  There is a 1.2 cm hypoattenuating lesion seen\nin the interpolar region of the right kidney.  This was previously seen to be\nconsistent with a cyst on post-contrast imagimg.  Adjacent to this, there is a\n0.2 cm calcification, which may represent a small renal calculus.  This is not\ncausing any obstruction.  No hydronephrosis seen.  Quite extensive\ncalcification of the abdominal aorta, iliac vessels and femoral vessels.  IVC\nfilter in situ in adequate position.  No free fluid seen.  No intra-abdominal\nlymphadenopathy seen.  \n\nCT PELVIS WITHOUT CONTRAST:\n\nThe bladder is distended; however, the bladder wall appears slightly thickened\nwhen compared to the previous study.  This suggests the possibility of\ncystitis, although it is not diagnostic.  There is a small pocket of air seen\nanteriorly within the bladder.  If the patient has had recent instrumentation\nincluding catheterization, this would account for the air within the bladder. \nHowever, in the absence of recent instrumentation, this raises the possibility\nof cystitis with gas forming organism.\n\nOSSEOUS STRUCTURES:  No concerning lytic or sclerotic bony lesion seen.\n\nIMPRESSION:\n\n1.  Multiple tiny calcifications at the renal hila are most likely vascular. \nPossible small calculus in the right kidney, which is not causing any\nobstruction.\n\n2.  Thick-walled bladder with intraluminal air, which may be due to recent\ninstrumentation but could also be due to chronic cystitis.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "5990",
+        "icd_version": 9,
+        "long_title": "Urinary tract infection, site not specified",
+        "normalized_time": "2142-02-12 14:43:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "5849",
+        "icd_version": 9,
+        "long_title": "Acute kidney failure, unspecified",
+        "normalized_time": "2142-02-12 14:45:18",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "1122",
+        "icd_version": 9,
+        "long_title": "Candidiasis of other urogenital sites",
+        "normalized_time": "2142-02-12 14:47:37",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "99590",
+        "icd_version": 9,
+        "long_title": "Systemic inflammatory response syndrome, unspecified",
+        "normalized_time": "2142-02-12 14:49:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "42822",
+        "icd_version": 9,
+        "long_title": "Chronic systolic heart failure",
+        "normalized_time": "2142-02-12 14:52:14",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "2761",
+        "icd_version": 9,
+        "long_title": "Hyposmolality and/or hyponatremia",
+        "normalized_time": "2142-02-12 14:54:32",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "0413",
+        "icd_version": 9,
+        "long_title": "Friedländer's bacillus infection in conditions classified elsewhere and of unspecified site",
+        "normalized_time": "2142-02-12 14:56:51",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "04185",
+        "icd_version": 9,
+        "long_title": "Other specified bacterial infections in conditions classified elsewhere and of unspecified site, other gram-negative organisms",
+        "normalized_time": "2142-02-12 14:59:09",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "25061",
+        "icd_version": 9,
+        "long_title": "Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled",
+        "normalized_time": "2142-02-12 15:01:28",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "59654",
+        "icd_version": 9,
+        "long_title": "Neurogenic bladder NOS",
+        "normalized_time": "2142-02-12 15:03:46",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "3572",
+        "icd_version": 9,
+        "long_title": "Polyneuropathy in diabetes",
+        "normalized_time": "2142-02-12 15:06:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "25081",
+        "icd_version": 9,
+        "long_title": "Diabetes with other specified manifestations, type I [juvenile type], not stated as uncontrolled",
+        "normalized_time": "2142-02-12 15:08:23",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "2767",
+        "icd_version": 9,
+        "long_title": "Hyperpotassemia",
+        "normalized_time": "2142-02-12 15:10:42",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "E9429",
+        "icd_version": 9,
+        "long_title": "Other and unspecified agents primarily affecting the cardiovascular system causing adverse effects in therapeutic use",
+        "normalized_time": "2142-02-12 15:13:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "78830",
+        "icd_version": 9,
+        "long_title": "Urinary incontinence, unspecified",
+        "normalized_time": "2142-02-12 15:15:18",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "4280",
+        "icd_version": 9,
+        "long_title": "Congestive heart failure, unspecified",
+        "normalized_time": "2142-02-12 15:17:37",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "4439",
+        "icd_version": 9,
+        "long_title": "Peripheral vascular disease, unspecified",
+        "normalized_time": "2142-02-12 15:19:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2142-02-12 15:22:14",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "412",
+        "icd_version": 9,
+        "long_title": "Old myocardial infarction",
+        "normalized_time": "2142-02-12 15:24:32",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "7906",
+        "icd_version": 9,
+        "long_title": "Other abnormal blood chemistry",
+        "normalized_time": "2142-02-12 15:26:51",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2142-02-12 15:29:09",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "2721",
+        "icd_version": 9,
+        "long_title": "Pure hyperglyceridemia",
+        "normalized_time": "2142-02-12 15:31:28",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "2859",
+        "icd_version": 9,
+        "long_title": "Anemia, unspecified",
+        "normalized_time": "2142-02-12 15:33:46",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "311",
+        "icd_version": 9,
+        "long_title": "Depressive disorder, not elsewhere classified",
+        "normalized_time": "2142-02-12 15:36:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "33829",
+        "icd_version": 9,
+        "long_title": "Other chronic pain",
+        "normalized_time": "2142-02-12 15:38:23",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 26,
+        "icd_code": "V4975",
+        "icd_version": 9,
+        "long_title": "Below knee amputation status",
+        "normalized_time": "2142-02-12 15:40:42",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 27,
+        "icd_code": "V4589",
+        "icd_version": 9,
+        "long_title": "Other postprocedural status",
+        "normalized_time": "2142-02-12 15:43:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2142-02-05",
+        "icd_code": "3893",
+        "icd_version": 9,
+        "long_title": "Venous catheterization, not elsewhere classified",
+        "normalized_time": "2142-02-05 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2142-02-06 00:00:00",
+        "charttime": "2142-02-06 04:04:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-06 00:00:00",
+        "charttime": "2142-02-06 09:23:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-06 00:00:00",
+        "charttime": "2142-02-06 10:14:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "CLOSTRIDIUM DIFFICILE TOXIN A & B TEST",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Feces negative for C. difficile toxin A & B by EIA.            (Reference Range-Negative).  "
+      },
+      {
+        "chartdate": "2142-02-07 00:00:00",
+        "charttime": "2142-02-07 06:56:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "YEAST",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": ""
+      },
+      {
+        "chartdate": "2142-02-07 00:00:00",
+        "charttime": "2142-02-07 06:56:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-07 00:00:00",
+        "charttime": "2142-02-07 09:35:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-09 00:00:00",
+        "charttime": "2142-02-09 05:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-09 00:00:00",
+        "charttime": "2142-02-09 06:20:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-09 00:00:00",
+        "charttime": "2142-02-09 16:05:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-12 00:00:00",
+        "charttime": "2142-02-12 05:05:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2142-02-12 00:00:00",
+        "charttime": "2142-02-12 05:35:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 15349,
+    "output_tokens": 5156,
+    "total_tokens": 20505
+  },
+  "response_id": "chatcmpl-90095ad4f5a7e19a",
+  "latency_ms": 92558,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2142-02-05 18:15:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I’ll be taking care of you during this hospital stay. I understand you’ve been feeling unwell?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2142-02-05 18:16:00",
+        "speaker": "Patient",
+        "text": "Yes, I had a fever earlier today. My doctor sent me here because I just got out of the hospital yesterday."
+      },
+      {
+        "turn_number": 3,
+        "time": "2142-02-05 18:17:00",
+        "speaker": "Doctor",
+        "text": "I see. You were admitted for a UTI and kidney issues. Now you’re febrile again and had low blood pressure in the ER. We’re concerned about sepsis."
+      },
+      {
+        "turn_number": 4,
+        "time": "2142-02-05 18:18:00",
+        "speaker": "Patient",
+        "text": "Sepsis? That sounds serious. Is it from my bladder again?"
+      },
+      {
+        "turn_number": 5,
+        "time": "2142-02-05 18:19:00",
+        "speaker": "Doctor",
+        "text": "It’s likely. You have a history of recurrent UTIs, and your diabetes and neurogenic bladder put you at higher risk. We’ve started broad-spectrum antibiotics."
+      },
+      {
+        "turn_number": 6,
+        "time": "2142-02-05 18:20:00",
+        "speaker": "Patient",
+        "text": "I was on ciprofloxacin for the last infection. Shouldn’t that have worked?"
+      },
+      {
+        "turn_number": 7,
+        "time": "2142-02-05 18:21:00",
+        "speaker": "Doctor",
+        "text": "It was, but this time the infection is caused by a more resistant bacteria—Klebsiella pneumoniae—that wasn’t sensitive to cipro. So we’ve switched to meropenem."
+      },
+      {
+        "turn_number": 8,
+        "time": "2142-02-05 18:22:00",
+        "speaker": "Patient",
+        "text": "Oh. Is that why I got so weak and my blood pressure dropped?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2142-02-05 18:23:00",
+        "speaker": "Doctor",
+        "text": "Yes. The infection triggered a systemic response—fever, high white count, low BP. That’s sepsis. But you responded well to fluids, and your pressure is stabilizing."
+      },
+      {
+        "turn_number": 10,
+        "time": "2142-02-05 18:24:00",
+        "speaker": "Patient",
+        "text": "I’m glad I’m not in the ICU anymore. What about my kidneys? They were bad last time."
+      },
+      {
+        "turn_number": 11,
+        "time": "2142-02-05 18:25:00",
+        "speaker": "Doctor",
+        "text": "Your creatinine was up to 1.5, which is higher than your baseline of 1.1–1.2. But it’s likely due to dehydration from fever. We’re giving IV fluids, and it’s already improving."
+      },
+      {
+        "turn_number": 12,
+        "time": "2142-02-05 18:26:00",
+        "speaker": "Patient",
+        "text": "And my potassium? Last time it was really high."
+      },
+      {
+        "turn_number": 13,
+        "time": "2142-02-05 18:27:00",
+        "speaker": "Doctor",
+        "text": "It was 5.8, which is elevated. We held your lisinopril because it can raise potassium. With fluids and monitoring, it’s coming down."
+      },
+      {
+        "turn_number": 14,
+        "time": "2142-02-05 18:28:00",
+        "speaker": "Patient",
+        "text": "Okay. I’ve been so up and down with my sugar too. I had a 420 this morning."
+      },
+      {
+        "turn_number": 15,
+        "time": "2142-02-05 18:29:00",
+        "speaker": "Doctor",
+        "text": "Yes, infections make blood sugar spike. We’ve you on a sliding scale insulin to manage it. We’ll adjust it as you stabilize."
+      },
+      {
+        "turn_number": 16,
+        "time": "2142-02-06 08:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your blood and urine cultures came back. The urine grew pan-resistant Klebsiella pneumoniae—very tough bug."
+      },
+      {
+        "turn_number": 17,
+        "time": "2142-02-06 08:16:00",
+        "speaker": "Patient",
+        "text": "Pan-resistant? Does that mean the antibiotics won’t work?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2142-02-06 08:17:00",
+        "speaker": "Doctor",
+        "text": "It’s resistant to most, but meropenem is still effective enough. You’re already improving—no more fevers, and your white count is dropping."
+      },
+      {
+        "turn_number": 19,
+        "time": "2142-02-06 08:18:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. What about the yeast in my urine? Is that an infection too?"
+      },
+      {
+        "turn_number": 20,
+        "time": "2142-02-06 08:19:00",
+        "speaker": "Doctor",
+        "text": "We saw yeast, but no symptoms of fungal infection. We’re not treating it now, but we’ll watch for it, especially since you’ve been on antibiotics."
+      },
+      {
+        "turn_number": 21,
+        "time": "2142-02-06 08:20:00",
+        "speaker": "Patient",
+        "text": "Makes sense. My bladder’s been a mess for years. The urology team mentioned something about self-catheterization?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2142-02-06 08:21:00",
+        "speaker": "Doctor",
+        "text": "Yes. Because of your neurogenic bladder from diabetes, you don’t empty fully, which leads to infections. Urology wants to teach you clean intermittent catheterization."
+      },
+      {
+        "turn_number": 23,
+        "time": "2142-02-06 08:22:00",
+        "speaker": "Patient",
+        "text": "I’m nervous about doing that myself. What if I can’t?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2142-02-06 08:23:00",
+        "speaker": "Doctor",
+        "text": "They’ll train you step by step. If it doesn’t work, they might discuss a long-term solution like a catheter or even a surgical conduit."
+      },
+      {
+        "turn_number": 25,
+        "time": "2142-02-07 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your latest chest X-ray shows no pneumonia. The heart is enlarged, but stable. No new lung issues."
+      },
+      {
+        "turn_number": 26,
+        "time": "2142-02-07 09:01:00",
+        "speaker": "Patient",
+        "text": "Good. I’ve been breathing fine. What about the CT scan they did?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2142-02-07 09:02:00",
+        "speaker": "Doctor",
+        "text": "It showed a thickened bladder wall and some air inside—could be from the catheter, or it might mean chronic bladder inflammation."
+      },
+      {
+        "turn_number": 28,
+        "time": "2142-02-07 09:03:00",
+        "speaker": "Patient",
+        "text": "So that’s why I keep getting infections?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2142-02-07 09:04:00",
+        "speaker": "Doctor",
+        "text": "Exactly. The bladder isn’t emptying well, and the lining is irritated. That’s why urology’s plan is so important—to break this cycle."
+      },
+      {
+        "turn_number": 30,
+        "time": "2142-02-08 10:00:00",
+        "speaker": "Doctor",
+        "text": "Your creatinine is down to 1.0, and potassium is normal. Your kidney function is recovering well with hydration."
+      },
+      {
+        "turn_number": 31,
+        "time": "2142-02-08 10:01:00",
+        "speaker": "Patient",
+        "text": "That’s great. And my blood pressure meds—when will I restart those?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2142-02-08 10:02:00",
+        "speaker": "Doctor",
+        "text": "We held metoprolol and lisinopril during the acute phase because of low BP. Now that you’re stable, we’re restarting them today."
+      },
+      {
+        "turn_number": 33,
+        "time": "2142-02-08 10:03:00",
+        "speaker": "Patient",
+        "text": "Okay. And gabapentin? My legs still ache."
+      },
+      {
+        "turn_number": 34,
+        "time": "2142-02-08 10:04:00",
+        "speaker": "Doctor",
+        "text": "We paused it during the infection, but we can restart it now. It helps with diabetic nerve pain."
+      },
+      {
+        "turn_number": 35,
+        "time": "2142-02-09 08:30:00",
+        "speaker": "Doctor",
+        "text": "All your repeat blood cultures are negative. That’s excellent—means the antibiotics are working."
+      },
+      {
+        "turn_number": 36,
+        "time": "2142-02-09 08:31:00",
+        "speaker": "Patient",
+        "text": "And the urine culture?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2142-02-09 08:32:00",
+        "speaker": "Doctor",
+        "text": "No growth. That means the infection is clearing. You’ve completed 7 days of meropenem, so we’ll stop IV antibiotics."
+      },
+      {
+        "turn_number": 38,
+        "time": "2142-02-09 08:33:00",
+        "speaker": "Patient",
+        "text": "No more IV meds? That’s good. Will I go home soon?"
+      },
+      {
+        "turn_number": 39,
+        "time": "2142-02-09 08:34:00",
+        "speaker": "Doctor",
+        "text": "We’re planning for discharge tomorrow. You’re afebrile, stable, and improving. But you’ll need follow-up."
+      },
+      {
+        "turn_number": 40,
+        "time": "2142-02-10 09:00:00",
+        "speaker": "Doctor",
+        "text": "Today’s labs show your creatinine is 0.9—better than baseline. Blood sugar is more stable too."
+      },
+      {
+        "turn_number": 41,
+        "time": "2142-02-10 09:01:00",
+        "speaker": "Patient",
+        "text": "I’ve been checking it. I’m trying to stay on track."
+      },
+      {
+        "turn_number": 42,
+        "time": "2142-02-10 09:02:00",
+        "speaker": "Doctor",
+        "text": "Good. We’re updating your insulin—increasing glargine to 5 units in the morning. Keep using the sliding scale for corrections."
+      },
+      {
+        "turn_number": 43,
+        "time": "2142-02-10 09:03:00",
+        "speaker": "Patient",
+        "text": "Got it. What about the urology appointment?"
+      },
+      {
+        "turn_number": 44,
+        "time": "2142-02-10 09:04:00",
+        "speaker": "Doctor",
+        "text": "It’s scheduled for tomorrow. They’ll teach you how to self-catheterize. Until then, use the diapers we provided."
+      },
+      {
+        "turn_number": 45,
+        "time": "2142-02-11 10:15:00",
+        "speaker": "Doctor",
+        "text": "You’re doing really well. Vital signs are normal, and you’re alert and eating. We’re clearing you for discharge tomorrow."
+      },
+      {
+        "turn_number": 46,
+        "time": "2142-02-11 10:16:00",
+        "speaker": "Patient",
+        "text": "That’s great. What do I need to do after I go home?"
+      },
+      {
+        "turn_number": 47,
+        "time": "2142-02-11 10:17:00",
+        "speaker": "Doctor",
+        "text": "First, get labs done 48 hours after discharge—urine and blood cultures. Take the form we’ll give you to the lab."
+      },
+      {
+        "turn_number": 48,
+        "time": "2142-02-11 10:18:00",
+        "speaker": "Patient",
+        "text": "Same day as urology?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2142-02-11 10:19:00",
+        "speaker": "Doctor",
+        "text": "Yes, ideal. Also, keep all your meds going—especially insulin, blood pressure pills, and gabapentin."
+      },
+      {
+        "turn_number": 50,
+        "time": "2142-02-11 10:20:00",
+        "speaker": "Patient",
+        "text": "And no more antibiotics?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2142-02-11 10:21:00",
+        "speaker": "Doctor",
+        "text": "None to go home on. But you’ll see infectious disease in a few weeks to make sure the infection is fully gone."
+      },
+      {
+        "turn_number": 52,
+        "time": "2142-02-12 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good news—your discharge orders are in. You’re going home with nursing support."
+      },
+      {
+        "turn_number": 53,
+        "time": "2142-02-12 08:01:00",
+        "speaker": "Patient",
+        "text": "Thank you. I’m ready to be home. Just want to stay healthy."
+      },
+      {
+        "turn_number": 54,
+        "time": "2142-02-12 08:02:00",
+        "speaker": "Doctor",
+        "text": "You’ve made great progress. Keep up with wound care—dry gauze on any oozing areas. The rest can be open to air."
+      },
+      {
+        "turn_number": 55,
+        "time": "2142-02-12 08:03:00",
+        "speaker": "Patient",
+        "text": "I will. And I’ll follow up with all my doctors."
+      },
+      {
+        "turn_number": 56,
+        "time": "2142-02-12 08:04:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Call if you develop fever, pain, or trouble with urination. Otherwise, we’ll see you in clinic soon."
+      },
+      {
+        "turn_number": 57,
+        "time": "2142-02-12 08:05:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks for taking such good care of me."
+      },
+      {
+        "turn_number": 58,
+        "time": "2142-02-12 08:06:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Get some rest, and take it one day at a time."
+      },
+      {
+        "turn_number": 59,
+        "time": "2142-02-12 08:07:00",
+        "speaker": "Patient",
+        "text": "I will. I’m just glad I’m on the mend."
+      },
+      {
+        "turn_number": 60,
+        "time": "2142-02-12 08:08:00",
+        "speaker": "Doctor",
+        "text": "You’ve come a long way. Keep up the good work."
+      },
+      {
+        "turn_number": 61,
+        "time": "2142-02-12 08:09:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you again."
+      },
+      {
+        "turn_number": 62,
+        "time": "2142-02-12 08:10:00",
+        "speaker": "Doctor",
+        "text": "You’re very welcome. We’ll make sure your records are sent to all your providers."
+      },
+      {
+        "turn_number": 63,
+        "time": "2142-02-12 08:11:00",
+        "speaker": "Patient",
+        "text": "That helps. I don’t want to repeat everything."
+      },
+      {
+        "turn_number": 64,
+        "time": "2142-02-12 08:12:00",
+        "speaker": "Doctor",
+        "text": "We’ll coordinate it all. Just focus on your recovery."
+      },
+      {
+        "turn_number": 65,
+        "time": "2142-02-12 08:13:00",
+        "speaker": "Patient",
+        "text": "I will. I’m feeling stronger every day."
+      },
+      {
+        "turn_number": 66,
+        "time": "2142-02-12 08:14:00",
+        "speaker": "Doctor",
+        "text": "That’s exactly what we want to hear. Keep it up."
+      },
+      {
+        "turn_number": 67,
+        "time": "2142-02-12 08:15:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks again, Doctor."
+      }
+    ],
+    "summary": {
+      "admission_start": "2142-02-05 18:06:00",
+      "admission_end": "2142-02-12 15:43:00",
+      "summary_paragraph": "A 58-year-old woman with type 1 diabetes, neurogenic bladder, and bilateral below-knee amputations was readmitted one day after discharge due to fever and hypotension. She was diagnosed with sepsis likely from a urinary tract infection caused by pan-resistant Klebsiella pneumoniae. She was treated with intravenous meropenem for seven days and improved clinically with resolution of fever and normalization of labs. Her acute kidney injury and hyperkalemia resolved with fluid resuscitation and holding lisinopril. Blood and urine cultures eventually cleared. She was restarted on home medications including metoprolol, lisinopril, and gabapentin. Urology planned outpatient training in clean intermittent catheterization to reduce future UTIs. She was discharged home with nursing services, stable and afebrile, with follow-up arranged in urology, infectious disease, and primary care.",
+      "problems": [
+        "Urinary tract infection, site not specified",
+        "Acute kidney failure, unspecified",
+        "Systemic inflammatory response syndrome, unspecified",
+        "Chronic systolic heart failure",
+        "Hyperpotassemia",
+        "Neurogenic bladder NOS",
+        "Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled",
+        "Polyneuropathy in diabetes",
+        "Long-term (current) use of insulin",
+        "Peripheral vascular disease, unspecified",
+        "Below knee amputation status"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-90095ad4f5a7e19a",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2142-02-05 18:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I’ll be taking care of you during this hospital stay. I understand you’ve been feeling unwell?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2142-02-05 18:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I had a fever earlier today. My doctor sent me here because I just got out of the hospital yesterday.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2142-02-05 18:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. You were admitted for a UTI and kidney issues. Now you’re febrile again and had low blood pressure in the ER. We’re concerned about sepsis.\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2142-02-05 18:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Sepsis? That sounds serious. Is it from my bladder again?\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2142-02-05 18:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s likely. You have a history of recurrent UTIs, and your diabetes and neurogenic bladder put you at higher risk. We’ve started broad-spectrum antibiotics.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2142-02-05 18:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I was on ciprofloxacin for the last infection. Shouldn’t that have worked?\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2142-02-05 18:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It was, but this time the infection is caused by a more resistant bacteria—Klebsiella pneumoniae—that wasn’t sensitive to cipro. So we’ve switched to meropenem.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2142-02-05 18:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh. Is that why I got so weak and my blood pressure dropped?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2142-02-05 18:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The infection triggered a systemic response—fever, high white count, low BP. That’s sepsis. But you responded well to fluids, and your pressure is stabilizing.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2142-02-05 18:24:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m glad I’m not in the ICU anymore. What about my kidneys? They were bad last time.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2142-02-05 18:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your creatinine was up to 1.5, which is higher than your baseline of 1.1–1.2. But it’s likely due to dehydration from fever. We’re giving IV fluids, and it’s already improving.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2142-02-05 18:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my potassium? Last time it was really high.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2142-02-05 18:27:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It was 5.8, which is elevated. We held your lisinopril because it can raise potassium. With fluids and monitoring, it’s coming down.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2142-02-05 18:28:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I’ve been so up and down with my sugar too. I had a 420 this morning.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2142-02-05 18:29:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, infections make blood sugar spike. We’ve you on a sliding scale insulin to manage it. We’ll adjust it as you stabilize.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2142-02-06 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your blood and urine cultures came back. The urine grew pan-resistant Klebsiella pneumoniae—very tough bug.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2142-02-06 08:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Pan-resistant? Does that mean the antibiotics won’t work?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2142-02-06 08:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s resistant to most, but meropenem is still effective enough. You’re already improving—no more fevers, and your white count is dropping.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2142-02-06 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. What about the yeast in my urine? Is that an infection too?\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2142-02-06 08:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We saw yeast, but no symptoms of fungal infection. We’re not treating it now, but we’ll watch for it, especially since you’ve been on antibiotics.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2142-02-06 08:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Makes sense. My bladder’s been a mess for years. The urology team mentioned something about self-catheterization?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2142-02-06 08:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. Because of your neurogenic bladder from diabetes, you don’t empty fully, which leads to infections. Urology wants to teach you clean intermittent catheterization.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2142-02-06 08:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m nervous about doing that myself. What if I can’t?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2142-02-06 08:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"They’ll train you step by step. If it doesn’t work, they might discuss a long-term solution like a catheter or even a surgical conduit.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2142-02-07 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your latest chest X-ray shows no pneumonia. The heart is enlarged, but stable. No new lung issues.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2142-02-07 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. I’ve been breathing fine. What about the CT scan they did?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2142-02-07 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It showed a thickened bladder wall and some air inside—could be from the catheter, or it might mean chronic bladder inflammation.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2142-02-07 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So that’s why I keep getting infections?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2142-02-07 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. The bladder isn’t emptying well, and the lining is irritated. That’s why urology’s plan is so important—to break this cycle.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2142-02-08 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your creatinine is down to 1.0, and potassium is normal. Your kidney function is recovering well with hydration.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2142-02-08 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great. And my blood pressure meds—when will I restart those?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2142-02-08 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We held metoprolol and lisinopril during the acute phase because of low BP. Now that you’re stable, we’re restarting them today.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2142-02-08 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. And gabapentin? My legs still ache.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2142-02-08 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We paused it during the infection, but we can restart it now. It helps with diabetic nerve pain.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2142-02-09 08:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All your repeat blood cultures are negative. That’s excellent—means the antibiotics are working.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2142-02-09 08:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the urine culture?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2142-02-09 08:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No growth. That means the infection is clearing. You’ve completed 7 days of meropenem, so we’ll stop IV antibiotics.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2142-02-09 08:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No more IV meds? That’s good. Will I go home soon?\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2142-02-09 08:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re planning for discharge tomorrow. You’re afebrile, stable, and improving. But you’ll need follow-up.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2142-02-10 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Today’s labs show your creatinine is 0.9—better than baseline. Blood sugar is more stable too.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2142-02-10 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been checking it. I’m trying to stay on track.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2142-02-10 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. We’re updating your insulin—increasing glargine to 5 units in the morning. Keep using the sliding scale for corrections.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2142-02-10 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. What about the urology appointment?\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2142-02-10 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s scheduled for tomorrow. They’ll teach you how to self-catheterize. Until then, use the diapers we provided.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2142-02-11 10:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing really well. Vital signs are normal, and you’re alert and eating. We’re clearing you for discharge tomorrow.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2142-02-11 10:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great. What do I need to do after I go home?\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2142-02-11 10:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"First, get labs done 48 hours after discharge—urine and blood cultures. Take the form we’ll give you to the lab.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2142-02-11 10:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Same day as urology?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2142-02-11 10:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, ideal. Also, keep all your meds going—especially insulin, blood pressure pills, and gabapentin.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2142-02-11 10:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And no more antibiotics?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2142-02-11 10:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"None to go home on. But you’ll see infectious disease in a few weeks to make sure the infection is fully gone.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2142-02-12 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good news—your discharge orders are in. You’re going home with nursing support.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2142-02-12 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I’m ready to be home. Just want to stay healthy.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2142-02-12 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ve made great progress. Keep up with wound care—dry gauze on any oozing areas. The rest can be open to air.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2142-02-12 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. And I’ll follow up with all my doctors.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2142-02-12 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Call if you develop fever, pain, or trouble with urination. Otherwise, we’ll see you in clinic soon.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2142-02-12 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks for taking such good care of me.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2142-02-12 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Get some rest, and take it one day at a time.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2142-02-12 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I’m just glad I’m on the mend.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2142-02-12 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ve come a long way. Keep up the good work.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2142-02-12 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you again.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2142-02-12 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re very welcome. We’ll make sure your records are sent to all your providers.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2142-02-12 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That helps. I don’t want to repeat everything.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2142-02-12 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll coordinate it all. Just focus on your recovery.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2142-02-12 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I’m feeling stronger every day.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2142-02-12 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s exactly what we want to hear. Keep it up.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2142-02-12 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks again, Doctor.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2142-02-05 18:06:00\",\n    \"admission_end\": \"2142-02-12 15:43:00\",\n    \"summary_paragraph\": \"A 58-year-old woman with type 1 diabetes, neurogenic bladder, and bilateral below-knee amputations was readmitted one day after discharge due to fever and hypotension. She was diagnosed with sepsis likely from a urinary tract infection caused by pan-resistant Klebsiella pneumoniae. She was treated with intravenous meropenem for seven days and improved clinically with resolution of fever and normalization of labs. Her acute kidney injury and hyperkalemia resolved with fluid resuscitation and holding lisinopril. Blood and urine cultures eventually cleared. She was restarted on home medications including metoprolol, lisinopril, and gabapentin. Urology planned outpatient training in clean intermittent catheterization to reduce future UTIs. She was discharged home with nursing services, stable and afebrile, with follow-up arranged in urology, infectious disease, and primary care.\",\n    \"problems\": [\n      \"Urinary tract infection, site not specified\",\n      \"Acute kidney failure, unspecified\",\n      \"Systemic inflammatory response syndrome, unspecified\",\n      \"Chronic systolic heart failure\",\n      \"Hyperpotassemia\",\n      \"Neurogenic bladder NOS\",\n      \"Diabetes with neurological manifestations, type I [juvenile type], not stated as uncontrolled\",\n      \"Polyneuropathy in diabetes\",\n      \"Long-term (current) use of insulin\",\n      \"Peripheral vascular disease, unspecified\",\n      \"Below knee amputation status\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776962116,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5156,
+      "prompt_tokens": 15349,
+      "total_tokens": 20505,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

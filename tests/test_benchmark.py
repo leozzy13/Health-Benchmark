@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,7 +19,7 @@ from health_benchmark.scripts.llm_client import (
     VLLMLLMClient,
     build_llm_client,
 )
-from health_benchmark.scripts.prompting import render_prompt
+from health_benchmark.scripts.prompting import append_repair_message, render_prompt
 from health_benchmark.scripts.qa_pipeline import (
     SINGLE_ADMISSION_ADVERSARIAL_COUNT,
     SINGLE_ADMISSION_REGULAR_COUNT,
@@ -26,6 +28,7 @@ from health_benchmark.scripts.qa_pipeline import (
     compute_cross_adversarial_count,
 )
 from health_benchmark.scripts.qa_prompting import (
+    append_qa_repair_message,
     render_cross_admission_adversarial_qa_prompt,
     render_cross_admission_regular_qa_prompt,
     render_single_admission_adversarial_qa_prompt,
@@ -462,7 +465,6 @@ class BenchmarkTestCase(unittest.TestCase):
         qas: list[dict[str, object]] = []
         regular_types = [
             "medical_reasoning",
-            "supporting_evidence",
             "care_plan_rationale",
         ]
         for index in range(1, count + 1):
@@ -709,6 +711,11 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertEqual(rendered.recommended_turn_range, [40, 60])
         self.assertIn("Approximate stay length: 2 day(s).", rendered.task_message)
         self.assertIn("Recommended turn range: 40-60 turns.", rendered.task_message)
+        self.assertIn("Exact admission window: 2020-01-01 08:00:00 to 2020-01-02 10:00:00.", rendered.task_message)
+        self.assertIn("Final self-check before returning JSON:", rendered.task_message)
+        self.assertIn("conversation_lines.time nondecreasing and inside the exact admission window", rendered.task_message)
+        self.assertIn("summary.admission_start and summary.admission_end copied exactly from the packet", rendered.task_message)
+        self.assertIn("no conversation line has empty text", rendered.task_message)
         self.assertIn("Hospital course: pneumonia treated with antibiotics.", rendered.storyline_prompt_block)
         self.assertIn("- Pneumonia", rendered.problem_prompt_block)
         self.assertIn("- Respiratory failure", rendered.problem_prompt_block)
@@ -738,6 +745,31 @@ class BenchmarkTestCase(unittest.TestCase):
             self.assertEqual(rendered.recommended_turn_range, expected_range)
             self.assertIn("Discharge note 1", rendered.storyline_prompt_block)
             self.assertIn("Radiology:", rendered.supporting_context_block)
+
+    def test_append_repair_message_includes_specific_generation_guidance(self) -> None:
+        repaired = append_repair_message(
+            "original prompt body",
+            "conversation timestamps must be monotonically increasing",
+        )
+
+        self.assertIn("original prompt body", repaired)
+        self.assertIn("timestamps are nondecreasing inside the exact packet admission window", repaired)
+        self.assertIn("turn_number is contiguous starting at 1", repaired)
+        self.assertIn("summary.admission_start and summary.admission_end exactly copy the packet", repaired)
+        self.assertIn("no line has empty text", repaired)
+        self.assertIn("Validation errors: conversation timestamps must be monotonically increasing", repaired)
+
+    def test_append_qa_repair_message_includes_cross_admission_id_guidance(self) -> None:
+        repaired = append_qa_repair_message(
+            "original qa prompt body",
+            "qas[39].evidence.admissions contain unknown hadm_ids: ['211485835']",
+        )
+
+        self.assertIn("original qa prompt body", repaired)
+        self.assertIn("evidence.admissions must copy only the exact", repaired)
+        self.assertIn("admission_id_for_evidence_only values already present in the prompt context", repaired)
+        self.assertIn("Do not invent, alter, extend, or reformat admission ids.", repaired)
+        self.assertIn("Validation errors: qas[39].evidence.admissions contain unknown hadm_ids", repaired)
 
     def test_validate_single_admission_qa_rejects_missing_turn_ids(self) -> None:
         payload = {
@@ -904,7 +936,7 @@ class BenchmarkTestCase(unittest.TestCase):
             "fever persisted despite antibiotics and blood pressure remained low overnight",
         )
 
-    def test_validate_single_admission_qa_accepts_supporting_evidence_question_type(self) -> None:
+    def test_validate_single_admission_qa_rejects_supporting_evidence_question_type(self) -> None:
         payload = {
             "qas": [
                 {
@@ -918,17 +950,17 @@ class BenchmarkTestCase(unittest.TestCase):
             ]
         }
 
-        validated = validate_single_admission_qa(
-            payload,
-            subject_id="100",
-            hadm_id="10",
-            admission_start="2020-01-01 08:00:00",
-            admission_end="2020-01-02 10:00:00",
-            valid_turn_ids={1, 2},
-            expected_count=1,
-            expected_adversarial_count=0,
-        )
-        self.assertEqual(validated["qas"][0]["question_type"], "supporting_evidence")
+        with self.assertRaises(QAValidationError):
+            validate_single_admission_qa(
+                payload,
+                subject_id="100",
+                hadm_id="10",
+                admission_start="2020-01-01 08:00:00",
+                admission_end="2020-01-02 10:00:00",
+                valid_turn_ids={1, 2},
+                expected_count=1,
+                expected_adversarial_count=0,
+            )
 
     def test_validate_single_admission_qa_rejects_wrong_adversarial_mix(self) -> None:
         payload = self._make_single_qa_payload("10", adversarial_count=0)
@@ -1355,7 +1387,6 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn('"conversation_lines"', rendered_single_regular.context_json)
         self.assertIn("Generate exactly 2 hard answerable short-answer question-answer pairs", rendered_single_regular.user_message)
         self.assertIn("- medical_reasoning", rendered_single_regular.user_message)
-        self.assertIn("- supporting_evidence", rendered_single_regular.user_message)
         self.assertIn("- care_plan_rationale", rendered_single_regular.user_message)
         self.assertNotIn("- adversarial", rendered_single_regular.user_message)
         self.assertNotIn("question_class", rendered_single_regular.user_message)
@@ -1421,6 +1452,14 @@ class BenchmarkTestCase(unittest.TestCase):
             "Evidence must cite at least 2 unique admissions for every item.",
             rendered_cross_regular.user_message,
         )
+        self.assertIn(
+            "evidence.admissions must use only the exact admission_id_for_evidence_only values already present in the provided context.",
+            rendered_cross_regular.user_message,
+        )
+        self.assertIn(
+            "Do not invent, alter, extend, or reformat admission ids.",
+            rendered_cross_regular.user_message,
+        )
         self.assertNotIn(
             "During the hospitalization from YYYY-MM-DD to YYYY-MM-DD, ...",
             rendered_cross_regular.user_message,
@@ -1434,6 +1473,14 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("- Generate exactly 2 questions total.", rendered_cross_adversarial.user_message)
         self.assertIn(
             "Evidence must cite at least 2 unique admissions for every item.",
+            rendered_cross_adversarial.user_message,
+        )
+        self.assertIn(
+            "evidence.admissions must use only the exact admission_id_for_evidence_only values already present in the provided context.",
+            rendered_cross_adversarial.user_message,
+        )
+        self.assertIn(
+            "Do not invent, alter, extend, or reformat admission ids.",
             rendered_cross_adversarial.user_message,
         )
         self.assertIn(CANONICAL_ADVERSARIAL_ANSWER, rendered_cross_adversarial.user_message)
@@ -2376,12 +2423,16 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("/software/singularity/3.8.1/bin/singularity", script)
         self.assertIn("/projects/p33194/containers/vllm-openai_latest.sif", script)
         self.assertIn("/gpfs/projects", script)
+        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", script)
         self.assertIn("#SBATCH --gres=gpu:4", script)
         self.assertIn("#SBATCH --constraint=sxm", script)
+        self.assertIn("#SBATCH --exclude=qgpu2014", script)
         self.assertIn('MODEL="${MODEL:-Qwen/Qwen3-235B-A22B-Instruct-2507-FP8}"', script)
         self.assertIn('MAX_MODEL_LEN="${MAX_MODEL_LEN:-49152}"', script)
-        self.assertIn('VLLM_ENGINE_READY_TIMEOUT_S="${VLLM_ENGINE_READY_TIMEOUT_S:-3600}"', script)
+        self.assertIn('VLLM_ENGINE_READY_TIMEOUT_S="${VLLM_ENGINE_READY_TIMEOUT_S:-7200}"', script)
+        self.assertIn('RETRY_LIMIT="${RETRY_LIMIT:-3}"', script)
         self.assertIn('READY_CHECK_ATTEMPTS="${READY_CHECK_ATTEMPTS:-$(( (VLLM_ENGINE_READY_TIMEOUT_S + READY_CHECK_SLEEP_SECONDS - 1) / READY_CHECK_SLEEP_SECONDS ))}"', script)
+        self.assertIn('DEFAULT_EXCLUDED_NODES="qgpu2014"', script)
         self.assertIn("PROJECT_ROOT", script)
         self.assertIn("SLURM_SUBMIT_DIR", script)
         self.assertIn("MAMBA_ROOT", script)
@@ -2411,16 +2462,155 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("SLURM_JOB_NODELIST", script)
         self.assertIn("hostname -s", script)
         self.assertIn('nvidia-smi -L', script)
+        self.assertIn('validate_non_negative_integer "RETRY_LIMIT" "$RETRY_LIMIT"', script)
+        self.assertIn('echo "Using launcher default excluded nodes: $DEFAULT_EXCLUDED_NODES"', script)
+        self.assertIn('echo "Using vLLM ready timeout: $VLLM_ENGINE_READY_TIMEOUT_S"', script)
+        self.assertIn('echo "Using generation retry limit: $RETRY_LIMIT"', script)
+        self.assertIn('VLLM_LOG="${VLLM_LOG:-$OUTPUT_ROOT/logs/vllm/vllm_${SLURM_JOB_ID:-manual}.log}"', script)
+        self.assertIn('mkdir -p "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$(dirname "$VLLM_LOG")"', script)
         self.assertIn('"$SINGULARITY_BIN" exec --nv -B /projects:/projects "$VLLM_IMAGE"', script)
         self.assertIn('vLLM exited before becoming ready. See $VLLM_LOG', script)
         self.assertIn('kill -0 "$VLLM_PID"', script)
         self.assertIn("resolve_required_env", script)
         self.assertIn('python "$REPO_ROOT/main.py" generate-all', script)
+        self.assertIn('--retry-limit "$RETRY_LIMIT"', script)
         self.assertIn("Resolved repo root: $REPO_ROOT", script)
         self.assertNotIn("gpu:a100", script)
         self.assertNotIn('REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"', script)
         self.assertNotIn('export HF_HOME="${HF_HOME:-$REPO_ROOT/.cache/hf}"', script)
         self.assertNotIn('Using vllm: $vllm_path', script)
+
+    def test_quest_batch_script_rejects_invalid_retry_limit(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        script_path = repo_root / "quest" / "run_generate_all_qwen.slurm"
+
+        completed = subprocess.run(
+            ["/bin/bash", str(script_path), "11826927"],
+            check=False,
+            capture_output=True,
+            text=True,
+            env={"RETRY_LIMIT": "-1"},
+        )
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("RETRY_LIMIT must be a non-negative integer, got: -1", completed.stderr)
+
+    def test_quest_generation_submission_helper_emits_smoke_test_plus_low_batches(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        helper = repo_root / "quest" / "emit_generation_submission_commands.py"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_path = Path(temp_dir) / "top_100_eligible_patients.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["subject_id", "eligible_admissions", "quest_generation_complete"],
+                )
+                writer.writeheader()
+                writer.writerows(
+                    [
+                        {"subject_id": 999, "eligible_admissions": 1, "quest_generation_complete": "yes"},
+                        {"subject_id": 101, "eligible_admissions": 9, "quest_generation_complete": "no"},
+                        {"subject_id": 102, "eligible_admissions": 5, "quest_generation_complete": "no"},
+                        {"subject_id": 103, "eligible_admissions": 5, "quest_generation_complete": "no"},
+                        {"subject_id": 104, "eligible_admissions": 4, "quest_generation_complete": "yes"},
+                        {"subject_id": 105, "eligible_admissions": 4, "quest_generation_complete": "no"},
+                        {"subject_id": 106, "eligible_admissions": 7, "quest_generation_complete": "no"},
+                        {"subject_id": 107, "eligible_admissions": 10, "quest_generation_complete": "no"},
+                    ]
+                )
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(helper),
+                    "--csv",
+                    str(csv_path),
+                    "--account",
+                    "demo",
+                    "--launcher",
+                    "/tmp/run_generate_all_qwen.slurm",
+                    "--smoke-test-subject",
+                    "999",
+                    "--lowest-count",
+                    "6",
+                    "--batch-size",
+                    "2",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("SCRIPT=/tmp/run_generate_all_qwen.slurm", completed.stdout)
+        self.assertIn("ACCOUNT=demo", completed.stdout)
+        self.assertIn("sbatch --account=$ACCOUNT $SCRIPT 999", completed.stdout)
+        self.assertIn("# Job 2\n# counts: 4 4\nsbatch --account=$ACCOUNT $SCRIPT 104 105", completed.stdout)
+        self.assertIn("# Job 3\n# counts: 5 5\nsbatch --account=$ACCOUNT $SCRIPT 102 103", completed.stdout)
+        self.assertIn("# Job 4\n# counts: 7 9\nsbatch --account=$ACCOUNT $SCRIPT 106 101", completed.stdout)
+        self.assertNotIn(" 999 ", completed.stdout)
+
+    def test_quest_shortlist_status_updater_marks_complete_generation_outputs(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        updater = repo_root / "quest" / "update_shortlist_generation_status.py"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            csv_path = temp_root / "top_100_eligible_patients.csv"
+            quest_output_root = temp_root / "medbench-output"
+            quest_output_root.mkdir()
+
+            with csv_path.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["subject_id", "eligible_admissions", "notes"])
+                writer.writeheader()
+                writer.writerows(
+                    [
+                        {"subject_id": 101, "eligible_admissions": 9, "notes": "first"},
+                        {"subject_id": 102, "eligible_admissions": 5, "notes": "second"},
+                        {"subject_id": 103, "eligible_admissions": 4, "notes": "third"},
+                    ]
+                )
+
+            complete_root = quest_output_root / "101"
+            complete_root.mkdir()
+            for filename in (
+                "combined_conversation.json",
+                "patient_summary.json",
+                "cross_admission_qa.json",
+                "benchmark_qa.json",
+            ):
+                (complete_root / filename).write_text("{}", encoding="utf-8")
+
+            partial_root = quest_output_root / "102"
+            partial_root.mkdir()
+            (partial_root / "combined_conversation.json").write_text("{}", encoding="utf-8")
+            (partial_root / "patient_summary.json").write_text("{}", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(updater),
+                    "--csv",
+                    str(csv_path),
+                    "--quest-output-root",
+                    str(quest_output_root),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            with csv_path.open(newline="", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                rows = list(reader)
+                fieldnames = reader.fieldnames
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(fieldnames, ["subject_id", "eligible_admissions", "notes", "quest_generation_complete"])
+        self.assertEqual([row["subject_id"] for row in rows], ["101", "102", "103"])
+        self.assertEqual([row["quest_generation_complete"] for row in rows], ["yes", "no", "no"])
+        self.assertEqual([row["notes"] for row in rows], ["first", "second", "third"])
 
     def test_quest_interactive_script_validates_repo_root_and_uses_absolute_main(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -2482,37 +2672,43 @@ class BenchmarkTestCase(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         slurm_script = (repo_root / "quest" / "qwen_open_eval_multi_patient.slurm").read_text(encoding="utf-8")
         small_slurm_script = (repo_root / "quest" / "qwen_open_eval_small_models.slurm").read_text(encoding="utf-8")
+        small_1gpu_slurm_script = (repo_root / "quest" / "qwen_open_eval_small_models_1gpu.slurm").read_text(encoding="utf-8")
         slurm_27b_2gpu_script = (repo_root / "quest" / "qwen_open_eval_27b_2gpu.slurm").read_text(encoding="utf-8")
         run_script = (repo_root / "quest" / "run_multi_patient_eval_job.sh").read_text(encoding="utf-8")
         launch_script = (repo_root / "quest" / "launch_vllm_server.sh").read_text(encoding="utf-8")
         stop_script = (repo_root / "quest" / "stop_vllm_server.sh").read_text(encoding="utf-8")
         wait_script = (repo_root / "quest" / "wait_for_server.py").read_text(encoding="utf-8")
 
-        self.assertIn("#SBATCH --nodes=2", slurm_script)
-        self.assertIn("#SBATCH --gres=gpu:4", slurm_script)
-        self.assertIn("#SBATCH --constraint=sxm", slurm_script)
-        self.assertIn("#SBATCH --partition=gengpu", slurm_script)
-        self.assertIn("Total allocated GPU count", slurm_script)
-        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-trio}"', slurm_script)
-        self.assertIn("required_total_gpu_count=8", slurm_script)
-        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', slurm_script)
-        self.assertIn("/projects/p33194/health-benchmark", slurm_script)
-        self.assertIn("/projects/p33194/medbench-output", slurm_script)
-        self.assertIn("/projects/p33194/hf_cache", slurm_script)
-        self.assertIn("/projects/p33194/containers/vllm-openai_latest.sif", slurm_script)
+        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", slurm_script)
+        self.assertIn("qwen_open_eval_multi_patient.slurm is retired for judged evaluation.", slurm_script)
+        self.assertIn("qwen_open_eval_small_models.slurm", slurm_script)
+        self.assertIn("qwen_open_eval_27b_2gpu.slurm", slurm_script)
+        self.assertNotIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', slurm_script)
 
         self.assertIn("#SBATCH --nodes=1", small_slurm_script)
         self.assertIn("#SBATCH --ntasks=1", small_slurm_script)
-        self.assertIn("#SBATCH --gres=gpu:1", small_slurm_script)
+        self.assertIn("#SBATCH --gres=gpu:2", small_slurm_script)
+        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", small_slurm_script)
         self.assertIn("#SBATCH --constraint=sxm", small_slurm_script)
         self.assertIn("#SBATCH --mem=256G", small_slurm_script)
         self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-small}"', small_slurm_script)
-        self.assertIn("required_total_gpu_count=1", small_slurm_script)
+        self.assertIn("required_total_gpu_count=2", small_slurm_script)
         self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', small_slurm_script)
+
+        self.assertIn("#SBATCH --nodes=1", small_1gpu_slurm_script)
+        self.assertIn("#SBATCH --ntasks=1", small_1gpu_slurm_script)
+        self.assertIn("#SBATCH --gres=gpu:1", small_1gpu_slurm_script)
+        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", small_1gpu_slurm_script)
+        self.assertIn("#SBATCH --constraint=sxm", small_1gpu_slurm_script)
+        self.assertIn("#SBATCH --mem=256G", small_1gpu_slurm_script)
+        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-small_1gpu}"', small_1gpu_slurm_script)
+        self.assertIn("required_total_gpu_count=1", small_1gpu_slurm_script)
+        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', small_1gpu_slurm_script)
 
         self.assertIn("#SBATCH --nodes=1", slurm_27b_2gpu_script)
         self.assertIn("#SBATCH --ntasks=1", slurm_27b_2gpu_script)
         self.assertIn("#SBATCH --gres=gpu:2", slurm_27b_2gpu_script)
+        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", slurm_27b_2gpu_script)
         self.assertIn("#SBATCH --constraint=sxm", slurm_27b_2gpu_script)
         self.assertIn("#SBATCH --mem=256G", slurm_27b_2gpu_script)
         self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-27b_2gpu}"', slurm_27b_2gpu_script)
@@ -2523,27 +2719,69 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn('case "${1:-}" in', run_script)
         self.assertIn("trio)", run_script)
         self.assertIn("small)", run_script)
+        self.assertIn("small_1gpu)", run_script)
         self.assertIn("27b_2gpu)", run_script)
+        self.assertIn("retired for judged evaluation", run_script)
         self.assertIn('Qwen/Qwen3.5-4B|qwen3.5-4b|1|262144', run_script)
         self.assertIn('Qwen/Qwen3.5-9B|qwen3.5-9b|1|262144', run_script)
-        self.assertIn('Qwen/Qwen3.5-27B|qwen3.5-27b|8|262144', run_script)
         self.assertIn('Qwen/Qwen3.5-27B|qwen3.5-27b|2|131072', run_script)
         self.assertIn('mapfile -t MODELS < <(resolve_model_records "$EVAL_MODEL_PRESET")', run_script)
-        self.assertIn('python "$REPO_ROOT/main.py" evaluate', run_script)
+        self.assertIn('DEFAULT_ANSWER_VLLM_PORT="$((20000 + (SLURM_JOB_ID % 10000) * 4))"', run_script)
+        self.assertIn('ANSWER_VLLM_PORT="${ANSWER_VLLM_PORT:-${VLLM_PORT:-$DEFAULT_ANSWER_VLLM_PORT}}"', run_script)
+        self.assertIn('DEFAULT_JUDGE_VLLM_PORT="$((ANSWER_VLLM_PORT + 2))"', run_script)
+        self.assertIn('JUDGE_VLLM_PORT="${JUDGE_VLLM_PORT:-$DEFAULT_JUDGE_VLLM_PORT}"', run_script)
+        self.assertIn('ANSWER_GPU_DEVICE_IDS="${ANSWER_GPU_DEVICE_IDS:-0}"', run_script)
+        self.assertIn('validate_tcp_port "ANSWER_VLLM_PORT" "$ANSWER_VLLM_PORT"', run_script)
+        self.assertIn('validate_tcp_port "JUDGE_VLLM_PORT" "$JUDGE_VLLM_PORT"', run_script)
+        self.assertIn('Using answer vLLM port: $ANSWER_VLLM_PORT', run_script)
+        self.assertIn('Using judge vLLM port: $JUDGE_VLLM_PORT', run_script)
+        self.assertIn('DEFAULT_JUDGE_TENSOR_PARALLEL_SIZE="1"', run_script)
+        self.assertIn('DEFAULT_JUDGE_MAX_MODEL_LEN="32768"', run_script)
+        self.assertIn('DEFAULT_JUDGE_GPU_DEVICE_IDS="0"', run_script)
+        self.assertIn('JUDGE_TENSOR_PARALLEL_SIZE="${JUDGE_TENSOR_PARALLEL_SIZE:-$DEFAULT_JUDGE_TENSOR_PARALLEL_SIZE}"', run_script)
+        self.assertIn('JUDGE_MAX_MODEL_LEN="${JUDGE_MAX_MODEL_LEN:-$DEFAULT_JUDGE_MAX_MODEL_LEN}"', run_script)
+        self.assertIn('JUDGE_GPU_DEVICE_IDS="${JUDGE_GPU_DEVICE_IDS:-$DEFAULT_JUDGE_GPU_DEVICE_IDS}"', run_script)
+        self.assertIn('CUDA_VISIBLE_DEVICES_OVERRIDE', run_script)
+        self.assertIn('start_named_server', run_script)
+        self.assertIn('stop_named_server', run_script)
+        self.assertIn('run_answers_stage()', run_script)
+        self.assertIn('run_judge_stage()', run_script)
+        self.assertIn('run_full_stage()', run_script)
+        self.assertIn('--stage answers', run_script)
+        self.assertIn('--stage judge', run_script)
+        self.assertIn('--base-url "http://127.0.0.1:${answer_port}/v1"', run_script)
+        self.assertIn('--judge-base-url "http://127.0.0.1:${judge_port}/v1"', run_script)
+        self.assertIn('--expected-model "$model"', run_script)
         self.assertIn('--patient-manifest "$PATIENT_MANIFEST"', run_script)
-        self.assertIn('--models "$MODEL"', run_script)
+        self.assertIn('--models "$model"', run_script)
         self.assertIn('quest_job_outputs', run_script)
         self.assertIn('patient_manifest_snapshot.txt', run_script)
+        self.assertIn('if [[ "$EVAL_MODEL_PRESET" == "small" || "$EVAL_MODEL_PRESET" == "small_1gpu" ]]; then', run_script)
+        self.assertIn('start_named_server "$MODEL" "$MODEL_SLUG" "$TENSOR_PARALLEL_SIZE" "$MAX_MODEL_LEN" "$ANSWER_VLLM_PORT" "$ANSWER_GPU_DEVICE_IDS"', run_script)
+        self.assertIn('start_named_server "$JUDGE_MODEL" "$JUDGE_MODEL_SLUG" "$JUDGE_TENSOR_PARALLEL_SIZE" "$JUDGE_MAX_MODEL_LEN" "$JUDGE_VLLM_PORT" "$JUDGE_GPU_DEVICE_IDS"', run_script)
+        self.assertNotIn('--base-url "http://127.0.0.1:${VLLM_PORT}/v1"', run_script)
+        self.assertIn('MODEL="$model" \\', run_script)
+        self.assertIn('MODEL_SLUG="$server_slug" \\', run_script)
+        self.assertNotIn('export MODEL="$model"', run_script)
+        self.assertNotIn('export MODEL_SLUG="$server_slug"', run_script)
 
         self.assertIn("--distributed-executor-backend ray", launch_script)
         self.assertIn('ray start --head', launch_script)
         self.assertIn('ray start --address', launch_script)
-        self.assertIn('vllm serve "$MODEL"', launch_script)
+        self.assertIn('launch_local_server()', launch_script)
+        self.assertIn('exec "$SINGULARITY_BIN" exec --nv -B /projects:/projects "$VLLM_IMAGE" \\', launch_script)
+        self.assertIn('( launch_local_server ) >"$VLLM_LOG" 2>&1 &', launch_script)
+        self.assertIn('CUDA_VISIBLE_DEVICES_OVERRIDE="${CUDA_VISIBLE_DEVICES_OVERRIDE:-}"', launch_script)
+        self.assertIn('CUDA_VISIBLE_DEVICES_OVERRIDE is not supported for distributed ray launches.', launch_script)
         self.assertIn('RAY_CLUSTER_PID_FILE', launch_script)
         self.assertIn('VLLM_PID_FILE', stop_script)
         self.assertIn('RAY_CLUSTER_PID_FILE', stop_script)
+        self.assertIn('kill -9 "$pid"', stop_script)
+        self.assertIn('for _ in $(seq 1 20); do', stop_script)
         self.assertIn('"/models"', wait_script)
         self.assertIn('"/health"', wait_script)
+        self.assertIn("--expected-model", wait_script)
+        self.assertIn("http.client.BadStatusLine", wait_script)
 
     def test_main_generate_qa_uses_fixed_harder_policy(self) -> None:
         fake_pipeline = Mock()

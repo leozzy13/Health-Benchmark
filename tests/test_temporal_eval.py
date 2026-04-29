@@ -14,6 +14,10 @@ from health_benchmark.temporal_eval.answer_prompting import render_answer_prompt
 from health_benchmark.temporal_eval.answer_runner import run_answer_batches
 from health_benchmark.temporal_eval.batch_builder import build_batches
 from health_benchmark.temporal_eval.config import build_settings
+from health_benchmark.temporal_eval.judge_prompting import (
+    render_adversarial_judge_prompt,
+    render_answerable_judge_prompt,
+)
 from health_benchmark.temporal_eval.loader import resolve_patient_targets
 from health_benchmark.temporal_eval.pipeline import TemporalEvaluationPipeline, normalize_benchmark
 from health_benchmark.temporal_eval.scoring import normalize_answer, score_adversarial, score_answerable
@@ -167,6 +171,16 @@ class TemporalEvalTestCase(unittest.TestCase):
             answers.append({"qa_id": qa_id, "prediction": prediction})
         return {"answers": answers}
 
+    def _judge_answerable_payload(self, qa_ids: list[str], *, score: float = 1.0) -> dict[str, object]:
+        return {
+            "judgments": [{"qa_id": qa_id, "score": score} for qa_id in qa_ids]
+        }
+
+    def _judge_adversarial_payload(self, qa_ids: list[str], *, score: int = 1) -> dict[str, object]:
+        return {
+            "judgments": [{"qa_id": qa_id, "score": score} for qa_id in qa_ids]
+        }
+
     def test_render_answer_prompt_uses_open_answer_contract(self) -> None:
         rendered = render_answer_prompt(
             context_text="context",
@@ -176,8 +190,55 @@ class TemporalEvalTestCase(unittest.TestCase):
         self.assertEqual(payload["questions"], [{"qa_id": "q1", "question": "What happened?"}])
         self.assertEqual(payload["patient_conversation"], "context")
         self.assertIn("Use only the provided conversation.", rendered.system_message)
-        self.assertIn(CANONICAL_ABSTENTION_ANSWER, rendered.system_message)
+        self.assertNotIn("If the answer is not supported by the conversation", rendered.system_message)
         self.assertNotIn("multiple_choice", rendered.system_message)
+
+    def test_render_llm_judge_prompts_use_minimal_inputs(self) -> None:
+        rendered_answerable = render_answerable_judge_prompt(
+            [
+                {
+                    "qa_id": "q1",
+                    "question": "What happened?",
+                    "gold_answer": "dialysis",
+                    "candidate_answer": "dialysis",
+                }
+            ]
+        )
+        answerable_payload = json.loads(rendered_answerable.user_message)
+        self.assertEqual(
+            answerable_payload["items"],
+            [
+                {
+                    "qa_id": "q1",
+                    "question": "What happened?",
+                    "gold_answer": "dialysis",
+                    "candidate_answer": "dialysis",
+                }
+            ],
+        )
+        self.assertIn("Each score must be exactly one of: 0, 0.5, 1.", rendered_answerable.system_message)
+
+        rendered_adversarial = render_adversarial_judge_prompt(
+            [{"qa_id": "q4", "candidate_answer": "not mentioned in the record"}]
+        )
+        adversarial_payload = json.loads(rendered_adversarial.user_message)
+        self.assertEqual(
+            adversarial_payload["items"],
+            [{"qa_id": "q4", "candidate_answer": "not mentioned in the record"}],
+        )
+        self.assertIn("Each score must be exactly one of: 0, 1.", rendered_adversarial.system_message)
+
+    def test_build_settings_uses_larger_default_judge_output_budget(self) -> None:
+        settings = build_settings(
+            self._config(),
+            provider="vllm",
+            base_url="http://127.0.0.1:8000/v1",
+            judge_base_url="http://127.0.0.1:8001/v1",
+            api_key_env=None,
+            models=["Qwen/Qwen3.5-4B"],
+            replace_existing=True,
+        )
+        self.assertEqual(settings.judge_max_output_tokens, 1024)
 
     def test_normalize_benchmark_rejects_legacy_fields(self) -> None:
         with self.assertRaisesRegex(ValueError, "legacy fields"):
@@ -203,6 +264,7 @@ class TemporalEvalTestCase(unittest.TestCase):
             self._config(),
             provider="vllm",
             base_url=None,
+            judge_base_url=None,
             api_key_env=None,
             models=["Qwen/Qwen3.5-4B"],
             replace_existing=None,
@@ -296,6 +358,7 @@ class TemporalEvalTestCase(unittest.TestCase):
             self._config(),
             provider="vllm",
             base_url=None,
+            judge_base_url=None,
             api_key_env=None,
             models=["Qwen/Qwen3.5-4B"],
             replace_existing=None,
@@ -333,10 +396,13 @@ class TemporalEvalTestCase(unittest.TestCase):
             base_config,
             provider="vllm",
             base_url="http://127.0.0.1:8000/v1",
+            judge_base_url="http://127.0.0.1:8001/v1",
             api_key_env=None,
             models=["Qwen/Qwen3.5-4B", "Qwen/Qwen3.5-9B"],
             replace_existing=True,
         )
+        answerable_ids = [f"q{index:02d}" for index in range(1, 13) if index not in {4, 11}]
+        adversarial_ids = ["q04", "q11"]
         client_overrides = {
             "Qwen/Qwen3.5-4B": FakeLLMClient(
                 [
@@ -348,6 +414,14 @@ class TemporalEvalTestCase(unittest.TestCase):
                 [
                     {"parsed_output": self._predicted_answers_payload(1, 10)},
                     {"parsed_output": self._predicted_answers_payload(11, 12)},
+                ]
+            ),
+            "__judge__": FakeLLMClient(
+                [
+                    {"parsed_output": self._judge_answerable_payload(answerable_ids)},
+                    {"parsed_output": self._judge_adversarial_payload(adversarial_ids)},
+                    {"parsed_output": self._judge_answerable_payload(answerable_ids)},
+                    {"parsed_output": self._judge_adversarial_payload(adversarial_ids)},
                 ]
             ),
         }
@@ -368,14 +442,171 @@ class TemporalEvalTestCase(unittest.TestCase):
         self.assertTrue((evaluation_root / "benchmark_snapshot.json").exists())
         self.assertTrue((evaluation_root / "qwen3.5-4b" / "summary.json").exists())
         self.assertTrue((evaluation_root / "qwen3.5-9b" / "summary.json").exists())
+        self.assertTrue((evaluation_root / "qwen3.5-4b" / "llm_judgments.jsonl").exists())
         self.assertTrue((evaluation_root / "comparison" / "leaderboard.json").exists())
         leaderboard = json.loads((evaluation_root / "comparison" / "leaderboard.json").read_text(encoding="utf-8"))
         self.assertEqual([row["model_slug"] for row in leaderboard["models"]], ["qwen3.5-4b", "qwen3.5-9b"])
+        self.assertEqual(leaderboard["models"][0]["llm_score"], 1.0)
         model_summary = json.loads((evaluation_root / "qwen3.5-4b" / "summary.json").read_text(encoding="utf-8"))
         self.assertEqual(model_summary["run_status"], "completed")
         self.assertEqual(model_summary["num_questions_total"], 12)
         self.assertEqual(model_summary["macro_f1_answerable"], 1.0)
         self.assertEqual(model_summary["adversarial_accuracy"], 1.0)
+        self.assertEqual(model_summary["llm_score"], 1.0)
+        self.assertNotIn("answerable_count", model_summary["breakdowns"]["by_scope"]["cross_admission"])
+
+    def test_pipeline_supports_serial_answers_then_judge_stages(self) -> None:
+        patient_root = self._write_patient_artifacts()
+        base_config = self._config()
+        answer_settings = build_settings(
+            base_config,
+            provider="vllm",
+            base_url="http://127.0.0.1:8000/v1",
+            judge_base_url=None,
+            api_key_env=None,
+            models=["Qwen/Qwen3.5-4B"],
+            stage="answers",
+            replace_existing=True,
+        )
+        answer_pipeline = TemporalEvaluationPipeline(
+            base_config,
+            answer_settings,
+            client_overrides={
+                "Qwen/Qwen3.5-4B": FakeLLMClient(
+                    [
+                        {"parsed_output": self._predicted_answers_payload(1, 10)},
+                        {"parsed_output": self._predicted_answers_payload(11, 12)},
+                    ]
+                )
+            },
+        )
+
+        answer_summary = answer_pipeline.run([(11826927, patient_root)])
+
+        self.assertEqual(answer_summary["final_status"], "completed")
+        self.assertEqual(answer_summary["results"][0]["stage"], "answers")
+        self.assertIsNone(answer_summary["results"][0]["comparison_summary_path"])
+        answer_model_summary = json.loads(
+            (patient_root / "evaluation" / "qwen3.5-4b" / "summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(answer_model_summary["run_status"], "answers_completed")
+        self.assertEqual(answer_model_summary["llm_score"], 0.0)
+        self.assertEqual(
+            (patient_root / "evaluation" / "qwen3.5-4b" / "llm_judgments.jsonl").read_text(encoding="utf-8"),
+            "",
+        )
+        self.assertFalse((patient_root / "evaluation" / "comparison" / "leaderboard.json").exists())
+
+        answerable_ids = [f"q{index:02d}" for index in range(1, 13) if index not in {4, 11}]
+        adversarial_ids = ["q04", "q11"]
+        judge_settings = build_settings(
+            base_config,
+            provider="vllm",
+            base_url=None,
+            judge_base_url="http://127.0.0.1:8001/v1",
+            api_key_env=None,
+            models=["Qwen/Qwen3.5-4B"],
+            stage="judge",
+            replace_existing=True,
+        )
+        judge_pipeline = TemporalEvaluationPipeline(
+            base_config,
+            judge_settings,
+            client_overrides={
+                "__judge__": FakeLLMClient(
+                    [
+                        {"parsed_output": self._judge_answerable_payload(answerable_ids)},
+                        {"parsed_output": self._judge_adversarial_payload(adversarial_ids)},
+                    ]
+                )
+            },
+        )
+
+        judge_summary = judge_pipeline.run([(11826927, patient_root)])
+
+        self.assertEqual(judge_summary["final_status"], "completed")
+        self.assertEqual(judge_summary["results"][0]["stage"], "judge")
+        self.assertTrue((patient_root / "evaluation" / "comparison" / "leaderboard.json").exists())
+        judged_model_summary = json.loads(
+            (patient_root / "evaluation" / "qwen3.5-4b" / "summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(judged_model_summary["run_status"], "completed")
+        self.assertEqual(judged_model_summary["llm_score"], 1.0)
+        self.assertGreaterEqual(
+            judged_model_summary["operational_metrics"]["total_wall_time_seconds"],
+            answer_model_summary["operational_metrics"]["total_wall_time_seconds"],
+        )
+
+    def test_pipeline_reuses_27b_answer_server_for_judging_when_no_judge_base_url_is_given(self) -> None:
+        patient_root = self._write_patient_artifacts()
+        base_config = self._config()
+        settings = build_settings(
+            base_config,
+            provider="vllm",
+            base_url="http://127.0.0.1:8000/v1",
+            judge_base_url=None,
+            api_key_env=None,
+            models=["Qwen/Qwen3.5-27B"],
+            replace_existing=True,
+        )
+        answerable_ids = [f"q{index:02d}" for index in range(1, 13) if index not in {4, 11}]
+        adversarial_ids = ["q04", "q11"]
+        shared_client = FakeLLMClient(
+            [
+                {"parsed_output": self._predicted_answers_payload(1, 10)},
+                {"parsed_output": self._predicted_answers_payload(11, 12)},
+                {"parsed_output": self._judge_answerable_payload(answerable_ids)},
+                {"parsed_output": self._judge_adversarial_payload(adversarial_ids)},
+            ]
+        )
+        pipeline = TemporalEvaluationPipeline(
+            base_config,
+            settings,
+            client_overrides={"Qwen/Qwen3.5-27B": shared_client},
+        )
+
+        summary = pipeline.run([(11826927, patient_root)])
+
+        self.assertEqual(summary["final_status"], "completed")
+        self.assertEqual(len(shared_client.calls), 4)
+        model_summary = json.loads(
+            (patient_root / "evaluation" / "qwen3.5-27b" / "summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(model_summary["llm_score"], 1.0)
+
+    def test_pipeline_fails_non_27b_eval_without_judge_base_url(self) -> None:
+        patient_root = self._write_patient_artifacts()
+        base_config = self._config()
+        settings = build_settings(
+            base_config,
+            provider="vllm",
+            base_url="http://127.0.0.1:8000/v1",
+            judge_base_url=None,
+            api_key_env=None,
+            models=["Qwen/Qwen3.5-4B"],
+            replace_existing=True,
+        )
+        pipeline = TemporalEvaluationPipeline(
+            base_config,
+            settings,
+            client_overrides={
+                "Qwen/Qwen3.5-4B": FakeLLMClient(
+                    [
+                        {"parsed_output": self._predicted_answers_payload(1, 10)},
+                        {"parsed_output": self._predicted_answers_payload(11, 12)},
+                    ]
+                )
+            },
+        )
+
+        summary = pipeline.run([(11826927, patient_root)])
+
+        self.assertEqual(summary["final_status"], "failed")
+        self.assertEqual(summary["failed"], [11826927])
+        model_summary = json.loads(
+            (patient_root / "evaluation" / "qwen3.5-4b" / "summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(model_summary["run_status"], "failed_input_error")
 
     def test_main_evaluate_accepts_patient_manifest(self) -> None:
         manifest = self.root / "patients.txt"
@@ -397,16 +628,18 @@ class TemporalEvalTestCase(unittest.TestCase):
             main_cli,
             "build_evaluation_settings",
             return_value=Mock(),
-        ), patch.object(
+        ) as build_settings_mock, patch.object(
             main_cli,
             "resolve_patient_targets",
             return_value=[(11826927, self.output_root / "11826927"), (17207245, self.output_root / "17207245")],
-        ) as build_settings_mock:
+        ):
             exit_code = main_cli.main(
                 [
                     "evaluate",
                     "--output-root",
                     str(self.output_root),
+                    "--stage",
+                    "judge",
                     "--patient-manifest",
                     str(manifest),
                     "--models",
@@ -416,4 +649,5 @@ class TemporalEvalTestCase(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         build_settings_mock.assert_called_once()
+        self.assertEqual(build_settings_mock.call_args.kwargs["stage"], "judge")
         fake_pipeline.run.assert_called_once()

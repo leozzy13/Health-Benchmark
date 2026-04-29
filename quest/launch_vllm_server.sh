@@ -16,8 +16,28 @@ RAY_CLUSTER_PID_FILE="${RAY_CLUSTER_PID_FILE:-}"
 SLURM_NODE_COUNT="${SLURM_JOB_NUM_NODES:-1}"
 REASONING_PARSER="${REASONING_PARSER:-qwen3}"
 RAY_LOG_DIR="${RAY_LOG_DIR:-$(dirname "$VLLM_LOG")/ray_${MODEL_SLUG}_${SLURM_JOB_ID:-manual}}"
+CUDA_VISIBLE_DEVICES_OVERRIDE="${CUDA_VISIBLE_DEVICES_OVERRIDE:-}"
+
+launch_local_server() {
+  if [[ -n "$CUDA_VISIBLE_DEVICES_OVERRIDE" ]]; then
+    export CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES_OVERRIDE"
+  else
+    unset CUDA_VISIBLE_DEVICES
+  fi
+  exec "$SINGULARITY_BIN" exec --nv -B /projects:/projects "$VLLM_IMAGE" \
+    vllm serve "$MODEL" \
+    --host 127.0.0.1 \
+    --port "$VLLM_PORT" \
+    --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
+    --max-model-len "$MAX_MODEL_LEN" \
+    --reasoning-parser "$REASONING_PARSER"
+}
 
 if [[ "$SLURM_NODE_COUNT" -gt 1 && "$TENSOR_PARALLEL_SIZE" -gt 4 ]]; then
+  if [[ -n "$CUDA_VISIBLE_DEVICES_OVERRIDE" ]]; then
+    echo "CUDA_VISIBLE_DEVICES_OVERRIDE is not supported for distributed ray launches." >&2
+    exit 2
+  fi
   HEAD_NODE="$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)"
   mkdir -p "$RAY_LOG_DIR"
   export HEAD_NODE RAY_PORT SINGULARITY_BIN VLLM_IMAGE
@@ -53,14 +73,7 @@ while true; do sleep 30; done
   " >"$VLLM_LOG" 2>&1 &
   VLLM_PID=$!
 else
-  "$SINGULARITY_BIN" exec --nv -B /projects:/projects "$VLLM_IMAGE" \
-    vllm serve "$MODEL" \
-    --host 127.0.0.1 \
-    --port "$VLLM_PORT" \
-    --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
-    --max-model-len "$MAX_MODEL_LEN" \
-    --reasoning-parser "$REASONING_PARSER" \
-    >"$VLLM_LOG" 2>&1 &
+  ( launch_local_server ) >"$VLLM_LOG" 2>&1 &
   VLLM_PID=$!
 fi
 
