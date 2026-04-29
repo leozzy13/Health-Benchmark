@@ -1,0 +1,805 @@
+{
+  "subject_id": "13648633",
+  "hadm_id": "24082084",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-24T03:54:57Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 8 day(s).\n- Recommended turn range: 60-85 turns.\n- Exact admission window: 2177-03-30 21:20:00 to 2177-04-07 16:11:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2175-12-20 01:04:00",
+    "admission_end": "2175-12-26 16:20:00",
+    "summary_paragraph": "Mr. ___ was admitted for confusion and a fall, with worsening back pain. He has a history of hepatitis C cirrhosis, recurrent hepatic encephalopathy, and prior vertebral osteomyelitis. Evaluation revealed hepatic encephalopathy likely triggered by pain and stress, with no evidence of acute infection. MRI showed new acute compression fractures at T9, T11, and L1, but no active osteomyelitis. A possible aortic valve vegetation seen on TTE was ruled out by TEE. He was treated with continued lactulose and rifaximin for encephalopathy, optimized diuretic therapy, and initiated on high-dose vitamin D and testosterone replacement for osteoporosis. A TLSO brace was fitted for spinal support. His mental status and pain improved, and he was discharged to extended care with follow-up plans.",
+    "problems": [
+      "Pathologic fracture of vertebrae",
+      "Unspecified viral hepatitis C with hepatic coma",
+      "Portal hypertension",
+      "Esophageal varices in diseases classified elsewhere, without mention of bleeding",
+      "Cirrhosis of liver without mention of alcohol",
+      "Osteoporosis, unspecified",
+      "Other chronic pain",
+      "Other chronic pulmonary heart diseases",
+      "History of fall",
+      "Personal history of tobacco use",
+      "Hypopotassemia"
+    ]
+  },
+  "stay_days": 8,
+  "recommended_turn_range": [
+    60,
+    85
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2177-04-07 00:00:00): Name:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nCephalosporins\n \nAttending: ___.\n \nChief Complaint:\npresyncope and syncope\n \nMajor Surgical or Invasive Procedure:\nRight heart catheterization ___\n\n \nHistory of Present Illness:\n___ with ESLD on ___ transplant list, c/b hepatic \nencephalopathy and grade 2 varices, presents with progressive \ndyspnea on exertion, numerous episodes of presyncope and one \nepisode of syncope.  \n.  \nMr. ___ states that he has been chronically deconditioned \nfor many years as a result of his ESLD and associated \ncomorbidies (in particular, his osteomyelitis and vertebral \ncompression fractures). He has been short of breath after \nmoderate exertion for nearly ___ years and has been experiencing \nprofound fatigue/weakness since hospitalization for lumbar \ncompression fracture one year ago.\nFor the past month, he has found himself gasping for breath \nafter walking even one or two blocks, after which he feels very \nlightheaded, sometimes necessitating him to sit down or hold on \nto a wall to prevent himself from falling.  He has had 5 or so \nof these presyncope episodes in the past year.  Two days prior \nto presentation, an episode of similar presyncope occurred, but \nhe was not able to catch himself, and he fainted and fell to the \nfloor.  Bystanders told him he was out for only a few seconds.  \nThere was no associated shaking or incontinence.  He felt no \nirregular heart beats.  He got up and rested and his symptoms \nresolved.  \nPatient also notes lower extremity weakness and dull aching, \nmostly in his quads, worse with increased exertion.  He rarely \nfeels symptoms in his gluts or calves.  At times, he has had \ntrouble getting up from chairs.  This problem has been \nextensively worked up by his hepatologist, Dr. ___.  MRI was \ndone recently at the beginning of ___ that showed no \nevidence of cord impingement.  TSH and CPK were also within \nnormal limits.  \nPatient denies any chest pain with exertion. He also denies \nnumbness, tingling, headache, dysarthria during any of these \nepisodes. \nPatient waited 3 days before presenting to the hospital because \nhe knew his symptoms would not recur if he rested in bed.\n.  \nHe presented to his ___ clinic, where it was noted that he \ndesatted to the high ___ while ambulating.  He was sent to the \nED, where CEs were sent and negative.  CTA was negative for PE.  \nHe received medication for pain control.  \n.\nThis morning, patient is asymptomatic.  He has been in bed all \nmorning, so does not feel any shortness of breath, \nlightheadedness or lower extremity myalgia/weakness.   \n.  \nREVIEW OF SYSTEMS: \nDenies fever, chills, night sweats, vision changes, rhinorrhea, \ncongestion, sore throat, cough, chest pain, nausea, vomiting, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria.  \n \nPast Medical History:\n- ESLD, on transplant list  \n- Hep C cirrhosis, genotype I, c/b encephalopathy, grade II \nvarices  \n- H/o SBP per patient  \n- History of IVDU  \n- History of EtOH  \n- History of septic arthritis (reports multiple joints)  \n- History of osteomyelitis of R proximal humerus ___  \n- History of osteomyeitis in lumbar vertebrae - finished course  \n\nvanco in ___. Now on suppressive doxy treatment\n- Osteoporosis c/b L2-L4 compression fractures  \n- Chronic back pain  \n \nSocial History:\n___\nFamily History:\nFather with prostate cancer. Mother with diabetes.  \n \nPhysical Exam:\nPHYSICAL EXAM ON ADMISSION:\nVS- Temp 95.2, BP 129/85, HR 58, RR 18, O2Sat 98% RA at rest, \n254.5 lb.\nGENERAL- well-appearing in NAD, comfortable, appropriate\nHEENT- PERRLA, sclera anicteric, MMM, OP clear\nNECK - supple, no thyromegaly, no JVD, no carotid bruits\nLUNGS - CTA bilat, no r/rh/wh, good air movement, resp \nunlabored, no accessory muscle use\nHEART - RRR, soft ___ SEM in LUSB, no gallop or rub\nAbd: soft, minimal tenderness in the LLQ, no mass, liver felt 1 \ncm below costal margin, no rebound or guarding\nEXTREMITIES - 2+ pitting edema to the knees bilaterally, 2+ \nperipheral pulses (radials, DPs)\nNEURO - awake, A&Ox3, CNs II-XII grossly intact, no asterixis, \nno focal weakness \n\nPHYSICAL EXAM ON DISCHARGE:\nVS- Tc 96.0 Tm 98.5, BP 104-114/63-76, HR 66-75, RR 18, O2Sat \n97% RA at rest\nGENERAL- well-appearing in NAD, comfortable, appropriate  \nHEENT- PERRL, sclera anicteric, MMM, OP clear  \nNECK - supple, no JVD, no carotid bruits  \nLUNGS - CTAB, no r/rh/wh \nHEART - RRR, nl s1, split s2, no murmurs\nAbd: +BS, soft, nontender, no hepatosplenomegaly, liver palpable \nunder costal margin on inspiration, no splenomegaly \nEXTREMITIES - trace edema to shins bilaterally, 2+ peripheral \npulses (radials, DPs)  \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, no asterixis\n \nPertinent Results:\nLabs on Admission:\n___ 04:40PM BLOOD WBC-3.9* RBC-4.36* Hgb-13.9* Hct-42.0 \nMCV-96 MCH-31.9 MCHC-33.1 RDW-15.8* Plt ___\n___ 04:40PM BLOOD Neuts-49.8* ___ Monos-6.1 Eos-3.6 \nBaso-0.6\n___ 04:40PM BLOOD Glucose-160* UreaN-9 Creat-0.9 Na-138 \nK-4.0 Cl-108 HCO3-24 AnGap-10\n___ 04:40PM BLOOD ALT-36 AST-79* AlkPhos-215* TotBili-2.7*\n___ 04:40PM BLOOD Lipase-11\n___ 04:40PM BLOOD proBNP-353*\n___ 07:44AM BLOOD Albumin-2.6* Calcium-8.0* Phos-4.2 Mg-1.7\n___ 04:40PM BLOOD D-Dimer-643*\n\nAutoimmune labs:\n___ 06:25AM BLOOD ___ * Titer-1:40\n___ 06:25AM BLOOD RheuFac-11\n\nCardiac Enzymes:\n___ 07:44AM BLOOD CK-MB-4 cTropnT-<0.01\n___ 04:40PM BLOOD cTropnT-<0.01\n\nImaging:\n___ Chest Xray (PA and Lateral):\nFINDINGS: PA and lateral views of the chest were obtained. Lungs \nappear\nclear and well expanded without focal consolidation, effusion, \nor\npneumothorax. Several calcified lymph nodes are again noted \nprojecting over\nthe left pulmonary hilum. Cardiomediastinal silhouette is \nstable. Bony\nstructures appear intact. No free air below the right \nhemidiaphragm.\nIMPRESSION: No acute intrathoracic process.\n\n___ Chest CTA\nFINDINGS: Contrast timing is suitable for evaluation of the \npulmonary\narteries to the subsegmental level. No pulmonary embolus is \nidentified. The\nheart and great vessels are otherwise unremarkable with normal \ncaliber. There are no nodules, consolidations, or effusions in \nthe lungs. Calcified left hilar nodes are unchanged from prior \nradiographs. No medistinal, hilar or axillary adenopathy is \npresent. Airways are patent to the segmental level.  Thoracic \nvertebral compression fractures are stable since MRI ___ which provides more thorough assessment.\nIMPRESSION: No pulmonary embolism or other acute process in the \nchest.\n\n___ TTE\nThe left atrium is mildly dilated. Left ventricular wall \nthicknesses are normal. The left ventricular cavity size is \nnormal. Overall left ventricular systolic function is normal \n(LVEF>55%). The right ventricular cavity is mildly dilated with \nnormal free wall contractility. There is abnormal septal \nmotion/position consistent with right ventricular \npressure/volume overload. The aortic valve leaflets (3) appear \nstructurally normal with good leaflet excursion and no aortic \nstenosis or aortic regurgitation. The mitral valve appears \nstructurally normal with trivial mitral regurgitation. Moderate \n[2+] tricuspid regurgitation is seen. There is severe pulmonary \nartery systolic hypertension. There is no pericardial effusion.\nCompared with the prior study (images reviewed) of ___, \nestimated pulmonary artery systolic pressure is now higher and \ntricuspid regurgitation is now more prominent.  \n\n___ cardic cath:\nFINAL DIAGNOSIS:    \n1. Moderate pulmonary hypertension that worsened in the upright \nposition.\n2. Mild improvement in mean PA pressures, pulmonary vascular \nresistance,\nand cardiac index with 100% FiO2 therapy.  No additional \nimprovement\nabove this with the addition of inhaled nitric oxide.\n\n___ TTE:\nNo atrial septal defect or patent foramen ovale is seen by 2D, \ncolor Doppler or saline contrast with maneuvers. No late \ncontrast is seen in the left heart (suggesting absence of \nintrapulmonary shunting). There is mild symmetric left \nventricular hypertrophy. The left ventricular cavity size is \nnormal. Overall left ventricular systolic function is normal \n(LVEF 65%). Tissue Doppler imaging suggests a normal left \nventricular filling pressure (PCWP<12mmHg). The right \nventricular free wall is hypertrophied. The right ventricular \ncavity is dilated with normal free wall contractility. The \naortic valve leaflets (3) appear structurally normal with good \nleaflet excursion and no aortic stenosis or aortic \nregurgitation. The mitral valve appears structurally normal with \ntrivial mitral regurgitation. There is no mitral valve prolapse. \nThe tricuspid valve leaflets are mildly thickened. Moderate [2+] \ntricuspid regurgitation is seen. There is moderate pulmonary \nartery systolic hypertension. There is no pericardial effusion.\nCompared with the findings of the prior study (images reviewed) \nof ___, the findings are similar.  \n\nLabs on Discharge:\n___ 07:30AM BLOOD WBC-5.5 RBC-4.50* Hgb-14.5 Hct-44.3 \nMCV-98 MCH-32.3* MCHC-32.8 RDW-15.7* Plt ___\n___ 07:30AM BLOOD Plt ___\n___ 07:30AM BLOOD Glucose-117* UreaN-13 Creat-0.9 Na-135 \nK-4.0 Cl-101 HCO3-27 AnGap-11\n___ 07:30AM BLOOD ALT-36 AST-71* AlkPhos-224* TotBili-2.8*\n___ 07:30AM BLOOD Calcium-8.7 Phos-3.4 Mg-1.7\n \nBrief Hospital Course:\nPrimary Reason for Admission:  \n___ with ESLD presents with 2 months of worsening dyspnea on \nexertion, several episodes of presyncope and one episode of \nsyncope, as well as progressively worsening ___ weakness.\n\nActive Diagnoses:\n# Syncope/Presyncope. Initial ddx for syncope included pulmonary \nhypertension/portopulmonary hypertension (which he is at risk \nfor given ESLD), CAD (given patient's new Twave inversions, and \nexertional-related symptoms), or general deconditioning.  \nPatient was already ruled out for PE in ED and cardiac enzymes \nare negative x2 with no symptoms of angina to suggest ACS.  TTE \non day of admission showed TR gradient of 60mmHg, up from 30mmHg \nin ___, consistent with pulmonary hypertension.  This also \nexplains patient's progressive dyspnea on exertion.  RHC \n___ showed severe pulm htn, mPAP 45mmHg with 10mmHg \nincrease in mPAP when sitting up.  mPAP dropped with O2, but was \nunresponsive to NO.  PFTs showed normal lung volumes and \nslightly reduced (but not dramatically reduced) DLCO.  \nContinuous O2 monitoring at night showed hat patient's O2 sat \ndips down to low ___, sometimes high ___, while sleeping.  \nPulmonology team recommended starting Sildinofil, home oxygen, \nand getting an outpatient sleep study.  ___ and RF to rule out \nother causes of pulmonary hypertension were negative.  Patient \nwas also diuresed to improve cardiac status.  He was started on \nhome oxygen at night and was prescribed Sildenafil, but was \nawaiting insurance approval at the time of discharge.\n\nChronic diagnoses:\n# ___ weakness. No obvious neurological deficits on exam and \npatient denies sensory loss or incotinence.  Patient received an \nMRI two weeks ago that was negative for cord \ncompression/impingement.  Patient states this is a chronic issue \nfor him, however, it has worsened over the past few months.  Ddx \nincludes cord compression (ruled out by MRI earlier this month), \nclaudication (unlikely given distribution of his ache in his \nquads), hypothyroidism (but nl TSH earlier this month), myopathy \n(normal CPK earlier this month), or general deconditioning.  No \nneed to repeat MRI obtained earlier this month since patient \ndoes not have signs of cord compression.  Physical therapy saw \npatient in house and felt he was safe for ambulation.\n\n# ESLD:  ESLD from ___ and on liver transplant list.  Sober for \n___ years.  Has hx of hepatic encephalopathy with sleep/wake \ninversion and prior episodes of SBP.  On admission, there was no \nneed for paracentesis since no exam findings of ascites. He was \ncontinued on lactulose, rifaximin for hepatic encephalopathy, \nhis diuretic regimen (plus additional diuresis on top of that), \nand nadolol.  \n\n# Chronic pain:  Patient has chronic back pain from chornic \ncompression fractures.  He was continued on his home morphine \nand dilaudid regimen.\n\n# Osteoporosis:  Severe osteoporisis that began after his \nepisode of osteomyelitis, leading to chronic compression \nfractures.  He was continued on home calcium and vitamin D.  \n\nTransitional Issues:\nPatient was encouraged to set up appointment for outpatient \nsleep study (for which his PCP has already referred him), as OSA \nmay be a reversible cause of pulmonary hypertension. Per patient \nreport he was in the process of scheduling this appointment. \n\nSildenafil pprescription was provided for the patient, although \nhis prio authorization had not yet come through at the time of \ndischarge. Per pulmonary, it was ok to discharge off this \nmedication, with oxygen.\n\nWill follow-up with Dr. ___ in Pulmonary ___ and will \ncontinue to work to get insurance approval for Sildenafil.\n\nNew home oxygen therapy was arranged for the patient on \ndischarge.\n\n# CODE: DNR/DNI confirmed with the patient  \n# CONTACT: Sister ___ ___  \n\n \n___ on Admission:\n- amiloride 10 mg daily  \n- adderall 90 mg daily prn  \n- fluoxetine 60 mg daily  \n- furosemide 40 mg daily  \n- hydromorphone 2 mg q6h prn for pain  \n- lactulose 40 mg TID  \n- lidocaine 1 patch daily  \n- morphine 30 mg BID  \n- nadolol 40 mg dialy  \n- omeprazole 20 mg BID  \n- potassium chloride 20 mEq daily  \n- rifaximin 550 mg BID  \n- teriparatide 20 mcg injection daily  \n- testosterone patch 2.5 mg daily  \n- doxycycline 100 mg BID  \n- calcium-vitD 600/400 BID  \n- vitamin D3 1000 units BID  \n- magnesium 400 mg daily  \n- MVI daily  \n \nDischarge Medications:\n1. amiloride 5 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).  \n2. Adderall 30 mg Tablet Sig: Three (3) Tablet PO once a day as \nneeded.  \n3. fluoxetine 20 mg Capsule Sig: Three (3) Capsule PO DAILY \n(Daily).  \n4. furosemide 40 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n5. hydromorphone 2 mg Tablet Sig: One (1) Tablet PO Q6H (every 6 \nhours) as needed for pain.  \n6. lactulose 20 gram Packet Sig: Two (2) packets PO three times \na day.  \n7. lidocaine 5 %(700 mg/patch) Adhesive Patch, Medicated Sig: \nOne (1) Adhesive Patch, Medicated Topical DAILY (Daily).  \n8. morphine 30 mg Tablet Extended Release Sig: One (1) Tablet \nExtended Release PO every twelve (12) hours.  \n9. nadolol 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n10. omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO BID (2 times a day).  \n11. potassium chloride 20 mEq Packet Sig: One (1) Packet PO once \na day.  \n12. rifaximin 550 mg Tablet Sig: One (1) Tablet PO BID (2 times \na day).  \n13. teriparatide 20 mcg/dose - 600 mcg/2.4 mL Pen Injector Sig: \nOne (1) injection Subcutaneous daily ().  \n14. doxycycline hyclate 100 mg Capsule Sig: One (1) Capsule PO \nQ12H (every 12 hours).  \n15. Calcium 600 + D(3) 600 mg(1,500mg) -400 unit Tablet Sig: One \n(1) Tablet PO twice a day.  \n16. Vitamin D-3 1,000 unit Tablet, Chewable Sig: One (1) Tablet, \nChewable PO twice a day.  \n17. magnesium 200 mg Tablet Sig: Two (2) Tablet PO once a day.  \n18. multivitamin     Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n19. sildenafil 20 mg Tablet Sig: One (1) Tablet PO TID (3 times \na day).\nDisp:*90 Tablet(s)* Refills:*1*\n20. Oxygen therapy\nPlease provide patient with 2L continuous pulse-dose oxygen for \nportability.  Dx: Pulmonary hypertension.  RA sat 88%.\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary Diagnoses:\nPulmonary Hypertension\nPortopulmonary Syndrome\n\nSecondary Diagnoses:\nEnd Stage Liver Disease\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\nIt was a pleasure taking care of you at ___ \n___.  You were admitted after an episode of fainting \nafter exerting yourself.  You frequently experienced gasping for \nbreath after exertion.  During this hospitalization, you were \nfound to have pulmonary hypertension, most likely related to \nportal hypertension from liver disease.  You were seen by liver, \nheart, and lung specialists, who have recommended you start a \nnew medication, start home oxygen at night, and also get \nevaluated for sleep apnea.\nPlease note the following changes have been made to your \nmedications:\n- Please start Sildenafil 20mg three times/day\n- Please start using Supplemental Oxygen at 2L overnight\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Other chronic pulmonary heart diseases\n- Thrombocytopenia, unspecified\n- Awaiting organ transplant status\n- Esophageal varices without mention of bleeding\n- Portal hypertension\n- Hepatopulmonary syndrome\n- Cirrhosis of liver without mention of alcohol\n- Chronic hepatitis C without mention of hepatic coma\n- Osteoporosis, unspecified\n- Backache, unspecified\n- Leukocytopenia, unspecified\n- Other sequelae of chronic liver disease\n- Syncope and collapse\n- Headache",
+  "supporting_context_block": "Radiology:\n- 2177-03-30 17:22:00: CHEST RADIOGRAPH PERFORMED ON ___ Comparison with a prior study from ___. CLINICAL HISTORY: Shortness of breath, question pneumonia. FINDINGS: PA and lateral views of the chest were obtained. Lungs appear clear and we...\n- 2177-03-30 19:30:00: INDICATION: ___ man with one month of dyspnea and syncope. COMPARISON: Chest radiograph of ___, CT abdomen ___. TECHNIQUE: MDCT data were acquired through the chest, abdomen and pelvis before and after the administrat...\n\nProcedures:\n- 2177-04-01 12:00:00: Right heart cardiac catheterization\n- 2177-04-01 12:00:00: Administration of inhaled nitric oxide\n\nMicrobiology:\n- None recorded.",
+  "formed_packet": {
+    "subject_id": "13648633",
+    "hadm_id": "24082084",
+    "admission_start": "2177-03-30 21:20:00",
+    "admission_end": "2177-04-07 16:11:00",
+    "previous_admission_summary": {
+      "admission_start": "2175-12-20 01:04:00",
+      "admission_end": "2175-12-26 16:20:00",
+      "summary_paragraph": "Mr. ___ was admitted for confusion and a fall, with worsening back pain. He has a history of hepatitis C cirrhosis, recurrent hepatic encephalopathy, and prior vertebral osteomyelitis. Evaluation revealed hepatic encephalopathy likely triggered by pain and stress, with no evidence of acute infection. MRI showed new acute compression fractures at T9, T11, and L1, but no active osteomyelitis. A possible aortic valve vegetation seen on TTE was ruled out by TEE. He was treated with continued lactulose and rifaximin for encephalopathy, optimized diuretic therapy, and initiated on high-dose vitamin D and testosterone replacement for osteoporosis. A TLSO brace was fitted for spinal support. His mental status and pain improved, and he was discharged to extended care with follow-up plans.",
+      "problems": [
+        "Pathologic fracture of vertebrae",
+        "Unspecified viral hepatitis C with hepatic coma",
+        "Portal hypertension",
+        "Esophageal varices in diseases classified elsewhere, without mention of bleeding",
+        "Cirrhosis of liver without mention of alcohol",
+        "Osteoporosis, unspecified",
+        "Other chronic pain",
+        "Other chronic pulmonary heart diseases",
+        "History of fall",
+        "Personal history of tobacco use",
+        "Hypopotassemia"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "13648633-DS-17",
+        "note_seq": 17,
+        "charttime": "2177-04-07 00:00:00",
+        "storetime": "2177-04-08 06:00:00",
+        "text": " \nName:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nCephalosporins\n \nAttending: ___.\n \nChief Complaint:\npresyncope and syncope\n \nMajor Surgical or Invasive Procedure:\nRight heart catheterization ___\n\n \nHistory of Present Illness:\n___ with ESLD on ___ transplant list, c/b hepatic \nencephalopathy and grade 2 varices, presents with progressive \ndyspnea on exertion, numerous episodes of presyncope and one \nepisode of syncope.  \n.  \nMr. ___ states that he has been chronically deconditioned \nfor many years as a result of his ESLD and associated \ncomorbidies (in particular, his osteomyelitis and vertebral \ncompression fractures). He has been short of breath after \nmoderate exertion for nearly ___ years and has been experiencing \nprofound fatigue/weakness since hospitalization for lumbar \ncompression fracture one year ago.\nFor the past month, he has found himself gasping for breath \nafter walking even one or two blocks, after which he feels very \nlightheaded, sometimes necessitating him to sit down or hold on \nto a wall to prevent himself from falling.  He has had 5 or so \nof these presyncope episodes in the past year.  Two days prior \nto presentation, an episode of similar presyncope occurred, but \nhe was not able to catch himself, and he fainted and fell to the \nfloor.  Bystanders told him he was out for only a few seconds.  \nThere was no associated shaking or incontinence.  He felt no \nirregular heart beats.  He got up and rested and his symptoms \nresolved.  \nPatient also notes lower extremity weakness and dull aching, \nmostly in his quads, worse with increased exertion.  He rarely \nfeels symptoms in his gluts or calves.  At times, he has had \ntrouble getting up from chairs.  This problem has been \nextensively worked up by his hepatologist, Dr. ___.  MRI was \ndone recently at the beginning of ___ that showed no \nevidence of cord impingement.  TSH and CPK were also within \nnormal limits.  \nPatient denies any chest pain with exertion. He also denies \nnumbness, tingling, headache, dysarthria during any of these \nepisodes. \nPatient waited 3 days before presenting to the hospital because \nhe knew his symptoms would not recur if he rested in bed.\n.  \nHe presented to his ___ clinic, where it was noted that he \ndesatted to the high ___ while ambulating.  He was sent to the \nED, where CEs were sent and negative.  CTA was negative for PE.  \nHe received medication for pain control.  \n.\nThis morning, patient is asymptomatic.  He has been in bed all \nmorning, so does not feel any shortness of breath, \nlightheadedness or lower extremity myalgia/weakness.   \n.  \nREVIEW OF SYSTEMS: \nDenies fever, chills, night sweats, vision changes, rhinorrhea, \ncongestion, sore throat, cough, chest pain, nausea, vomiting, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria.  \n \nPast Medical History:\n- ESLD, on transplant list  \n- Hep C cirrhosis, genotype I, c/b encephalopathy, grade II \nvarices  \n- H/o SBP per patient  \n- History of IVDU  \n- History of EtOH  \n- History of septic arthritis (reports multiple joints)  \n- History of osteomyelitis of R proximal humerus ___  \n- History of osteomyeitis in lumbar vertebrae - finished course  \n\nvanco in ___. Now on suppressive doxy treatment\n- Osteoporosis c/b L2-L4 compression fractures  \n- Chronic back pain  \n \nSocial History:\n___\nFamily History:\nFather with prostate cancer. Mother with diabetes.  \n \nPhysical Exam:\nPHYSICAL EXAM ON ADMISSION:\nVS- Temp 95.2, BP 129/85, HR 58, RR 18, O2Sat 98% RA at rest, \n254.5 lb.\nGENERAL- well-appearing in NAD, comfortable, appropriate\nHEENT- PERRLA, sclera anicteric, MMM, OP clear\nNECK - supple, no thyromegaly, no JVD, no carotid bruits\nLUNGS - CTA bilat, no r/rh/wh, good air movement, resp \nunlabored, no accessory muscle use\nHEART - RRR, soft ___ SEM in LUSB, no gallop or rub\nAbd: soft, minimal tenderness in the LLQ, no mass, liver felt 1 \ncm below costal margin, no rebound or guarding\nEXTREMITIES - 2+ pitting edema to the knees bilaterally, 2+ \nperipheral pulses (radials, DPs)\nNEURO - awake, A&Ox3, CNs II-XII grossly intact, no asterixis, \nno focal weakness \n\nPHYSICAL EXAM ON DISCHARGE:\nVS- Tc 96.0 Tm 98.5, BP 104-114/63-76, HR 66-75, RR 18, O2Sat \n97% RA at rest\nGENERAL- well-appearing in NAD, comfortable, appropriate  \nHEENT- PERRL, sclera anicteric, MMM, OP clear  \nNECK - supple, no JVD, no carotid bruits  \nLUNGS - CTAB, no r/rh/wh \nHEART - RRR, nl s1, split s2, no murmurs\nAbd: +BS, soft, nontender, no hepatosplenomegaly, liver palpable \nunder costal margin on inspiration, no splenomegaly \nEXTREMITIES - trace edema to shins bilaterally, 2+ peripheral \npulses (radials, DPs)  \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, no asterixis\n \nPertinent Results:\nLabs on Admission:\n___ 04:40PM BLOOD WBC-3.9* RBC-4.36* Hgb-13.9* Hct-42.0 \nMCV-96 MCH-31.9 MCHC-33.1 RDW-15.8* Plt ___\n___ 04:40PM BLOOD Neuts-49.8* ___ Monos-6.1 Eos-3.6 \nBaso-0.6\n___ 04:40PM BLOOD Glucose-160* UreaN-9 Creat-0.9 Na-138 \nK-4.0 Cl-108 HCO3-24 AnGap-10\n___ 04:40PM BLOOD ALT-36 AST-79* AlkPhos-215* TotBili-2.7*\n___ 04:40PM BLOOD Lipase-11\n___ 04:40PM BLOOD proBNP-353*\n___ 07:44AM BLOOD Albumin-2.6* Calcium-8.0* Phos-4.2 Mg-1.7\n___ 04:40PM BLOOD D-Dimer-643*\n\nAutoimmune labs:\n___ 06:25AM BLOOD ___ * Titer-1:40\n___ 06:25AM BLOOD RheuFac-11\n\nCardiac Enzymes:\n___ 07:44AM BLOOD CK-MB-4 cTropnT-<0.01\n___ 04:40PM BLOOD cTropnT-<0.01\n\nImaging:\n___ Chest Xray (PA and Lateral):\nFINDINGS: PA and lateral views of the chest were obtained. Lungs \nappear\nclear and well expanded without focal consolidation, effusion, \nor\npneumothorax. Several calcified lymph nodes are again noted \nprojecting over\nthe left pulmonary hilum. Cardiomediastinal silhouette is \nstable. Bony\nstructures appear intact. No free air below the right \nhemidiaphragm.\nIMPRESSION: No acute intrathoracic process.\n\n___ Chest CTA\nFINDINGS: Contrast timing is suitable for evaluation of the \npulmonary\narteries to the subsegmental level. No pulmonary embolus is \nidentified. The\nheart and great vessels are otherwise unremarkable with normal \ncaliber. There are no nodules, consolidations, or effusions in \nthe lungs. Calcified left hilar nodes are unchanged from prior \nradiographs. No medistinal, hilar or axillary adenopathy is \npresent. Airways are patent to the segmental level.  Thoracic \nvertebral compression fractures are stable since MRI ___ which provides more thorough assessment.\nIMPRESSION: No pulmonary embolism or other acute process in the \nchest.\n\n___ TTE\nThe left atrium is mildly dilated. Left ventricular wall \nthicknesses are normal. The left ventricular cavity size is \nnormal. Overall left ventricular systolic function is normal \n(LVEF>55%). The right ventricular cavity is mildly dilated with \nnormal free wall contractility. There is abnormal septal \nmotion/position consistent with right ventricular \npressure/volume overload. The aortic valve leaflets (3) appear \nstructurally normal with good leaflet excursion and no aortic \nstenosis or aortic regurgitation. The mitral valve appears \nstructurally normal with trivial mitral regurgitation. Moderate \n[2+] tricuspid regurgitation is seen. There is severe pulmonary \nartery systolic hypertension. There is no pericardial effusion.\nCompared with the prior study (images reviewed) of ___, \nestimated pulmonary artery systolic pressure is now higher and \ntricuspid regurgitation is now more prominent.  \n\n___ cardic cath:\nFINAL DIAGNOSIS:    \n1. Moderate pulmonary hypertension that worsened in the upright \nposition.\n2. Mild improvement in mean PA pressures, pulmonary vascular \nresistance,\nand cardiac index with 100% FiO2 therapy.  No additional \nimprovement\nabove this with the addition of inhaled nitric oxide.\n\n___ TTE:\nNo atrial septal defect or patent foramen ovale is seen by 2D, \ncolor Doppler or saline contrast with maneuvers. No late \ncontrast is seen in the left heart (suggesting absence of \nintrapulmonary shunting). There is mild symmetric left \nventricular hypertrophy. The left ventricular cavity size is \nnormal. Overall left ventricular systolic function is normal \n(LVEF 65%). Tissue Doppler imaging suggests a normal left \nventricular filling pressure (PCWP<12mmHg). The right \nventricular free wall is hypertrophied. The right ventricular \ncavity is dilated with normal free wall contractility. The \naortic valve leaflets (3) appear structurally normal with good \nleaflet excursion and no aortic stenosis or aortic \nregurgitation. The mitral valve appears structurally normal with \ntrivial mitral regurgitation. There is no mitral valve prolapse. \nThe tricuspid valve leaflets are mildly thickened. Moderate [2+] \ntricuspid regurgitation is seen. There is moderate pulmonary \nartery systolic hypertension. There is no pericardial effusion.\nCompared with the findings of the prior study (images reviewed) \nof ___, the findings are similar.  \n\nLabs on Discharge:\n___ 07:30AM BLOOD WBC-5.5 RBC-4.50* Hgb-14.5 Hct-44.3 \nMCV-98 MCH-32.3* MCHC-32.8 RDW-15.7* Plt ___\n___ 07:30AM BLOOD Plt ___\n___ 07:30AM BLOOD Glucose-117* UreaN-13 Creat-0.9 Na-135 \nK-4.0 Cl-101 HCO3-27 AnGap-11\n___ 07:30AM BLOOD ALT-36 AST-71* AlkPhos-224* TotBili-2.8*\n___ 07:30AM BLOOD Calcium-8.7 Phos-3.4 Mg-1.7\n \nBrief Hospital Course:\nPrimary Reason for Admission:  \n___ with ESLD presents with 2 months of worsening dyspnea on \nexertion, several episodes of presyncope and one episode of \nsyncope, as well as progressively worsening ___ weakness.\n\nActive Diagnoses:\n# Syncope/Presyncope. Initial ddx for syncope included pulmonary \nhypertension/portopulmonary hypertension (which he is at risk \nfor given ESLD), CAD (given patient's new Twave inversions, and \nexertional-related symptoms), or general deconditioning.  \nPatient was already ruled out for PE in ED and cardiac enzymes \nare negative x2 with no symptoms of angina to suggest ACS.  TTE \non day of admission showed TR gradient of 60mmHg, up from 30mmHg \nin ___, consistent with pulmonary hypertension.  This also \nexplains patient's progressive dyspnea on exertion.  RHC \n___ showed severe pulm htn, mPAP 45mmHg with 10mmHg \nincrease in mPAP when sitting up.  mPAP dropped with O2, but was \nunresponsive to NO.  PFTs showed normal lung volumes and \nslightly reduced (but not dramatically reduced) DLCO.  \nContinuous O2 monitoring at night showed hat patient's O2 sat \ndips down to low ___, sometimes high ___, while sleeping.  \nPulmonology team recommended starting Sildinofil, home oxygen, \nand getting an outpatient sleep study.  ___ and RF to rule out \nother causes of pulmonary hypertension were negative.  Patient \nwas also diuresed to improve cardiac status.  He was started on \nhome oxygen at night and was prescribed Sildenafil, but was \nawaiting insurance approval at the time of discharge.\n\nChronic diagnoses:\n# ___ weakness. No obvious neurological deficits on exam and \npatient denies sensory loss or incotinence.  Patient received an \nMRI two weeks ago that was negative for cord \ncompression/impingement.  Patient states this is a chronic issue \nfor him, however, it has worsened over the past few months.  Ddx \nincludes cord compression (ruled out by MRI earlier this month), \nclaudication (unlikely given distribution of his ache in his \nquads), hypothyroidism (but nl TSH earlier this month), myopathy \n(normal CPK earlier this month), or general deconditioning.  No \nneed to repeat MRI obtained earlier this month since patient \ndoes not have signs of cord compression.  Physical therapy saw \npatient in house and felt he was safe for ambulation.\n\n# ESLD:  ESLD from ___ and on liver transplant list.  Sober for \n___ years.  Has hx of hepatic encephalopathy with sleep/wake \ninversion and prior episodes of SBP.  On admission, there was no \nneed for paracentesis since no exam findings of ascites. He was \ncontinued on lactulose, rifaximin for hepatic encephalopathy, \nhis diuretic regimen (plus additional diuresis on top of that), \nand nadolol.  \n\n# Chronic pain:  Patient has chronic back pain from chornic \ncompression fractures.  He was continued on his home morphine \nand dilaudid regimen.\n\n# Osteoporosis:  Severe osteoporisis that began after his \nepisode of osteomyelitis, leading to chronic compression \nfractures.  He was continued on home calcium and vitamin D.  \n\nTransitional Issues:\nPatient was encouraged to set up appointment for outpatient \nsleep study (for which his PCP has already referred him), as OSA \nmay be a reversible cause of pulmonary hypertension. Per patient \nreport he was in the process of scheduling this appointment. \n\nSildenafil pprescription was provided for the patient, although \nhis prio authorization had not yet come through at the time of \ndischarge. Per pulmonary, it was ok to discharge off this \nmedication, with oxygen.\n\nWill follow-up with Dr. ___ in Pulmonary ___ and will \ncontinue to work to get insurance approval for Sildenafil.\n\nNew home oxygen therapy was arranged for the patient on \ndischarge.\n\n# CODE: DNR/DNI confirmed with the patient  \n# CONTACT: Sister ___ ___  \n\n \n___ on Admission:\n- amiloride 10 mg daily  \n- adderall 90 mg daily prn  \n- fluoxetine 60 mg daily  \n- furosemide 40 mg daily  \n- hydromorphone 2 mg q6h prn for pain  \n- lactulose 40 mg TID  \n- lidocaine 1 patch daily  \n- morphine 30 mg BID  \n- nadolol 40 mg dialy  \n- omeprazole 20 mg BID  \n- potassium chloride 20 mEq daily  \n- rifaximin 550 mg BID  \n- teriparatide 20 mcg injection daily  \n- testosterone patch 2.5 mg daily  \n- doxycycline 100 mg BID  \n- calcium-vitD 600/400 BID  \n- vitamin D3 1000 units BID  \n- magnesium 400 mg daily  \n- MVI daily  \n \nDischarge Medications:\n1. amiloride 5 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).  \n2. Adderall 30 mg Tablet Sig: Three (3) Tablet PO once a day as \nneeded.  \n3. fluoxetine 20 mg Capsule Sig: Three (3) Capsule PO DAILY \n(Daily).  \n4. furosemide 40 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n5. hydromorphone 2 mg Tablet Sig: One (1) Tablet PO Q6H (every 6 \nhours) as needed for pain.  \n6. lactulose 20 gram Packet Sig: Two (2) packets PO three times \na day.  \n7. lidocaine 5 %(700 mg/patch) Adhesive Patch, Medicated Sig: \nOne (1) Adhesive Patch, Medicated Topical DAILY (Daily).  \n8. morphine 30 mg Tablet Extended Release Sig: One (1) Tablet \nExtended Release PO every twelve (12) hours.  \n9. nadolol 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n10. omeprazole 20 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO BID (2 times a day).  \n11. potassium chloride 20 mEq Packet Sig: One (1) Packet PO once \na day.  \n12. rifaximin 550 mg Tablet Sig: One (1) Tablet PO BID (2 times \na day).  \n13. teriparatide 20 mcg/dose - 600 mcg/2.4 mL Pen Injector Sig: \nOne (1) injection Subcutaneous daily ().  \n14. doxycycline hyclate 100 mg Capsule Sig: One (1) Capsule PO \nQ12H (every 12 hours).  \n15. Calcium 600 + D(3) 600 mg(1,500mg) -400 unit Tablet Sig: One \n(1) Tablet PO twice a day.  \n16. Vitamin D-3 1,000 unit Tablet, Chewable Sig: One (1) Tablet, \nChewable PO twice a day.  \n17. magnesium 200 mg Tablet Sig: Two (2) Tablet PO once a day.  \n18. multivitamin     Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n19. sildenafil 20 mg Tablet Sig: One (1) Tablet PO TID (3 times \na day).\nDisp:*90 Tablet(s)* Refills:*1*\n20. Oxygen therapy\nPlease provide patient with 2L continuous pulse-dose oxygen for \nportability.  Dx: Pulmonary hypertension.  RA sat 88%.\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary Diagnoses:\nPulmonary Hypertension\nPortopulmonary Syndrome\n\nSecondary Diagnoses:\nEnd Stage Liver Disease\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\nIt was a pleasure taking care of you at ___ \n___.  You were admitted after an episode of fainting \nafter exerting yourself.  You frequently experienced gasping for \nbreath after exertion.  During this hospitalization, you were \nfound to have pulmonary hypertension, most likely related to \nportal hypertension from liver disease.  You were seen by liver, \nheart, and lung specialists, who have recommended you start a \nnew medication, start home oxygen at night, and also get \nevaluated for sleep apnea.\nPlease note the following changes have been made to your \nmedications:\n- Please start Sildenafil 20mg three times/day\n- Please start using Supplemental Oxygen at 2L overnight\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "13648633-RR-95",
+        "charttime": "2177-03-30 17:22:00",
+        "storetime": "2177-03-30 17:46:00",
+        "text": "CHEST RADIOGRAPH PERFORMED ON ___\n\nComparison with a prior study from ___.\n\nCLINICAL HISTORY:  Shortness of breath, question pneumonia.\n\nFINDINGS:  PA and lateral views of the chest were obtained.  Lungs appear\nclear and well expanded without focal consolidation, effusion, or\npneumothorax.  Several calcified lymph nodes are again noted projecting over\nthe left pulmonary hilum.  Cardiomediastinal silhouette is stable.  Bony\nstructures appear intact.  No free air below the right hemidiaphragm.\n\nIMPRESSION:  No acute intrathoracic process.\n"
+      },
+      {
+        "note_id": "13648633-RR-96",
+        "charttime": "2177-03-30 19:30:00",
+        "storetime": "2177-03-30 23:57:00",
+        "text": "INDICATION:  ___ man with one month of dyspnea and syncope.\n\nCOMPARISON:  Chest radiograph of ___, CT abdomen ___.\n\nTECHNIQUE:  MDCT data were acquired through the chest, abdomen and pelvis\nbefore and after the administration of intravenous contrast.  Images were\ndisplayed in multiple planes including oblique projections.\n\nFINDINGS:  Contrast timing is suitable for evaluation of the pulmonary\narteries to the subsegmental level.  No pulmonary embolus is identified.  The\nheart and great vessels are otherwise unremarkable with normal caliber.  There\nare no nodules, consolidations, or effusions in the lungs.  Calcified left\nhilar nodes are unchanged from prior radiographs.  No medistinal, hilar or\naxillary adenopathy is present.  Airways are patent to the segmental level. \nThoracic vertebral compression fractures are stable since MRI ___\nwhich provides more thorough assessment.  \n\nIMPRESSION:  No pulmonary embolism or other acute process in the chest.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "4168",
+        "icd_version": 9,
+        "long_title": "Other chronic pulmonary heart diseases",
+        "normalized_time": "2177-04-07 15:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "2875",
+        "icd_version": 9,
+        "long_title": "Thrombocytopenia, unspecified",
+        "normalized_time": "2177-04-07 15:15:37",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "V4983",
+        "icd_version": 9,
+        "long_title": "Awaiting organ transplant status",
+        "normalized_time": "2177-04-07 15:20:14",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "4561",
+        "icd_version": 9,
+        "long_title": "Esophageal varices without mention of bleeding",
+        "normalized_time": "2177-04-07 15:24:51",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "5723",
+        "icd_version": 9,
+        "long_title": "Portal hypertension",
+        "normalized_time": "2177-04-07 15:29:28",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "5735",
+        "icd_version": 9,
+        "long_title": "Hepatopulmonary syndrome",
+        "normalized_time": "2177-04-07 15:34:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "5715",
+        "icd_version": 9,
+        "long_title": "Cirrhosis of liver without mention of alcohol",
+        "normalized_time": "2177-04-07 15:38:42",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "07054",
+        "icd_version": 9,
+        "long_title": "Chronic hepatitis C without mention of hepatic coma",
+        "normalized_time": "2177-04-07 15:43:18",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "73300",
+        "icd_version": 9,
+        "long_title": "Osteoporosis, unspecified",
+        "normalized_time": "2177-04-07 15:47:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "7245",
+        "icd_version": 9,
+        "long_title": "Backache, unspecified",
+        "normalized_time": "2177-04-07 15:52:32",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "28850",
+        "icd_version": 9,
+        "long_title": "Leukocytopenia, unspecified",
+        "normalized_time": "2177-04-07 15:57:09",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "5728",
+        "icd_version": 9,
+        "long_title": "Other sequelae of chronic liver disease",
+        "normalized_time": "2177-04-07 16:01:46",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "7802",
+        "icd_version": 9,
+        "long_title": "Syncope and collapse",
+        "normalized_time": "2177-04-07 16:06:23",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "7840",
+        "icd_version": 9,
+        "long_title": "Headache",
+        "normalized_time": "2177-04-07 16:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2177-04-01",
+        "icd_code": "3721",
+        "icd_version": 9,
+        "long_title": "Right heart cardiac catheterization",
+        "normalized_time": "2177-04-01 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 2,
+        "chartdate": "2177-04-01",
+        "icd_code": "0012",
+        "icd_version": 9,
+        "long_title": "Administration of inhaled nitric oxide",
+        "normalized_time": "2177-04-01 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 13681,
+    "output_tokens": 6449,
+    "total_tokens": 20130
+  },
+  "response_id": "chatcmpl-afdb11d0243393f0",
+  "latency_ms": 114034,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2177-03-30 21:20:00",
+        "speaker": "Doctor",
+        "text": "Hello, Mr. ___. I'm Dr. ___, one of your hospital doctors. I understand you’ve been having some episodes of feeling lightheaded and even passed out recently. Can you tell me more about what happened?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2177-03-30 21:21:30",
+        "speaker": "Patient",
+        "text": "Yes, doctor. For the past month, I’ve been getting short of breath just walking a block or two. Then I feel dizzy, like I might pass out. I’ve had a few of those near-fainting spells. But two days ago, I actually fainted. I was walking, got lightheaded, and just collapsed."
+      },
+      {
+        "turn_number": 3,
+        "time": "2177-03-30 21:22:45",
+        "speaker": "Doctor",
+        "text": "I see. Did you lose consciousness completely? Any shaking or incontinence?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2177-03-30 21:23:15",
+        "speaker": "Patient",
+        "text": "Bystanders said I was out for just a few seconds. No shaking, no wetting myself. I got up, sat down, and felt okay after resting."
+      },
+      {
+        "turn_number": 5,
+        "time": "2177-03-30 21:24:00",
+        "speaker": "Doctor",
+        "text": "And you’ve also been having leg weakness, especially in your thighs?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2177-03-30 21:24:30",
+        "speaker": "Patient",
+        "text": "Yes, it’s been going on for a while, but it’s worse lately. Sometimes I struggle to stand up from a chair. My back pain hasn’t changed much, though."
+      },
+      {
+        "turn_number": 7,
+        "time": "2177-03-30 21:25:15",
+        "speaker": "Doctor",
+        "text": "Okay. Given your history of liver disease, we need to figure out why you’re having these symptoms. We’ll run some tests to check your heart, lungs, and blood flow."
+      },
+      {
+        "turn_number": 8,
+        "time": "2177-03-30 21:26:00",
+        "speaker": "Patient",
+        "text": "I’ve had liver problems for years. I’m on the transplant list. Could this be related?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2177-03-30 21:26:30",
+        "speaker": "Doctor",
+        "text": "Absolutely. Liver disease can affect your lungs and heart. One possibility is something called portopulmonary hypertension — high blood pressure in the lungs due to liver disease. We’ll look into that."
+      },
+      {
+        "turn_number": 10,
+        "time": "2177-03-30 21:27:15",
+        "speaker": "Patient",
+        "text": "That sounds serious. Is it treatable?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2177-03-30 21:27:45",
+        "speaker": "Doctor",
+        "text": "Yes, there are treatments. But first, we need to confirm it. We’ve ordered a chest CT to rule out blood clots, and an echocardiogram to check your heart and estimate lung pressures."
+      },
+      {
+        "turn_number": 12,
+        "time": "2177-03-31 08:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your CT scan came back — no blood clots in your lungs. That’s good news. Your echocardiogram shows increased pressure in your pulmonary arteries — about 60 mmHg, up from 30 mmHg a year ago. This suggests worsening pulmonary hypertension."
+      },
+      {
+        "turn_number": 13,
+        "time": "2177-03-31 08:16:30",
+        "speaker": "Patient",
+        "text": "So that’s why I’m so short of breath? It’s getting worse?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2177-03-31 08:17:15",
+        "speaker": "Doctor",
+        "text": "Yes. The higher pressure makes it harder for your heart to pump blood through your lungs, especially when you’re active. That’s likely causing your breathlessness and near-fainting episodes."
+      },
+      {
+        "turn_number": 15,
+        "time": "2177-03-31 08:18:00",
+        "speaker": "Patient",
+        "text": "What about my leg weakness? Is that related?"
+      },
+      {
+        "turn_number": 16,
+        "time": "2177-03-31 08:18:30",
+        "speaker": "Doctor",
+        "text": "We reviewed your recent MRI — no spinal cord compression. Your thyroid and muscle enzymes are normal. It’s likely due to chronic deconditioning from years of limited mobility, possibly worsened by your liver disease."
+      },
+      {
+        "turn_number": 17,
+        "time": "2177-03-31 08:19:15",
+        "speaker": "Patient",
+        "text": "So no new nerve or spine problem?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2177-03-31 08:19:45",
+        "speaker": "Doctor",
+        "text": "No, nothing new. Physical therapy thinks you’re safe to walk with support. We’ll keep monitoring."
+      },
+      {
+        "turn_number": 19,
+        "time": "2177-03-31 14:00:00",
+        "speaker": "Doctor",
+        "text": "We’re going to do a right heart catheterization tomorrow. It’s the best way to confirm pulmonary hypertension and see how severe it is."
+      },
+      {
+        "turn_number": 20,
+        "time": "2177-03-31 14:01:15",
+        "speaker": "Patient",
+        "text": "Is that risky?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2177-03-31 14:02:00",
+        "speaker": "Doctor",
+        "text": "It’s a standard procedure with low risk. A thin tube goes into a vein and up to your heart to measure pressures directly. It will help us decide the best treatment."
+      },
+      {
+        "turn_number": 22,
+        "time": "2177-04-01 13:30:00",
+        "speaker": "Doctor",
+        "text": "The catheterization is done. Confirmed — you have severe pulmonary hypertension. Your mean pulmonary artery pressure is 45 mmHg, which is high. It got worse when you sat up, which explains why symptoms happen during activity."
+      },
+      {
+        "turn_number": 23,
+        "time": "2177-04-01 13:31:30",
+        "speaker": "Patient",
+        "text": "Can it be treated?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2177-04-01 13:32:15",
+        "speaker": "Doctor",
+        "text": "Yes. The pulmonology team recommends starting sildenafil — it helps relax the blood vessels in your lungs. Also, nighttime oxygen — we found your oxygen levels drop while you sleep."
+      },
+      {
+        "turn_number": 25,
+        "time": "2177-04-01 13:33:00",
+        "speaker": "Patient",
+        "text": "I’ll need oxygen at home?"
+      },
+      {
+        "turn_number": 26,
+        "time": "2177-04-01 13:33:30",
+        "speaker": "Doctor",
+        "text": "Just at night, for now. It may help your lung pressures and improve your energy. We’ll also adjust your diuretics to reduce fluid buildup, which can strain your heart."
+      },
+      {
+        "turn_number": 27,
+        "time": "2177-04-02 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your labs are stable. Liver function is as expected for your condition. No signs of infection or heart attack. We’re continuing your usual meds for liver support — lactulose, rifaximin, nadolol."
+      },
+      {
+        "turn_number": 28,
+        "time": "2177-04-02 09:01:15",
+        "speaker": "Patient",
+        "text": "I’ve been on those for years. Are they still helping?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2177-04-02 09:01:45",
+        "speaker": "Doctor",
+        "text": "Yes. They prevent hepatic encephalopathy and reduce variceal bleeding risk. We’re keeping them unchanged."
+      },
+      {
+        "turn_number": 30,
+        "time": "2177-04-02 15:20:00",
+        "speaker": "Doctor",
+        "text": "We got your autoimmune tests back — all negative. So this isn’t due to lupus or rheumatoid disease. Your pulmonary hypertension is most likely tied to your liver disease — portopulmonary syndrome."
+      },
+      {
+        "turn_number": 31,
+        "time": "2177-04-02 15:21:30",
+        "speaker": "Patient",
+        "text": "So it’s because of my liver?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2177-04-02 15:22:00",
+        "speaker": "Doctor",
+        "text": "Exactly. Portal hypertension from cirrhosis can lead to lung vessel changes. It’s not common, but it happens. Treating it may improve your transplant eligibility."
+      },
+      {
+        "turn_number": 33,
+        "time": "2177-04-03 08:45:00",
+        "speaker": "Doctor",
+        "text": "Your oxygen levels overnight were dipping into the 80s. That’s why we’re recommending home oxygen at 2 liters per minute while you sleep."
+      },
+      {
+        "turn_number": 34,
+        "time": "2177-04-03 08:46:15",
+        "speaker": "Patient",
+        "text": "Will I need it forever?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2177-04-03 08:46:45",
+        "speaker": "Doctor",
+        "text": "We’ll reassess. Also, your PCP referred you for a sleep study — important to check for sleep apnea, which can worsen lung pressure."
+      },
+      {
+        "turn_number": 36,
+        "time": "2177-04-03 14:10:00",
+        "speaker": "Patient",
+        "text": "I heard my sildenafil prescription is waiting on insurance?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2177-04-03 14:11:00",
+        "speaker": "Doctor",
+        "text": "Yes, but we’ve given you a 90-day supply. The team says it’s safe to start once approved. It’s key for managing your pulmonary pressures."
+      },
+      {
+        "turn_number": 38,
+        "time": "2177-04-04 09:20:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. Swelling in your legs is improving with diuresis. Oxygen at night seems to be helping — you’re not as fatigued in the mornings."
+      },
+      {
+        "turn_number": 39,
+        "time": "2177-04-04 09:21:15",
+        "speaker": "Patient",
+        "text": "I do feel a bit better. Still weak, but not as dizzy."
+      },
+      {
+        "turn_number": 40,
+        "time": "2177-04-04 09:22:00",
+        "speaker": "Doctor",
+        "text": "That’s progress. We’ll keep you on track for discharge tomorrow or the day after."
+      },
+      {
+        "turn_number": 41,
+        "time": "2177-04-05 10:00:00",
+        "speaker": "Doctor",
+        "text": "Final plan: You’ll go home with oxygen at night, start sildenafil when approved, and follow up with pulmonary and your hepatologist."
+      },
+      {
+        "turn_number": 42,
+        "time": "2177-04-05 10:01:15",
+        "speaker": "Patient",
+        "text": "And my pain meds?"
+      },
+      {
+        "turn_number": 43,
+        "time": "2177-04-05 10:01:45",
+        "speaker": "Doctor",
+        "text": "You’ll continue morphine for back pain, lidocaine patch, and your other supplements — calcium, vitamin D, teriparatide for bones."
+      },
+      {
+        "turn_number": 44,
+        "time": "2177-04-05 15:30:00",
+        "speaker": "Patient",
+        "text": "I’m on a lot of meds. Any changes?"
+      },
+      {
+        "turn_number": 45,
+        "time": "2177-04-05 15:31:15",
+        "speaker": "Doctor",
+        "text": "A few. We’re cutting amiloride in half, adjusting fluoxetine and Adderall doses. Everything else stays the same, including doxycycline for osteomyelitis prevention."
+      },
+      {
+        "turn_number": 46,
+        "time": "2177-04-06 08:50:00",
+        "speaker": "Doctor",
+        "text": "You’re cleared for discharge tomorrow. Home oxygen will be delivered today. Make sure your sister knows how to help if needed."
+      },
+      {
+        "turn_number": 47,
+        "time": "2177-04-06 08:51:30",
+        "speaker": "Patient",
+        "text": "She’s my emergency contact. I’ll call her."
+      },
+      {
+        "turn_number": 48,
+        "time": "2177-04-06 14:00:00",
+        "speaker": "Doctor",
+        "text": "One last thing — your DNR/DNI status is confirmed. We’ve documented that per your wishes."
+      },
+      {
+        "turn_number": 49,
+        "time": "2177-04-06 14:01:00",
+        "speaker": "Patient",
+        "text": "Yes, I don’t want aggressive resuscitation. Just comfort."
+      },
+      {
+        "turn_number": 50,
+        "time": "2177-04-06 14:01:30",
+        "speaker": "Doctor",
+        "text": "Understood. We’ll respect that in all care plans."
+      },
+      {
+        "turn_number": 51,
+        "time": "2177-04-07 07:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. You’re doing well — vitals stable, no symptoms. We’re finalizing discharge."
+      },
+      {
+        "turn_number": 52,
+        "time": "2177-04-07 07:01:15",
+        "speaker": "Patient",
+        "text": "I’m ready to go home. Just want to make sure I understand everything."
+      },
+      {
+        "turn_number": 53,
+        "time": "2177-04-07 07:02:00",
+        "speaker": "Doctor",
+        "text": "Of course. Summary: You have portopulmonary hypertension due to liver disease. We’re treating it with sildenafil — start three times daily — and nighttime oxygen at 2 liters."
+      },
+      {
+        "turn_number": 54,
+        "time": "2177-04-07 07:03:15",
+        "speaker": "Patient",
+        "text": "And follow-up?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2177-04-07 07:03:45",
+        "speaker": "Doctor",
+        "text": "See your pulmonologist soon. Get the sleep study done. Keep all your liver and bone meds. Call if you feel worse — more shortness of breath, chest pain, or pass out again."
+      },
+      {
+        "turn_number": 56,
+        "time": "2177-04-07 07:04:30",
+        "speaker": "Patient",
+        "text": "I will. Thank you for explaining everything."
+      },
+      {
+        "turn_number": 57,
+        "time": "2177-04-07 07:05:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’ll send all instructions to your sister and your doctors. Take care."
+      },
+      {
+        "turn_number": 58,
+        "time": "2177-04-07 09:15:00",
+        "speaker": "Patient",
+        "text": "One more thing — my leg weakness. Will it get better?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2177-04-07 09:16:15",
+        "speaker": "Doctor",
+        "text": "It may improve slowly with better oxygen and overall stability. Physical therapy can help you build strength safely. Don’t push too hard, but stay active."
+      },
+      {
+        "turn_number": 60,
+        "time": "2177-04-07 09:17:00",
+        "speaker": "Patient",
+        "text": "I’ll try. Thanks again."
+      },
+      {
+        "turn_number": 61,
+        "time": "2177-04-07 11:00:00",
+        "speaker": "Doctor",
+        "text": "Nurse will review your medications and oxygen setup. You can leave once everything’s ready."
+      },
+      {
+        "turn_number": 62,
+        "time": "2177-04-07 11:01:15",
+        "speaker": "Patient",
+        "text": "Got it. I’ll wait here."
+      },
+      {
+        "turn_number": 63,
+        "time": "2177-04-07 12:30:00",
+        "speaker": "Doctor",
+        "text": "All set. Oxygen equipment is packed, prescriptions sent. You’re discharged."
+      },
+      {
+        "turn_number": 64,
+        "time": "2177-04-07 12:31:00",
+        "speaker": "Patient",
+        "text": "Thank you, doctor. I feel much clearer now."
+      },
+      {
+        "turn_number": 65,
+        "time": "2177-04-07 12:31:30",
+        "speaker": "Doctor",
+        "text": "Glad to hear it. Take it easy, and we’ll see how you do."
+      },
+      {
+        "turn_number": 66,
+        "time": "2177-04-07 13:00:00",
+        "speaker": "Patient",
+        "text": "Just to confirm — I start sildenafil as soon as I get it, right?"
+      },
+      {
+        "turn_number": 67,
+        "time": "2177-04-07 13:01:00",
+        "speaker": "Doctor",
+        "text": "Yes, 20 mg three times a day. And use oxygen at night, even if you feel fine."
+      },
+      {
+        "turn_number": 68,
+        "time": "2177-04-07 13:01:30",
+        "speaker": "Patient",
+        "text": "Will do."
+      },
+      {
+        "turn_number": 69,
+        "time": "2177-04-07 14:00:00",
+        "speaker": "Doctor",
+        "text": "One last check — any questions before you leave?"
+      },
+      {
+        "turn_number": 70,
+        "time": "2177-04-07 14:00:30",
+        "speaker": "Patient",
+        "text": "No, I think I’ve got it all. Thanks for your help."
+      },
+      {
+        "turn_number": 71,
+        "time": "2177-04-07 14:01:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Stay in touch with your doctors."
+      },
+      {
+        "turn_number": 72,
+        "time": "2177-04-07 15:00:00",
+        "speaker": "Patient",
+        "text": "Doctor, just wanted to say I appreciate how you explained everything step by step."
+      },
+      {
+        "turn_number": 73,
+        "time": "2177-04-07 15:01:00",
+        "speaker": "Doctor",
+        "text": "Thank you. That’s what we’re here for. Take care of yourself."
+      },
+      {
+        "turn_number": 74,
+        "time": "2177-04-07 15:01:30",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 75,
+        "time": "2177-04-07 15:30:00",
+        "speaker": "Doctor",
+        "text": "Safe travels home. We’ll follow up with your team."
+      },
+      {
+        "turn_number": 76,
+        "time": "2177-04-07 15:30:30",
+        "speaker": "Patient",
+        "text": "Thanks again."
+      },
+      {
+        "turn_number": 77,
+        "time": "2177-04-07 15:45:00",
+        "speaker": "Doctor",
+        "text": "Remember — call if you have chest pain, severe shortness of breath, or pass out again."
+      },
+      {
+        "turn_number": 78,
+        "time": "2177-04-07 15:45:30",
+        "speaker": "Patient",
+        "text": "I will. I’m going to take it slow."
+      },
+      {
+        "turn_number": 79,
+        "time": "2177-04-07 15:46:00",
+        "speaker": "Doctor",
+        "text": "Perfect. That’s the best plan."
+      },
+      {
+        "turn_number": 80,
+        "time": "2177-04-07 15:50:00",
+        "speaker": "Patient",
+        "text": "One last thing — my sister has the emergency contact info?"
+      },
+      {
+        "turn_number": 81,
+        "time": "2177-04-07 15:50:30",
+        "speaker": "Doctor",
+        "text": "Yes, confirmed. She’s listed and has the details."
+      },
+      {
+        "turn_number": 82,
+        "time": "2177-04-07 15:51:00",
+        "speaker": "Patient",
+        "text": "Good. I feel ready."
+      },
+      {
+        "turn_number": 83,
+        "time": "2177-04-07 15:51:30",
+        "speaker": "Doctor",
+        "text": "Then you’re all set. Take care, Mr. ___."
+      },
+      {
+        "turn_number": 84,
+        "time": "2177-04-07 15:52:00",
+        "speaker": "Patient",
+        "text": "Thank you, doctor."
+      },
+      {
+        "turn_number": 85,
+        "time": "2177-04-07 16:00:00",
+        "speaker": "Doctor",
+        "text": "You’re discharged. Have a safe trip home."
+      }
+    ],
+    "summary": {
+      "admission_start": "2177-03-30 21:20:00",
+      "admission_end": "2177-04-07 16:11:00",
+      "summary_paragraph": "Mr. ___ was admitted for evaluation of recurrent presyncope and a recent syncopal episode, following progressive dyspnea on exertion. He has a history of end-stage liver disease, cirrhosis, and portal hypertension, and is on the transplant list. Initial workup ruled out pulmonary embolism and acute cardiac ischemia. Echocardiography revealed worsening pulmonary hypertension, confirmed by right heart catheterization, with a mean pulmonary artery pressure of 45 mmHg that increased in the upright position. The findings support a diagnosis of portopulmonary syndrome. He was started on nighttime oxygen therapy due to nocturnal desaturation and prescribed sildenafil, pending insurance approval. His chronic leg weakness was assessed and attributed to deconditioning, with no new neurological pathology. He remained stable, with optimized management of his liver disease and supportive medications. He was discharged home with a plan for follow-up in pulmonary clinic, initiation of home oxygen, and completion of a sleep study to evaluate for obstructive sleep apnea.",
+      "problems": [
+        "Syncope and collapse",
+        "Pulmonary Hypertension",
+        "Portopulmonary Syndrome",
+        "End Stage Liver Disease",
+        "Portal hypertension",
+        "Cirrhosis of liver without mention of alcohol",
+        "Chronic hepatitis C without mention of hepatic coma",
+        "Esophageal varices without mention of bleeding",
+        "Osteoporosis, unspecified",
+        "Backache, unspecified",
+        "Other chronic pulmonary heart diseases",
+        "Other sequelae of chronic liver disease",
+        "Awaiting organ transplant status"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-afdb11d0243393f0",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2177-03-30 21:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hello, Mr. ___. I'm Dr. ___, one of your hospital doctors. I understand you’ve been having some episodes of feeling lightheaded and even passed out recently. Can you tell me more about what happened?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2177-03-30 21:21:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, doctor. For the past month, I’ve been getting short of breath just walking a block or two. Then I feel dizzy, like I might pass out. I’ve had a few of those near-fainting spells. But two days ago, I actually fainted. I was walking, got lightheaded, and just collapsed.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2177-03-30 21:22:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. Did you lose consciousness completely? Any shaking or incontinence?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2177-03-30 21:23:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Bystanders said I was out for just a few seconds. No shaking, no wetting myself. I got up, sat down, and felt okay after resting.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2177-03-30 21:24:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"And you’ve also been having leg weakness, especially in your thighs?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2177-03-30 21:24:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, it’s been going on for a while, but it’s worse lately. Sometimes I struggle to stand up from a chair. My back pain hasn’t changed much, though.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2177-03-30 21:25:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. Given your history of liver disease, we need to figure out why you’re having these symptoms. We’ll run some tests to check your heart, lungs, and blood flow.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2177-03-30 21:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had liver problems for years. I’m on the transplant list. Could this be related?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2177-03-30 21:26:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Absolutely. Liver disease can affect your lungs and heart. One possibility is something called portopulmonary hypertension — high blood pressure in the lungs due to liver disease. We’ll look into that.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2177-03-30 21:27:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That sounds serious. Is it treatable?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2177-03-30 21:27:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, there are treatments. But first, we need to confirm it. We’ve ordered a chest CT to rule out blood clots, and an echocardiogram to check your heart and estimate lung pressures.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2177-03-31 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your CT scan came back — no blood clots in your lungs. That’s good news. Your echocardiogram shows increased pressure in your pulmonary arteries — about 60 mmHg, up from 30 mmHg a year ago. This suggests worsening pulmonary hypertension.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2177-03-31 08:16:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So that’s why I’m so short of breath? It’s getting worse?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2177-03-31 08:17:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The higher pressure makes it harder for your heart to pump blood through your lungs, especially when you’re active. That’s likely causing your breathlessness and near-fainting episodes.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2177-03-31 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about my leg weakness? Is that related?\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2177-03-31 08:18:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We reviewed your recent MRI — no spinal cord compression. Your thyroid and muscle enzymes are normal. It’s likely due to chronic deconditioning from years of limited mobility, possibly worsened by your liver disease.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2177-03-31 08:19:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So no new nerve or spine problem?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2177-03-31 08:19:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No, nothing new. Physical therapy thinks you’re safe to walk with support. We’ll keep monitoring.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2177-03-31 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re going to do a right heart catheterization tomorrow. It’s the best way to confirm pulmonary hypertension and see how severe it is.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2177-03-31 14:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that risky?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2177-03-31 14:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s a standard procedure with low risk. A thin tube goes into a vein and up to your heart to measure pressures directly. It will help us decide the best treatment.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2177-04-01 13:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The catheterization is done. Confirmed — you have severe pulmonary hypertension. Your mean pulmonary artery pressure is 45 mmHg, which is high. It got worse when you sat up, which explains why symptoms happen during activity.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2177-04-01 13:31:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Can it be treated?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2177-04-01 13:32:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The pulmonology team recommends starting sildenafil — it helps relax the blood vessels in your lungs. Also, nighttime oxygen — we found your oxygen levels drop while you sleep.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2177-04-01 13:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll need oxygen at home?\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2177-04-01 13:33:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just at night, for now. It may help your lung pressures and improve your energy. We’ll also adjust your diuretics to reduce fluid buildup, which can strain your heart.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2177-04-02 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your labs are stable. Liver function is as expected for your condition. No signs of infection or heart attack. We’re continuing your usual meds for liver support — lactulose, rifaximin, nadolol.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2177-04-02 09:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been on those for years. Are they still helping?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2177-04-02 09:01:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. They prevent hepatic encephalopathy and reduce variceal bleeding risk. We’re keeping them unchanged.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2177-04-02 15:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We got your autoimmune tests back — all negative. So this isn’t due to lupus or rheumatoid disease. Your pulmonary hypertension is most likely tied to your liver disease — portopulmonary syndrome.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2177-04-02 15:21:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s because of my liver?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2177-04-02 15:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. Portal hypertension from cirrhosis can lead to lung vessel changes. It’s not common, but it happens. Treating it may improve your transplant eligibility.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2177-04-03 08:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your oxygen levels overnight were dipping into the 80s. That’s why we’re recommending home oxygen at 2 liters per minute while you sleep.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2177-04-03 08:46:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I need it forever?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2177-04-03 08:46:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll reassess. Also, your PCP referred you for a sleep study — important to check for sleep apnea, which can worsen lung pressure.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2177-04-03 14:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I heard my sildenafil prescription is waiting on insurance?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2177-04-03 14:11:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, but we’ve given you a 90-day supply. The team says it’s safe to start once approved. It’s key for managing your pulmonary pressures.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2177-04-04 09:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. Swelling in your legs is improving with diuresis. Oxygen at night seems to be helping — you’re not as fatigued in the mornings.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2177-04-04 09:21:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I do feel a bit better. Still weak, but not as dizzy.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2177-04-04 09:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s progress. We’ll keep you on track for discharge tomorrow or the day after.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2177-04-05 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Final plan: You’ll go home with oxygen at night, start sildenafil when approved, and follow up with pulmonary and your hepatologist.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2177-04-05 10:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my pain meds?\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2177-04-05 10:01:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll continue morphine for back pain, lidocaine patch, and your other supplements — calcium, vitamin D, teriparatide for bones.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2177-04-05 15:30:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m on a lot of meds. Any changes?\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2177-04-05 15:31:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"A few. We’re cutting amiloride in half, adjusting fluoxetine and Adderall doses. Everything else stays the same, including doxycycline for osteomyelitis prevention.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2177-04-06 08:50:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re cleared for discharge tomorrow. Home oxygen will be delivered today. Make sure your sister knows how to help if needed.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2177-04-06 08:51:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"She’s my emergency contact. I’ll call her.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2177-04-06 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing — your DNR/DNI status is confirmed. We’ve documented that per your wishes.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2177-04-06 14:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, I don’t want aggressive resuscitation. Just comfort.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2177-04-06 14:01:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Understood. We’ll respect that in all care plans.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2177-04-07 07:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. You’re doing well — vitals stable, no symptoms. We’re finalizing discharge.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2177-04-07 07:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m ready to go home. Just want to make sure I understand everything.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2177-04-07 07:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Of course. Summary: You have portopulmonary hypertension due to liver disease. We’re treating it with sildenafil — start three times daily — and nighttime oxygen at 2 liters.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2177-04-07 07:03:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And follow-up?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2177-04-07 07:03:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"See your pulmonologist soon. Get the sleep study done. Keep all your liver and bone meds. Call if you feel worse — more shortness of breath, chest pain, or pass out again.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2177-04-07 07:04:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you for explaining everything.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2177-04-07 07:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’ll send all instructions to your sister and your doctors. Take care.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2177-04-07 09:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"One more thing — my leg weakness. Will it get better?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2177-04-07 09:16:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It may improve slowly with better oxygen and overall stability. Physical therapy can help you build strength safely. Don’t push too hard, but stay active.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2177-04-07 09:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll try. Thanks again.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2177-04-07 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Nurse will review your medications and oxygen setup. You can leave once everything’s ready.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2177-04-07 11:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. I’ll wait here.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2177-04-07 12:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All set. Oxygen equipment is packed, prescriptions sent. You’re discharged.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2177-04-07 12:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, doctor. I feel much clearer now.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2177-04-07 12:31:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Glad to hear it. Take it easy, and we’ll see how you do.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2177-04-07 13:00:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Just to confirm — I start sildenafil as soon as I get it, right?\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2177-04-07 13:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, 20 mg three times a day. And use oxygen at night, even if you feel fine.\"\n    },\n    {\n      \"turn_number\": 68,\n      \"time\": \"2177-04-07 13:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will do.\"\n    },\n    {\n      \"turn_number\": 69,\n      \"time\": \"2177-04-07 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last check — any questions before you leave?\"\n    },\n    {\n      \"turn_number\": 70,\n      \"time\": \"2177-04-07 14:00:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, I think I’ve got it all. Thanks for your help.\"\n    },\n    {\n      \"turn_number\": 71,\n      \"time\": \"2177-04-07 14:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Stay in touch with your doctors.\"\n    },\n    {\n      \"turn_number\": 72,\n      \"time\": \"2177-04-07 15:00:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Doctor, just wanted to say I appreciate how you explained everything step by step.\"\n    },\n    {\n      \"turn_number\": 73,\n      \"time\": \"2177-04-07 15:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Thank you. That’s what we’re here for. Take care of yourself.\"\n    },\n    {\n      \"turn_number\": 74,\n      \"time\": \"2177-04-07 15:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 75,\n      \"time\": \"2177-04-07 15:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Safe travels home. We’ll follow up with your team.\"\n    },\n    {\n      \"turn_number\": 76,\n      \"time\": \"2177-04-07 15:30:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks again.\"\n    },\n    {\n      \"turn_number\": 77,\n      \"time\": \"2177-04-07 15:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Remember — call if you have chest pain, severe shortness of breath, or pass out again.\"\n    },\n    {\n      \"turn_number\": 78,\n      \"time\": \"2177-04-07 15:45:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I’m going to take it slow.\"\n    },\n    {\n      \"turn_number\": 79,\n      \"time\": \"2177-04-07 15:46:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. That’s the best plan.\"\n    },\n    {\n      \"turn_number\": 80,\n      \"time\": \"2177-04-07 15:50:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"One last thing — my sister has the emergency contact info?\"\n    },\n    {\n      \"turn_number\": 81,\n      \"time\": \"2177-04-07 15:50:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, confirmed. She’s listed and has the details.\"\n    },\n    {\n      \"turn_number\": 82,\n      \"time\": \"2177-04-07 15:51:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. I feel ready.\"\n    },\n    {\n      \"turn_number\": 83,\n      \"time\": \"2177-04-07 15:51:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Then you’re all set. Take care, Mr. ___.\"\n    },\n    {\n      \"turn_number\": 84,\n      \"time\": \"2177-04-07 15:52:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, doctor.\"\n    },\n    {\n      \"turn_number\": 85,\n      \"time\": \"2177-04-07 16:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re discharged. Have a safe trip home.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2177-03-30 21:20:00\",\n    \"admission_end\": \"2177-04-07 16:11:00\",\n    \"summary_paragraph\": \"Mr. ___ was admitted for evaluation of recurrent presyncope and a recent syncopal episode, following progressive dyspnea on exertion. He has a history of end-stage liver disease, cirrhosis, and portal hypertension, and is on the transplant list. Initial workup ruled out pulmonary embolism and acute cardiac ischemia. Echocardiography revealed worsening pulmonary hypertension, confirmed by right heart catheterization, with a mean pulmonary artery pressure of 45 mmHg that increased in the upright position. The findings support a diagnosis of portopulmonary syndrome. He was started on nighttime oxygen therapy due to nocturnal desaturation and prescribed sildenafil, pending insurance approval. His chronic leg weakness was assessed and attributed to deconditioning, with no new neurological pathology. He remained stable, with optimized management of his liver disease and supportive medications. He was discharged home with a plan for follow-up in pulmonary clinic, initiation of home oxygen, and completion of a sleep study to evaluate for obstructive sleep apnea.\",\n    \"problems\": [\n      \"Syncope and collapse\",\n      \"Pulmonary Hypertension\",\n      \"Portopulmonary Syndrome\",\n      \"End Stage Liver Disease\",\n      \"Portal hypertension\",\n      \"Cirrhosis of liver without mention of alcohol\",\n      \"Chronic hepatitis C without mention of hepatic coma\",\n      \"Esophageal varices without mention of bleeding\",\n      \"Osteoporosis, unspecified\",\n      \"Backache, unspecified\",\n      \"Other chronic pulmonary heart diseases\",\n      \"Other sequelae of chronic liver disease\",\n      \"Awaiting organ transplant status\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1777002897,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 6449,
+      "prompt_tokens": 13681,
+      "total_tokens": 20130,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

@@ -1,0 +1,998 @@
+{
+  "subject_id": "19625808",
+  "hadm_id": "23180703",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-24T15:24:22Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 5 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2180-05-25 19:57:00 to 2180-05-30 19:11:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2180-05-22 02:28:00",
+    "admission_end": "2180-05-22 18:30:00",
+    "summary_paragraph": "The patient was admitted for nausea, vomiting, and periumbilical abdominal pain. She has a history of insulin-dependent diabetes, stage 5 chronic kidney disease on peritoneal dialysis, gastroparesis, and chronic constipation. She recently had bloody drainage from her PD catheter site and was started on Bactrim. During this admission, she developed worsening nausea and abdominal discomfort. CT imaging showed no intra-abdominal pathology, and peritoneal fluid analysis did not indicate peritonitis. She was found to have a superficial soft tissue infection at the catheter site with erythema and yellow drainage. Her symptoms improved with supportive care, and she transitioned to clindamycin and gentamicin cream for the infection. She tolerated oral intake by discharge and was sent home with instructions to continue her bowel regimen, complete the antibiotic course, monitor the catheter site, and follow up for a pelvic ultrasound in one year to evaluate a right adnexal cyst.",
+    "problems": [
+      "Infection and inflammatory reaction due to peritoneal dialysis catheter",
+      "End stage renal disease",
+      "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+      "Gastroparesis",
+      "Other constipation",
+      "Nausea with vomiting",
+      "Abdominal pain, periumbilic",
+      "Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled",
+      "Polyneuropathy in diabetes",
+      "Obstructive sleep apnea (adult)(pediatric)",
+      "Other and unspecified hyperlipidemia",
+      "Depressive disorder, not elsewhere classified",
+      "Anxiety state, unspecified",
+      "Long-term (current) use of insulin",
+      "Unspecified acquired hypothyroidism",
+      "Esophageal reflux",
+      "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+      "Renal dialysis status"
+    ]
+  },
+  "stay_days": 5,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2180-05-30 00:00:00): Name:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPenicillins / ondansetron / Linzess / codeine / Percocet / \nReglan\n \nAttending: ___.\n \nChief Complaint:\ncough, fever\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\nMs. ___ is a ___ with history of IDDM and stage 5 CKD on PD  \n\nas of ___ who presents with cough and fevers.  \nPt was admitted for one on ___ with abdominal pain. CT A/P as \nwell as peritoneal fluid all negative for intra-abdominal \ninfection. She was treated with oral clindamycin and topical \ngentamicin for superficial infection of the PD catheter site.  \nPt reports experiencing cough, fever, and chills x2 days. Fevers \nup to 101.4. She also reports hoarse voice but denies dyspnea or \nchest discomfort. Her abdominal pain has improved but she \nexpresses concern that her PD catheter is draining very slowly. \nHer husband has had a recent viral illness. She denies N/V or \nchanges in BM. Endorses poor appetite since starting PD.  \nIn the ED, initial vitals were: 100.4 88 133/53 17 100% RA.  \n- Labs were significant for WBC 3.9, H&H 11.7/36.1 at baseline, \nnormal lactate.  \n- Imaging revealed: CXR with RLL PNA.  \n- The patient was given vancomycin, cefepime, and azithromycin.  \n\nVitals prior to transfer were: 98.2 71 122/59 15 95% RA.  \nPt was seen by renal who recommended peritoneal fluid analysis.  \n\nUpon arrival to the floor, VS are: 98.3 124/47 77 16 95% on RA. \nShe has undergone 3 PD sessions today. She usually does 4. She \ndoes not do PD overnight and requests if it can be done in am. \nPt reports cough but denies pain or dyspnea or abd pain.  \nREVIEW OF SYSTEMS:  \n(+) Per HPI  \n \nPast Medical History:\n- IDDM\n- Peripheral Neuropathy\n- Chronic Kidney Disease Stage IV (GFR ___\n- Gastroparesis\n- OSA\n- HLD\n- HTN\n- Chronic Fatigue\n- Depression\n- Anxiety\n- h/o Bulemia  \n\nPast surgical history: L BC AVF ___ (___), L breast \nlumpectomy ___, R breast lumpectomy ___, appendectomy  \n\n \nSocial History:\n___\nFamily History:\nNo history of diabetes or kidney disease \n\n \nPhysical Exam:\nADMISSION EXAM:\n--------------\nVitals: 98.3 124/47 77 16 95% on RA  \nGeneral: Alert, oriented, no acute distress. no conversational \ndyspnea  \nHEENT: Sclera anicteric, MMM, oropharynx clear, EOMI, PERRL  \nNeck: Supple, JVP not elevated, no LAD  \nCV: Regular rate and rhythm, normal S1 + S2, systolic murmur \nalong left sternum  \nLungs: decreased breath sound in the right LL with mild crackles \n \nAbdomen: Soft, non-tender, non-distended, bowel sounds present, \nno organomegaly, no rebound or guarding  \nGU: No foley  \nExt: Warm, well perfused, 2+ pulses, no clubbing, cyanosis or \nedema  \nNeuro: CNII-XII intact, ___ strength upper/lower extremities, \ngrossly normal sensation, 2+ reflexes bilaterally, gait \ndeferred.  \nSkin: PD catheter with dressing c/d/i, no surrounding erythema \nc/f infection. mildly tender in that area.  \n\nDISCHARGE EXAM:\n--------------\nVitals: Tm/Tc 97.8 119/49 64 18 95%RA\nGeneral: Alert, oriented, no acute distress. no conversational \ndyspnea  \nHEENT: Sclera anicteric, MMM, oropharynx clear, EOMI, PERRL  \nNeck: Supple, JVP not elevated, no LAD  \nCV: Regular rate and rhythm, normal S1 + S2, systolic murmur \nalong left sternum  \nLungs: decreased breath sounds in the bases b/l with diffuse \nrales \nAbdomen: Soft, non-tender, non-distended, bowel sounds present, \nno organomegaly, no rebound or guarding. \nGU: No foley  \nExt: Warm, well perfused, 2+ pulses, no clubbing, cyanosis or \nedema  \nNeuro: CNII-XII intact, ___ strength upper/lower extremities, \ngrossly normal sensation, 2+ reflexes bilaterally, gait \ndeferred.  \nSkin: PD catheter with dressing c/d/i, no surrounding erythema \nc/f infection. mildly tender in that area. \n\n \nPertinent Results:\nADMISSION LABS:\n==============\n___ 12:30PM   PLT COUNT-287\n___ 12:30PM   NEUTS-75.5* LYMPHS-16.6* MONOS-5.0 EOS-2.2 \nBASOS-0.7\n___ 12:30PM   WBC-3.9* RBC-3.73* HGB-11.7* HCT-36.1 MCV-97 \nMCH-31.5 MCHC-32.5 RDW-13.0\n___ 12:30PM   ALBUMIN-3.6 CALCIUM-8.2* PHOSPHATE-3.9 \nMAGNESIUM-2.1\n___ 12:30PM   LIPASE-37\n___ 12:30PM   ALT(SGPT)-26 AST(SGOT)-32 ALK PHOS-140* TOT \nBILI-0.1\n___ 12:30PM   GLUCOSE-169* UREA N-32* CREAT-3.6* SODIUM-135 \nPOTASSIUM-3.8 CHLORIDE-97 TOTAL CO2-28 ANION GAP-14\n___ 12:36PM   LACTATE-0.9\n___ 02:00PM OTHER BODY FLUID  FluAPCR-NEGATIVE \nFluBPCR-NEGATIVE\n___ 04:00PM URINE  MUCOUS-RARE\n___ 04:00PM URINE  RBC-1 WBC-2 BACTERIA-MANY YEAST-NONE \nEPI-5 TRANS EPI-<1\n___ 04:00PM URINE  BLOOD-NEG NITRITE-NEG PROTEIN-100 \nGLUCOSE-TR KETONE-NEG BILIRUBIN-NEG UROBILNGN-NEG PH-7.0 \nLEUK-NEG\n___ 04:00PM URINE  COLOR-Straw APPEAR-Clear SP ___\n___ 04:00PM URINE  UCG-NEGATIVE\n___ 04:00PM URINE  HOURS-RANDOM\n___ 04:10PM ASCITES  WBC-3* RBC-5* POLYS-2* LYMPHS-3* \nMONOS-84* EOS-4* MESOTHELI-7*\n___ 04:10PM ASCITES  TOT PROT-0.3 GLUCOSE-401\n\nMICRO:\n=====\n___ STOOL C. difficile DNA amplification \nassay-FINAL INPATIENT \n___ 1:59 am STOOL     CONSISTENCY: SOFT      Source: Stool. \n\n\n                            **FINAL REPORT ___\n\n   C. difficile DNA amplification assay (Final ___: \n      Negative for toxigenic C. difficile by the Illumigene DNA\n      amplification assay. \n           (Reference Range-Negative). \n___ URINE URINE CULTURE-PENDING INPATIENT \n___ PERITONEAL FLUID GRAM STAIN-FINAL; FLUID \nCULTURE-FINAL; ANAEROBIC CULTURE-PRELIMINARY INPATIENT \n___ 6:11 pm PERITONEAL FLUID      PERITONEALFLUID. \n\n   GRAM STAIN (Final ___: \n      NO POLYMORPHONUCLEAR LEUKOCYTES SEEN. \n      NO MICROORGANISMS SEEN. \n      This is a concentrated smear made by cytospin method, \nplease refer to\n      hematology for a quantitative white blood cell count.. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n   ANAEROBIC CULTURE (Preliminary):    NO GROWTH. \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ PERITONEAL FLUID GRAM STAIN-FINAL; FLUID \nCULTURE-FINAL; ANAEROBIC CULTURE-PRELIMINARY EMERGENCY WARD \n___ 4:10 pm PERITONEAL FLUID      PERITONEAL FLUID. \n\n   GRAM STAIN (Final ___: \n      NO POLYMORPHONUCLEAR LEUKOCYTES SEEN. \n      NO MICROORGANISMS SEEN. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n   ANAEROBIC CULTURE (Preliminary):    NO GROWTH. \n___ URINE URINE CULTURE-FINAL EMERGENCY WARD \nURINE CULTURE (Final ___:    NO GROWTH.\n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nEMERGENCY WARD \n___ SWAB WOUND CULTURE-FINAL EMERGENCY WARD \nWOUND CULTURE (Final ___:    NO GROWTH. \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nEMERGENCY WARD \n\nIMAGING/STUDIES:\n===============\n___ Imaging ABDOMEN (SUPINE & ERECT \nIMPRESSION:  \n  \nProminent air distended loops of small bowel on the left abdomen \non the supine view, not well seen on the upright view, may \nrelate to peristalsis or focal ileus.  Small air-fluid levels \nscattered in the colon are nonspecific and could be normal \nversus related to the mild gastroenteritis. No evidence of high \ngrade bowel obstruction. \n\n___ Imaging CHEST (PA & LAT) \nFINDINGS:  \n  \nRight lower lobe consolidation is seen, consistent with \npneumonia. The left lung is clear.  No pleural effusion or \npneumothorax is seen. The cardiac and mediastinal silhouettes \nare unremarkable. \nIMPRESSION:   \nRight lower lobe pneumonia. \n\n___ Imaging CHEST (PORTABLE AP) \nIMPRESSION:  \n  \nNew heterogeneity in the right lower lobe consolidation could be \nsome \nimprovement since ___ or development of cavitation.  There \nis no definite pleural effusion or consolidation elsewhere. \nHeart size is normal. No definite hilar adenopathy. \n\n___ Imaging CHEST (PORTABLE AP) \nIMPRESSION:  \n  \nLower lung volumes. No change in appearance of the known right \nbasal pneumonia and the known left basilar atelectasis. Mild \ncardiomegaly without pulmonary edema. No larger pleural \neffusions. \n\nDISCHARGE LABS:\n==============\n\n___ 08:25AM BLOOD WBC-2.9* RBC-3.54* Hgb-11.2* Hct-33.3* \nMCV-94 MCH-31.7 MCHC-33.7 RDW-13.1 Plt ___\n___ 08:25AM BLOOD Glucose-125* UreaN-18 Creat-3.3* Na-134 \nK-3.9 Cl-96 HCO3-29 AnGap-13\n___ 08:25AM BLOOD Calcium-8.8 Phos-4.0 Mg-2.0\n \nBrief Hospital Course:\nMs. ___ is a ___ with history of IDDM and stage 5 CKD on PD \nas of ___ who presents with cough and fevers.  \n\n# PNA: The patient presented with cough and fevers and was found \nto have a RLL infiltrate on CXR. She was started on \nvanc/cefepime/azithromycin in the ED (___) due to concern for \nHCAP. On ___ vanc/cefepime/azithro were stopped and she was \nswitched to levofloxacin; however later that day she developed a \nfever and felt worse and so vanc/cefepime were added back to \nlevofloxacin. She remained afebrile for the next ___ hours and so \nthen vanc/cefepime were stopped and she continued on \nlevofloxacin, finishing a 7-day course of antibiotics by day of \ndischarge. Her urine and blood cultures remained negative. For \ncough, she was continued on guaifenisin and benzonatate PRN. \n\n# ESRD on PD: Pt was started on PD in ___. She was recently \n(___) admitted for superficial infection of catheter site. Exam \nduring this hospitalization was reassuring for infection. \nPeritoneal fluid was sent off for culture twice during \nhospitalization and analysis is reassuring for infection. She \nhad been started on clindamycin for a superficial cellulitis \naround the PD catheter site prior to this admission. This \nstopped given that the patient was taking other antibiotics for \npneuomonia; it also caused her to have diarrhea. She was \ncontinued on gentamycin topical and was also started on \nmupiricin topical ointment for a two week course. She was \ncontinued on PD and followed by the nephrology service.\n\n# Diarrhea: The patient reported diarrhea at home in the setting \nof taking clindamycin. C. diff this admission was negative. \nClindamycin was changed to topical mupiricin for a 2 week course \n(in addition to gentamicin). \n\n# Yeast infection: The patient complained of a yeast infection \nand received 150 mg fluconazole PO.\n\n# IDDM: The patient has a history of IDDM c/b gastroparesis and \nneuropathy. She was continued on home ISS and glargine 6U qHS.   \n\n\nCHRONIC ISSUES  \n#Psych: The patient was continued on home ClonazePAM, \nDextroamphetamine, Fluoxetine, LaMOTrigine 200 mg PO BID, \nmodafinil  \n\n#Hypothyroidism: The patient was continued on home \nlevothyroxine. \n \n#GERD: The patient was continued on home pantoprazole.  \n\n#Migraines:  The patient was continued on topiramate. She was \ngiven sumatriptan once for a headache.\n\n#Chronic pain/neuropathy: The patient was continued on home \ngabapentin. \n\n# CODE STATUS: full code  \n# CONTACT: husband ___ ___  \n\nTRANSITIONAL ISSUES:\n- Mupiricin ointment was added to gentamycin to apply to PD \ncatheter site for two weeks, instead of clindamycin, as this \ncaused diarrhea.\n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. ClonazePAM 1 mg PO BID \n2. Docusate Sodium 100 mg PO BID \n3. Fluoxetine 60 mg PO DAILY \n4. Fluticasone Propionate NASAL 1 SPRY NU DAILY \n5. Gabapentin 600 mg PO QHS \n6. LaMOTrigine 200 mg PO BID \n7. Levothyroxine Sodium 50 mcg PO DAILY \n8. Lubiprostone 24 mcg PO BID \n9. Pantoprazole 40 mg PO Q12H \n10. Senna 8.6 mg PO BID:PRN constipation \n11. Sumatriptan Succinate ___ mg PO ONCE \n12. Topiramate (Topamax) 25 mg PO BID \n13. Vitamin D 1000 UNIT PO DAILY \n14. modafinil 300  oral AM \n15. modafinil 200 mg ORAL AS DIRECTED \n16. Ondansetron 4 mg PO Q8H:PRN nausea \n17. Gentamicin 0.1% Cream 1 Appl TP DAILY \n18. Clindamycin 300 mg PO Q8H \n19. Bisacodyl 10 mg PO/PR DAILY:PRN constipation \n20. Polyethylene Glycol 17 g PO DAILY \n21. Glargine 6 Units Bedtime  \nInsulin SC Sliding Scale using HUM Insulin  \n\n \nDischarge Medications:\n1. Bisacodyl 10 mg PO/PR DAILY:PRN constipation \n2. ClonazePAM 1 mg PO BID \n3. Docusate Sodium 100 mg PO BID \n4. Fluoxetine 60 mg PO DAILY \n5. Fluticasone Propionate NASAL 1 SPRY NU DAILY \n6. Gabapentin 600 mg PO QHS \n7. Gentamicin 0.1% Cream 1 Appl TP DAILY \n8. LaMOTrigine 200 mg PO BID \n9. Levothyroxine Sodium 50 mcg PO DAILY \n10. Lubiprostone 24 mcg PO BID \n11. modafinil 300  oral AM \n12. Ondansetron 4 mg PO Q8H:PRN nausea \n13. Pantoprazole 40 mg PO Q12H \n14. Polyethylene Glycol 17 g PO DAILY \n15. Senna 8.6 mg PO BID:PRN constipation \n16. Topiramate (Topamax) 25 mg PO BID \n17. Vitamin D 1000 UNIT PO DAILY \n18. Benzonatate 100 mg PO TID:PRN cough \nRX *benzonatate 100 mg 1 capsule(s) by mouth TID:PRN Disp #*60 \nCapsule Refills:*0\n19. Dextromethorphan-Guaifenesin (Sugar Free) 5 mL PO Q4H:PRN \ncough \nRX *dextromethorphan-guaifenesin ___ DM Diabetic] 100 \nmg-10 mg/5 mL 5 mL by mouth Q4H:PRN Refills:*0\n20. Multiple Vitamins Liq. 5 mL PO DAILY \nRX *therapeutic multivitamin  5 mL by mouth Daily Disp #*1 Pint \nRefills:*0\n21. Mupirocin Ointment 2% 1 Appl TP BID \nRX *mupirocin 2 % 1 Appl twice a day Refills:*0\n22. modafinil 200 mg ORAL AS DIRECTED \n23. Glargine 6 Units Bedtime  \nInsulin SC Sliding Scale using HUM Insulin  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary diagnosis:\nPneumonia\n\nSecondary diagnoses:\nESRD on PD\nDiabetes\nHypothyroidism\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted to the ___ \nbecause you were having fevers and a cough. You were found to \nhave a pneumonia and you were treated with a course of \nantibiotics. You stopped having fevers and you were showing some \nimprovement and so you were determined safe to go home. You were \nhaving diarrhea but you were found not to have an infection in \nyour GI tract called C.diff.\n\nYou have the following appiontments listed below.\n\nThank you for allowing us to participate in your care.\n\nSincerely,\nYour ___ Team.\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Pneumonia, organism unspecified\n- End stage renal disease\n- Nonspecific (abnormal) findings on radiological and other examination of musculoskeletal system\n- Awaiting organ transplant status\n- Gastroparesis\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease\n- Hyposmolality and/or hyponatremia\n- Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled\n- Cellulitis and abscess of trunk\n- Infection and inflammatory reaction due to peritoneal dialysis catheter\n- Mechanical complication due to peritoneal dialysis catheter\n- Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled\n- Other and unspecified hyperlipidemia\n- Polyneuropathy in diabetes\n- Obstructive sleep apnea (adult)(pediatric)\n- Depressive disorder, not elsewhere classified\n- Anxiety state, unspecified\n- Anemia, unspecified\n- Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus\n- Chronic fatigue syndrome\n- Unspecified acquired hypothyroidism\n- Anorexia\n- Other chronic pain\n- Diarrhea\n- Long-term (current) use of insulin\n- Renal dialysis status\n- Body Mass Index between 19-24, adult\n- Other specified antibiotics causing adverse effects in therapeutic use\n- Kidney dialysis as the cause of abnormal reaction of patient, or of later complication, without mention of misadventure at time of procedure\n- Candidiasis of unspecified site\n- Cough\n- Other specified surgical operations and procedures causing abnormal patient reaction, or later complication, without mention of misadventure at time of operation\n- Home accidents\n- Unspecified hereditary and idiopathic peripheral neuropathy\n- Constipation, unspecified\n- Esophageal reflux\n- Acute upper respiratory infections of unspecified site",
+  "supporting_context_block": "Radiology:\n- 2180-05-25 14:05:00: INDICATION: History: ___ with abdominal pain. PD cathether // eval for signs of obstruction TECHNIQUE: Supine hand upright views of the abdomen. COMPARISON: ___ FINDINGS: Peritoneal dialysis catheter is seen coiled in...\n- 2180-05-25 14:05:00: EXAMINATION: Chest: Frontal and lateral views INDICATION: History: ___ with cough, fever, RLL crackles // eval for PNA TECHNIQUE: Chest: Frontal and Lateral COMPARISON: ___ FINDINGS: Right lower lobe consolidation is...\n- 2180-05-27 17:06:00: EXAMINATION: CHEST (PORTABLE AP) INDICATION: ___ year old woman with ESRD on PD with pneumonia, clinically worsening // worsening of infiltrate worsening of infiltrate COMPARISON: CHEST RADIOGRAPHS SINCE ___ MOST RECE...\n- 2180-05-29 11:32:00: EXAMINATION: CHEST (PORTABLE AP) INDICATION: ___ year old woman with ESRD on HD with PNA // evidence of worsening infiltrate or effusions COMPARISON: ___ IMPRESSION: Lower lung volumes. No change in appearance of the...\n\nProcedures:\n- 2180-05-25 12:00:00: Peritoneal dialysis\n\nMicrobiology:\n- 2180-05-26 07:54:00: BLOOD CULTURE (NO GROWTH.)\n- 2180-05-27 17:09:00: BLOOD CULTURE (NO GROWTH.)\n- 2180-05-27 17:48:00: BLOOD CULTURE (NO GROWTH.)\n- 2180-05-27 18:11:00: PERITONEAL FLUID (NO POLYMORPHONUCLEAR LEUKOCYTES SEEN.  NO MICROORGANISMS SEEN.  This is a concentrated smear made by cytospin method, please refer to hematology for a quantitative white blood cell count.)\n- 2180-05-27 18:11:00: PERITONEAL FLUID (NO GROWTH.)\n- 2180-05-27 18:11:00: PERITONEAL FLUID (NO GROWTH.)\n- 2180-05-30 01:58:00: URINE | YEAST\n- 2180-05-30 01:59:00: STOOL (Negative for toxigenic C. difficile by the Illumigene DNA amplification assay.            (Reference Range-Negative).)",
+  "formed_packet": {
+    "subject_id": "19625808",
+    "hadm_id": "23180703",
+    "admission_start": "2180-05-25 19:57:00",
+    "admission_end": "2180-05-30 19:11:00",
+    "previous_admission_summary": {
+      "admission_start": "2180-05-22 02:28:00",
+      "admission_end": "2180-05-22 18:30:00",
+      "summary_paragraph": "The patient was admitted for nausea, vomiting, and periumbilical abdominal pain. She has a history of insulin-dependent diabetes, stage 5 chronic kidney disease on peritoneal dialysis, gastroparesis, and chronic constipation. She recently had bloody drainage from her PD catheter site and was started on Bactrim. During this admission, she developed worsening nausea and abdominal discomfort. CT imaging showed no intra-abdominal pathology, and peritoneal fluid analysis did not indicate peritonitis. She was found to have a superficial soft tissue infection at the catheter site with erythema and yellow drainage. Her symptoms improved with supportive care, and she transitioned to clindamycin and gentamicin cream for the infection. She tolerated oral intake by discharge and was sent home with instructions to continue her bowel regimen, complete the antibiotic course, monitor the catheter site, and follow up for a pelvic ultrasound in one year to evaluate a right adnexal cyst.",
+      "problems": [
+        "Infection and inflammatory reaction due to peritoneal dialysis catheter",
+        "End stage renal disease",
+        "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Gastroparesis",
+        "Other constipation",
+        "Nausea with vomiting",
+        "Abdominal pain, periumbilic",
+        "Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Polyneuropathy in diabetes",
+        "Obstructive sleep apnea (adult)(pediatric)",
+        "Other and unspecified hyperlipidemia",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Long-term (current) use of insulin",
+        "Unspecified acquired hypothyroidism",
+        "Esophageal reflux",
+        "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+        "Renal dialysis status"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "19625808-DS-10",
+        "note_seq": 10,
+        "charttime": "2180-05-30 00:00:00",
+        "storetime": "2180-06-01 13:58:00",
+        "text": " \nName:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPenicillins / ondansetron / Linzess / codeine / Percocet / \nReglan\n \nAttending: ___.\n \nChief Complaint:\ncough, fever\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\nMs. ___ is a ___ with history of IDDM and stage 5 CKD on PD  \n\nas of ___ who presents with cough and fevers.  \nPt was admitted for one on ___ with abdominal pain. CT A/P as \nwell as peritoneal fluid all negative for intra-abdominal \ninfection. She was treated with oral clindamycin and topical \ngentamicin for superficial infection of the PD catheter site.  \nPt reports experiencing cough, fever, and chills x2 days. Fevers \nup to 101.4. She also reports hoarse voice but denies dyspnea or \nchest discomfort. Her abdominal pain has improved but she \nexpresses concern that her PD catheter is draining very slowly. \nHer husband has had a recent viral illness. She denies N/V or \nchanges in BM. Endorses poor appetite since starting PD.  \nIn the ED, initial vitals were: 100.4 88 133/53 17 100% RA.  \n- Labs were significant for WBC 3.9, H&H 11.7/36.1 at baseline, \nnormal lactate.  \n- Imaging revealed: CXR with RLL PNA.  \n- The patient was given vancomycin, cefepime, and azithromycin.  \n\nVitals prior to transfer were: 98.2 71 122/59 15 95% RA.  \nPt was seen by renal who recommended peritoneal fluid analysis.  \n\nUpon arrival to the floor, VS are: 98.3 124/47 77 16 95% on RA. \nShe has undergone 3 PD sessions today. She usually does 4. She \ndoes not do PD overnight and requests if it can be done in am. \nPt reports cough but denies pain or dyspnea or abd pain.  \nREVIEW OF SYSTEMS:  \n(+) Per HPI  \n \nPast Medical History:\n- IDDM\n- Peripheral Neuropathy\n- Chronic Kidney Disease Stage IV (GFR ___\n- Gastroparesis\n- OSA\n- HLD\n- HTN\n- Chronic Fatigue\n- Depression\n- Anxiety\n- h/o Bulemia  \n\nPast surgical history: L BC AVF ___ (___), L breast \nlumpectomy ___, R breast lumpectomy ___, appendectomy  \n\n \nSocial History:\n___\nFamily History:\nNo history of diabetes or kidney disease \n\n \nPhysical Exam:\nADMISSION EXAM:\n--------------\nVitals: 98.3 124/47 77 16 95% on RA  \nGeneral: Alert, oriented, no acute distress. no conversational \ndyspnea  \nHEENT: Sclera anicteric, MMM, oropharynx clear, EOMI, PERRL  \nNeck: Supple, JVP not elevated, no LAD  \nCV: Regular rate and rhythm, normal S1 + S2, systolic murmur \nalong left sternum  \nLungs: decreased breath sound in the right LL with mild crackles \n \nAbdomen: Soft, non-tender, non-distended, bowel sounds present, \nno organomegaly, no rebound or guarding  \nGU: No foley  \nExt: Warm, well perfused, 2+ pulses, no clubbing, cyanosis or \nedema  \nNeuro: CNII-XII intact, ___ strength upper/lower extremities, \ngrossly normal sensation, 2+ reflexes bilaterally, gait \ndeferred.  \nSkin: PD catheter with dressing c/d/i, no surrounding erythema \nc/f infection. mildly tender in that area.  \n\nDISCHARGE EXAM:\n--------------\nVitals: Tm/Tc 97.8 119/49 64 18 95%RA\nGeneral: Alert, oriented, no acute distress. no conversational \ndyspnea  \nHEENT: Sclera anicteric, MMM, oropharynx clear, EOMI, PERRL  \nNeck: Supple, JVP not elevated, no LAD  \nCV: Regular rate and rhythm, normal S1 + S2, systolic murmur \nalong left sternum  \nLungs: decreased breath sounds in the bases b/l with diffuse \nrales \nAbdomen: Soft, non-tender, non-distended, bowel sounds present, \nno organomegaly, no rebound or guarding. \nGU: No foley  \nExt: Warm, well perfused, 2+ pulses, no clubbing, cyanosis or \nedema  \nNeuro: CNII-XII intact, ___ strength upper/lower extremities, \ngrossly normal sensation, 2+ reflexes bilaterally, gait \ndeferred.  \nSkin: PD catheter with dressing c/d/i, no surrounding erythema \nc/f infection. mildly tender in that area. \n\n \nPertinent Results:\nADMISSION LABS:\n==============\n___ 12:30PM   PLT COUNT-287\n___ 12:30PM   NEUTS-75.5* LYMPHS-16.6* MONOS-5.0 EOS-2.2 \nBASOS-0.7\n___ 12:30PM   WBC-3.9* RBC-3.73* HGB-11.7* HCT-36.1 MCV-97 \nMCH-31.5 MCHC-32.5 RDW-13.0\n___ 12:30PM   ALBUMIN-3.6 CALCIUM-8.2* PHOSPHATE-3.9 \nMAGNESIUM-2.1\n___ 12:30PM   LIPASE-37\n___ 12:30PM   ALT(SGPT)-26 AST(SGOT)-32 ALK PHOS-140* TOT \nBILI-0.1\n___ 12:30PM   GLUCOSE-169* UREA N-32* CREAT-3.6* SODIUM-135 \nPOTASSIUM-3.8 CHLORIDE-97 TOTAL CO2-28 ANION GAP-14\n___ 12:36PM   LACTATE-0.9\n___ 02:00PM OTHER BODY FLUID  FluAPCR-NEGATIVE \nFluBPCR-NEGATIVE\n___ 04:00PM URINE  MUCOUS-RARE\n___ 04:00PM URINE  RBC-1 WBC-2 BACTERIA-MANY YEAST-NONE \nEPI-5 TRANS EPI-<1\n___ 04:00PM URINE  BLOOD-NEG NITRITE-NEG PROTEIN-100 \nGLUCOSE-TR KETONE-NEG BILIRUBIN-NEG UROBILNGN-NEG PH-7.0 \nLEUK-NEG\n___ 04:00PM URINE  COLOR-Straw APPEAR-Clear SP ___\n___ 04:00PM URINE  UCG-NEGATIVE\n___ 04:00PM URINE  HOURS-RANDOM\n___ 04:10PM ASCITES  WBC-3* RBC-5* POLYS-2* LYMPHS-3* \nMONOS-84* EOS-4* MESOTHELI-7*\n___ 04:10PM ASCITES  TOT PROT-0.3 GLUCOSE-401\n\nMICRO:\n=====\n___ STOOL C. difficile DNA amplification \nassay-FINAL INPATIENT \n___ 1:59 am STOOL     CONSISTENCY: SOFT      Source: Stool. \n\n\n                            **FINAL REPORT ___\n\n   C. difficile DNA amplification assay (Final ___: \n      Negative for toxigenic C. difficile by the Illumigene DNA\n      amplification assay. \n           (Reference Range-Negative). \n___ URINE URINE CULTURE-PENDING INPATIENT \n___ PERITONEAL FLUID GRAM STAIN-FINAL; FLUID \nCULTURE-FINAL; ANAEROBIC CULTURE-PRELIMINARY INPATIENT \n___ 6:11 pm PERITONEAL FLUID      PERITONEALFLUID. \n\n   GRAM STAIN (Final ___: \n      NO POLYMORPHONUCLEAR LEUKOCYTES SEEN. \n      NO MICROORGANISMS SEEN. \n      This is a concentrated smear made by cytospin method, \nplease refer to\n      hematology for a quantitative white blood cell count.. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n   ANAEROBIC CULTURE (Preliminary):    NO GROWTH. \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nINPATIENT \n___ PERITONEAL FLUID GRAM STAIN-FINAL; FLUID \nCULTURE-FINAL; ANAEROBIC CULTURE-PRELIMINARY EMERGENCY WARD \n___ 4:10 pm PERITONEAL FLUID      PERITONEAL FLUID. \n\n   GRAM STAIN (Final ___: \n      NO POLYMORPHONUCLEAR LEUKOCYTES SEEN. \n      NO MICROORGANISMS SEEN. \n\n   FLUID CULTURE (Final ___:    NO GROWTH. \n\n   ANAEROBIC CULTURE (Preliminary):    NO GROWTH. \n___ URINE URINE CULTURE-FINAL EMERGENCY WARD \nURINE CULTURE (Final ___:    NO GROWTH.\n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nEMERGENCY WARD \n___ SWAB WOUND CULTURE-FINAL EMERGENCY WARD \nWOUND CULTURE (Final ___:    NO GROWTH. \n___ BLOOD CULTURE Blood Culture, Routine-PENDING \nEMERGENCY WARD \n\nIMAGING/STUDIES:\n===============\n___ Imaging ABDOMEN (SUPINE & ERECT \nIMPRESSION:  \n  \nProminent air distended loops of small bowel on the left abdomen \non the supine view, not well seen on the upright view, may \nrelate to peristalsis or focal ileus.  Small air-fluid levels \nscattered in the colon are nonspecific and could be normal \nversus related to the mild gastroenteritis. No evidence of high \ngrade bowel obstruction. \n\n___ Imaging CHEST (PA & LAT) \nFINDINGS:  \n  \nRight lower lobe consolidation is seen, consistent with \npneumonia. The left lung is clear.  No pleural effusion or \npneumothorax is seen. The cardiac and mediastinal silhouettes \nare unremarkable. \nIMPRESSION:   \nRight lower lobe pneumonia. \n\n___ Imaging CHEST (PORTABLE AP) \nIMPRESSION:  \n  \nNew heterogeneity in the right lower lobe consolidation could be \nsome \nimprovement since ___ or development of cavitation.  There \nis no definite pleural effusion or consolidation elsewhere. \nHeart size is normal. No definite hilar adenopathy. \n\n___ Imaging CHEST (PORTABLE AP) \nIMPRESSION:  \n  \nLower lung volumes. No change in appearance of the known right \nbasal pneumonia and the known left basilar atelectasis. Mild \ncardiomegaly without pulmonary edema. No larger pleural \neffusions. \n\nDISCHARGE LABS:\n==============\n\n___ 08:25AM BLOOD WBC-2.9* RBC-3.54* Hgb-11.2* Hct-33.3* \nMCV-94 MCH-31.7 MCHC-33.7 RDW-13.1 Plt ___\n___ 08:25AM BLOOD Glucose-125* UreaN-18 Creat-3.3* Na-134 \nK-3.9 Cl-96 HCO3-29 AnGap-13\n___ 08:25AM BLOOD Calcium-8.8 Phos-4.0 Mg-2.0\n \nBrief Hospital Course:\nMs. ___ is a ___ with history of IDDM and stage 5 CKD on PD \nas of ___ who presents with cough and fevers.  \n\n# PNA: The patient presented with cough and fevers and was found \nto have a RLL infiltrate on CXR. She was started on \nvanc/cefepime/azithromycin in the ED (___) due to concern for \nHCAP. On ___ vanc/cefepime/azithro were stopped and she was \nswitched to levofloxacin; however later that day she developed a \nfever and felt worse and so vanc/cefepime were added back to \nlevofloxacin. She remained afebrile for the next ___ hours and so \nthen vanc/cefepime were stopped and she continued on \nlevofloxacin, finishing a 7-day course of antibiotics by day of \ndischarge. Her urine and blood cultures remained negative. For \ncough, she was continued on guaifenisin and benzonatate PRN. \n\n# ESRD on PD: Pt was started on PD in ___. She was recently \n(___) admitted for superficial infection of catheter site. Exam \nduring this hospitalization was reassuring for infection. \nPeritoneal fluid was sent off for culture twice during \nhospitalization and analysis is reassuring for infection. She \nhad been started on clindamycin for a superficial cellulitis \naround the PD catheter site prior to this admission. This \nstopped given that the patient was taking other antibiotics for \npneuomonia; it also caused her to have diarrhea. She was \ncontinued on gentamycin topical and was also started on \nmupiricin topical ointment for a two week course. She was \ncontinued on PD and followed by the nephrology service.\n\n# Diarrhea: The patient reported diarrhea at home in the setting \nof taking clindamycin. C. diff this admission was negative. \nClindamycin was changed to topical mupiricin for a 2 week course \n(in addition to gentamicin). \n\n# Yeast infection: The patient complained of a yeast infection \nand received 150 mg fluconazole PO.\n\n# IDDM: The patient has a history of IDDM c/b gastroparesis and \nneuropathy. She was continued on home ISS and glargine 6U qHS.   \n\n\nCHRONIC ISSUES  \n#Psych: The patient was continued on home ClonazePAM, \nDextroamphetamine, Fluoxetine, LaMOTrigine 200 mg PO BID, \nmodafinil  \n\n#Hypothyroidism: The patient was continued on home \nlevothyroxine. \n \n#GERD: The patient was continued on home pantoprazole.  \n\n#Migraines:  The patient was continued on topiramate. She was \ngiven sumatriptan once for a headache.\n\n#Chronic pain/neuropathy: The patient was continued on home \ngabapentin. \n\n# CODE STATUS: full code  \n# CONTACT: husband ___ ___  \n\nTRANSITIONAL ISSUES:\n- Mupiricin ointment was added to gentamycin to apply to PD \ncatheter site for two weeks, instead of clindamycin, as this \ncaused diarrhea.\n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. ClonazePAM 1 mg PO BID \n2. Docusate Sodium 100 mg PO BID \n3. Fluoxetine 60 mg PO DAILY \n4. Fluticasone Propionate NASAL 1 SPRY NU DAILY \n5. Gabapentin 600 mg PO QHS \n6. LaMOTrigine 200 mg PO BID \n7. Levothyroxine Sodium 50 mcg PO DAILY \n8. Lubiprostone 24 mcg PO BID \n9. Pantoprazole 40 mg PO Q12H \n10. Senna 8.6 mg PO BID:PRN constipation \n11. Sumatriptan Succinate ___ mg PO ONCE \n12. Topiramate (Topamax) 25 mg PO BID \n13. Vitamin D 1000 UNIT PO DAILY \n14. modafinil 300  oral AM \n15. modafinil 200 mg ORAL AS DIRECTED \n16. Ondansetron 4 mg PO Q8H:PRN nausea \n17. Gentamicin 0.1% Cream 1 Appl TP DAILY \n18. Clindamycin 300 mg PO Q8H \n19. Bisacodyl 10 mg PO/PR DAILY:PRN constipation \n20. Polyethylene Glycol 17 g PO DAILY \n21. Glargine 6 Units Bedtime  \nInsulin SC Sliding Scale using HUM Insulin  \n\n \nDischarge Medications:\n1. Bisacodyl 10 mg PO/PR DAILY:PRN constipation \n2. ClonazePAM 1 mg PO BID \n3. Docusate Sodium 100 mg PO BID \n4. Fluoxetine 60 mg PO DAILY \n5. Fluticasone Propionate NASAL 1 SPRY NU DAILY \n6. Gabapentin 600 mg PO QHS \n7. Gentamicin 0.1% Cream 1 Appl TP DAILY \n8. LaMOTrigine 200 mg PO BID \n9. Levothyroxine Sodium 50 mcg PO DAILY \n10. Lubiprostone 24 mcg PO BID \n11. modafinil 300  oral AM \n12. Ondansetron 4 mg PO Q8H:PRN nausea \n13. Pantoprazole 40 mg PO Q12H \n14. Polyethylene Glycol 17 g PO DAILY \n15. Senna 8.6 mg PO BID:PRN constipation \n16. Topiramate (Topamax) 25 mg PO BID \n17. Vitamin D 1000 UNIT PO DAILY \n18. Benzonatate 100 mg PO TID:PRN cough \nRX *benzonatate 100 mg 1 capsule(s) by mouth TID:PRN Disp #*60 \nCapsule Refills:*0\n19. Dextromethorphan-Guaifenesin (Sugar Free) 5 mL PO Q4H:PRN \ncough \nRX *dextromethorphan-guaifenesin ___ DM Diabetic] 100 \nmg-10 mg/5 mL 5 mL by mouth Q4H:PRN Refills:*0\n20. Multiple Vitamins Liq. 5 mL PO DAILY \nRX *therapeutic multivitamin  5 mL by mouth Daily Disp #*1 Pint \nRefills:*0\n21. Mupirocin Ointment 2% 1 Appl TP BID \nRX *mupirocin 2 % 1 Appl twice a day Refills:*0\n22. modafinil 200 mg ORAL AS DIRECTED \n23. Glargine 6 Units Bedtime  \nInsulin SC Sliding Scale using HUM Insulin  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary diagnosis:\nPneumonia\n\nSecondary diagnoses:\nESRD on PD\nDiabetes\nHypothyroidism\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nYou were admitted to the ___ \nbecause you were having fevers and a cough. You were found to \nhave a pneumonia and you were treated with a course of \nantibiotics. You stopped having fevers and you were showing some \nimprovement and so you were determined safe to go home. You were \nhaving diarrhea but you were found not to have an infection in \nyour GI tract called C.diff.\n\nYou have the following appiontments listed below.\n\nThank you for allowing us to participate in your care.\n\nSincerely,\nYour ___ Team.\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "19625808-RR-55",
+        "charttime": "2180-05-25 14:05:00",
+        "storetime": "2180-05-25 15:01:00",
+        "text": "INDICATION:  History: ___ with abdominal pain. PD cathether  // eval for signs\nof obstruction\n\nTECHNIQUE:  Supine hand upright views of the abdomen.\n\nCOMPARISON:  ___\n\nFINDINGS: \n\nPeritoneal dialysis catheter is seen coiled in the lateral left mid abdomen. \nOn the supine view, there is a prominent air distended loops of small bowel\nwhich is not as well seen on the upright view nor does there appear to be\nlarge air-fluid level.  Smaller fluid levels are seen scattered throughout the\ncolon which may be within normal limits versus related to a gastroenteritis.\nAir seen throughout most of the colon. There is a paucity of gas in the\nrectum.  No evidence of free air is seen.  Pelvic phleboliths are noted.\n\nIMPRESSION: \n\nProminent air distended loops of small bowel on the left abdomen on the supine\nview, not well seen on the upright view, may relate to peristalsis or focal\nileus.  Small air-fluid levels scattered in the colon are nonspecific and\ncould be normal versus related to the mild gastroenteritis. No evidence of\nhigh grade bowel obstruction.\n"
+      },
+      {
+        "note_id": "19625808-RR-54",
+        "charttime": "2180-05-25 14:05:00",
+        "storetime": "2180-05-25 15:03:00",
+        "text": "EXAMINATION:\nChest:  Frontal and lateral views\n\nINDICATION:  History: ___ with cough, fever, RLL crackles  // eval for PNA\n\nTECHNIQUE:  Chest:  Frontal and Lateral\n\nCOMPARISON:  ___\n\nFINDINGS: \n\nRight lower lobe consolidation is seen, consistent with pneumonia. The left\nlung is clear.  No pleural effusion or pneumothorax is seen. The cardiac and\nmediastinal silhouettes are unremarkable.\n\nIMPRESSION: \n\nRight lower lobe pneumonia.\n"
+      },
+      {
+        "note_id": "19625808-RR-56",
+        "charttime": "2180-05-27 17:06:00",
+        "storetime": "2180-05-27 19:03:00",
+        "text": "EXAMINATION:  CHEST (PORTABLE AP)\n\nINDICATION:  ___ year old woman with ESRD on PD with pneumonia, clinically\nworsening  // worsening of infiltrate      worsening of infiltrate\n\nCOMPARISON:  CHEST RADIOGRAPHS SINCE ___ MOST RECENTLY ONE ___.\n\nIMPRESSION: \n\nNew heterogeneity in the right lower lobe consolidation could be some\nimprovement since ___ one or development of cavitation.  There is no definite\npleural effusion or consolidation elsewhere. Heart size is normal. No definite\nhilar adenopathy.\n"
+      },
+      {
+        "note_id": "19625808-RR-57",
+        "charttime": "2180-05-29 11:32:00",
+        "storetime": "2180-05-29 12:17:00",
+        "text": "EXAMINATION:  CHEST (PORTABLE AP)\n\nINDICATION:  ___ year old woman with ESRD on HD with PNA  // evidence of\nworsening infiltrate or effusions\n\nCOMPARISON:  ___\n\nIMPRESSION: \n\nLower lung volumes. No change in appearance of the known right basal pneumonia\nand the known left basilar atelectasis. Mild cardiomegaly without pulmonary\nedema. No larger pleural effusions.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "486",
+        "icd_version": 9,
+        "long_title": "Pneumonia, organism unspecified",
+        "normalized_time": "2180-05-30 18:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "5856",
+        "icd_version": 9,
+        "long_title": "End stage renal disease",
+        "normalized_time": "2180-05-30 18:12:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "7937",
+        "icd_version": 9,
+        "long_title": "Nonspecific (abnormal) findings on radiological and other examination of musculoskeletal system",
+        "normalized_time": "2180-05-30 18:14:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "V4983",
+        "icd_version": 9,
+        "long_title": "Awaiting organ transplant status",
+        "normalized_time": "2180-05-30 18:16:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "5363",
+        "icd_version": 9,
+        "long_title": "Gastroparesis",
+        "normalized_time": "2180-05-30 18:17:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "40391",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage V or end stage renal disease",
+        "normalized_time": "2180-05-30 18:19:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "2761",
+        "icd_version": 9,
+        "long_title": "Hyposmolality and/or hyponatremia",
+        "normalized_time": "2180-05-30 18:21:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "25040",
+        "icd_version": 9,
+        "long_title": "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2180-05-30 18:22:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "6822",
+        "icd_version": 9,
+        "long_title": "Cellulitis and abscess of trunk",
+        "normalized_time": "2180-05-30 18:24:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "99668",
+        "icd_version": 9,
+        "long_title": "Infection and inflammatory reaction due to peritoneal dialysis catheter",
+        "normalized_time": "2180-05-30 18:26:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "99656",
+        "icd_version": 9,
+        "long_title": "Mechanical complication due to peritoneal dialysis catheter",
+        "normalized_time": "2180-05-30 18:27:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "25060",
+        "icd_version": 9,
+        "long_title": "Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2180-05-30 18:29:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2180-05-30 18:31:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "3572",
+        "icd_version": 9,
+        "long_title": "Polyneuropathy in diabetes",
+        "normalized_time": "2180-05-30 18:32:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "32723",
+        "icd_version": 9,
+        "long_title": "Obstructive sleep apnea (adult)(pediatric)",
+        "normalized_time": "2180-05-30 18:34:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "311",
+        "icd_version": 9,
+        "long_title": "Depressive disorder, not elsewhere classified",
+        "normalized_time": "2180-05-30 18:36:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "30000",
+        "icd_version": 9,
+        "long_title": "Anxiety state, unspecified",
+        "normalized_time": "2180-05-30 18:37:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "2859",
+        "icd_version": 9,
+        "long_title": "Anemia, unspecified",
+        "normalized_time": "2180-05-30 18:39:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "34690",
+        "icd_version": 9,
+        "long_title": "Migraine, unspecified, without mention of intractable migraine without mention of status migrainosus",
+        "normalized_time": "2180-05-30 18:41:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "78071",
+        "icd_version": 9,
+        "long_title": "Chronic fatigue syndrome",
+        "normalized_time": "2180-05-30 18:42:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "2449",
+        "icd_version": 9,
+        "long_title": "Unspecified acquired hypothyroidism",
+        "normalized_time": "2180-05-30 18:44:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "7830",
+        "icd_version": 9,
+        "long_title": "Anorexia",
+        "normalized_time": "2180-05-30 18:46:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "33829",
+        "icd_version": 9,
+        "long_title": "Other chronic pain",
+        "normalized_time": "2180-05-30 18:47:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "78791",
+        "icd_version": 9,
+        "long_title": "Diarrhea",
+        "normalized_time": "2180-05-30 18:49:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2180-05-30 18:51:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 26,
+        "icd_code": "V4511",
+        "icd_version": 9,
+        "long_title": "Renal dialysis status",
+        "normalized_time": "2180-05-30 18:52:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 27,
+        "icd_code": "V851",
+        "icd_version": 9,
+        "long_title": "Body Mass Index between 19-24, adult",
+        "normalized_time": "2180-05-30 18:54:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 28,
+        "icd_code": "E9308",
+        "icd_version": 9,
+        "long_title": "Other specified antibiotics causing adverse effects in therapeutic use",
+        "normalized_time": "2180-05-30 18:56:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 29,
+        "icd_code": "E8791",
+        "icd_version": 9,
+        "long_title": "Kidney dialysis as the cause of abnormal reaction of patient, or of later complication, without mention of misadventure at time of procedure",
+        "normalized_time": "2180-05-30 18:57:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 30,
+        "icd_code": "1129",
+        "icd_version": 9,
+        "long_title": "Candidiasis of unspecified site",
+        "normalized_time": "2180-05-30 18:59:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 31,
+        "icd_code": "7862",
+        "icd_version": 9,
+        "long_title": "Cough",
+        "normalized_time": "2180-05-30 19:01:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 32,
+        "icd_code": "E8788",
+        "icd_version": 9,
+        "long_title": "Other specified surgical operations and procedures causing abnormal patient reaction, or later complication, without mention of misadventure at time of operation",
+        "normalized_time": "2180-05-30 19:02:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 33,
+        "icd_code": "E8490",
+        "icd_version": 9,
+        "long_title": "Home accidents",
+        "normalized_time": "2180-05-30 19:04:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 34,
+        "icd_code": "3569",
+        "icd_version": 9,
+        "long_title": "Unspecified hereditary and idiopathic peripheral neuropathy",
+        "normalized_time": "2180-05-30 19:06:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 35,
+        "icd_code": "56400",
+        "icd_version": 9,
+        "long_title": "Constipation, unspecified",
+        "normalized_time": "2180-05-30 19:07:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 36,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2180-05-30 19:09:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 37,
+        "icd_code": "4659",
+        "icd_version": 9,
+        "long_title": "Acute upper respiratory infections of unspecified site",
+        "normalized_time": "2180-05-30 19:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2180-05-25",
+        "icd_code": "5498",
+        "icd_version": 9,
+        "long_title": "Peritoneal dialysis",
+        "normalized_time": "2180-05-25 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2180-05-26 00:00:00",
+        "charttime": "2180-05-26 07:54:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2180-05-27 00:00:00",
+        "charttime": "2180-05-27 17:09:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2180-05-27 00:00:00",
+        "charttime": "2180-05-27 17:48:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2180-05-27 00:00:00",
+        "charttime": "2180-05-27 18:11:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "PERITONEAL FLUID",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO POLYMORPHONUCLEAR LEUKOCYTES SEEN.  NO MICROORGANISMS SEEN.  This is a concentrated smear made by cytospin method, please refer to hematology for a quantitative white blood cell count.  "
+      },
+      {
+        "chartdate": "2180-05-27 00:00:00",
+        "charttime": "2180-05-27 18:11:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "PERITONEAL FLUID",
+        "test_name": "FLUID CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2180-05-27 00:00:00",
+        "charttime": "2180-05-27 18:11:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "PERITONEAL FLUID",
+        "test_name": "ANAEROBIC CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2180-05-30 00:00:00",
+        "charttime": "2180-05-30 01:58:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "YEAST",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": ""
+      },
+      {
+        "chartdate": "2180-05-30 00:00:00",
+        "charttime": "2180-05-30 01:59:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "C. difficile PCR",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Negative for toxigenic C. difficile by the Illumigene DNA amplification assay.            (Reference Range-Negative).  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 17069,
+    "output_tokens": 5145,
+    "total_tokens": 22214
+  },
+  "response_id": "chatcmpl-8b1c4b9a3d1b444a",
+  "latency_ms": 93374,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2180-05-25 20:15:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I’ll be taking care of you during this stay. Can you tell me what brought you in today?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2180-05-25 20:16:00",
+        "speaker": "Patient",
+        "text": "Hi, I’ve had a cough and fever for about two days. I’ve been feeling chills too. My husband had a cold recently, so I think I caught something."
+      },
+      {
+        "turn_number": 3,
+        "time": "2180-05-25 20:17:00",
+        "speaker": "Doctor",
+        "text": "I see. Any shortness of breath or chest pain?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2180-05-25 20:18:00",
+        "speaker": "Patient",
+        "text": "No chest pain, and I’m not really short of breath. But my voice is a bit hoarse."
+      },
+      {
+        "turn_number": 5,
+        "time": "2180-05-25 20:19:00",
+        "speaker": "Doctor",
+        "text": "Okay. I also see you’re on peritoneal dialysis. How’s that been going?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2180-05-25 20:20:00",
+        "speaker": "Patient",
+        "text": "It’s been okay, but I’m worried—the fluid is draining slower than usual. And I’ve been doing only three exchanges today instead of four."
+      },
+      {
+        "turn_number": 7,
+        "time": "2180-05-25 20:21:00",
+        "speaker": "Doctor",
+        "text": "That’s something we’ll monitor. We’ve already done a chest X-ray, and it shows pneumonia in your right lower lung."
+      },
+      {
+        "turn_number": 8,
+        "time": "2180-05-25 20:22:00",
+        "speaker": "Patient",
+        "text": "Oh no, pneumonia? Is that serious?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2180-05-25 20:23:00",
+        "speaker": "Doctor",
+        "text": "We caught it early. You’re already on antibiotics—vancomycin, cefepime, and azithromycin—to cover possible infections. We’ll keep a close eye on you."
+      },
+      {
+        "turn_number": 10,
+        "time": "2180-05-25 20:24:00",
+        "speaker": "Patient",
+        "text": "Okay, thanks. I’ve also had some diarrhea at home. Could that be from the clindamycin I was taking for my catheter site?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2180-05-25 20:25:00",
+        "speaker": "Doctor",
+        "text": "That’s very possible. Clindamycin can cause diarrhea. We’ve stopped the oral clindamycin for now since you’re on other antibiotics. We’ll switch to a topical ointment to avoid that."
+      },
+      {
+        "turn_number": 12,
+        "time": "2180-05-25 20:26:00",
+        "speaker": "Patient",
+        "text": "That makes sense. My catheter site still feels tender, though."
+      },
+      {
+        "turn_number": 13,
+        "time": "2180-05-25 20:27:00",
+        "speaker": "Doctor",
+        "text": "We checked it—the skin around it looks okay, no redness. We’ll keep using gentamicin cream and add mupirocin ointment to help prevent infection."
+      },
+      {
+        "turn_number": 14,
+        "time": "2180-05-26 08:30:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your blood cultures came back negative—no bacteria growing. That’s reassuring."
+      },
+      {
+        "turn_number": 15,
+        "time": "2180-05-26 08:31:00",
+        "speaker": "Patient",
+        "text": "That’s good. Does that mean the antibiotics are working?"
+      },
+      {
+        "turn_number": 16,
+        "time": "2180-05-26 08:32:00",
+        "speaker": "Doctor",
+        "text": "It means there’s no bloodstream infection right now. We’re still treating the pneumonia aggressively. How’s your cough?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2180-05-26 08:33:00",
+        "speaker": "Patient",
+        "text": "Still there, but maybe a little less. I’ve been using the guaifenesin."
+      },
+      {
+        "turn_number": 18,
+        "time": "2180-05-26 08:34:00",
+        "speaker": "Doctor",
+        "text": "Good. We’ll keep that and add benzonatate if the cough is bothering you."
+      },
+      {
+        "turn_number": 19,
+        "time": "2180-05-27 09:00:00",
+        "speaker": "Doctor",
+        "text": "We did another chest X-ray yesterday. There’s some change in the pneumonia area—could be early improvement or a small cavity forming. We’re watching it closely."
+      },
+      {
+        "turn_number": 20,
+        "time": "2180-05-27 09:01:00",
+        "speaker": "Patient",
+        "text": "A cavity? Is that bad?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2180-05-27 09:02:00",
+        "speaker": "Doctor",
+        "text": "It’s not uncommon with certain pneumonias. Since you’re not getting worse, we think it’s healing. We’ll repeat the X-ray soon."
+      },
+      {
+        "turn_number": 22,
+        "time": "2180-05-27 09:03:00",
+        "speaker": "Patient",
+        "text": "Okay, that’s a relief. I’ve also been feeling a bit itchy down there—could it be a yeast infection?"
+      },
+      {
+        "turn_number": 23,
+        "time": "2180-05-27 09:04:00",
+        "speaker": "Doctor",
+        "text": "Given your history and recent antibiotics, that’s likely. I’ll prescribe a single dose of fluconazole to treat it."
+      },
+      {
+        "turn_number": 24,
+        "time": "2180-05-27 09:05:00",
+        "speaker": "Patient",
+        "text": "Thank you, that would help a lot."
+      },
+      {
+        "turn_number": 25,
+        "time": "2180-05-27 18:15:00",
+        "speaker": "Doctor",
+        "text": "We also sent peritoneal fluid for testing. The results show no white blood cells or bacteria—so no sign of peritonitis. That’s excellent news."
+      },
+      {
+        "turn_number": 26,
+        "time": "2180-05-27 18:16:00",
+        "speaker": "Patient",
+        "text": "So my dialysis fluid is clean?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2180-05-27 18:17:00",
+        "speaker": "Doctor",
+        "text": "Yes. The infection is just on the skin surface. We’ll keep the topical treatments going for two weeks."
+      },
+      {
+        "turn_number": 28,
+        "time": "2180-05-28 08:45:00",
+        "speaker": "Doctor",
+        "text": "Your latest labs show your white blood cell count is still low, but stable. Your kidney function is consistent with baseline."
+      },
+      {
+        "turn_number": 29,
+        "time": "2180-05-28 08:46:00",
+        "speaker": "Patient",
+        "text": "Is that dangerous, the low white count?"
+      },
+      {
+        "turn_number": 30,
+        "time": "2180-05-28 08:47:00",
+        "speaker": "Doctor",
+        "text": "It can make you more prone to infections, but since you’re improving, we think it’s chronic for you. We’ll keep monitoring."
+      },
+      {
+        "turn_number": 31,
+        "time": "2180-05-28 08:48:00",
+        "speaker": "Patient",
+        "text": "Okay. I’ve been doing my dialysis okay—still three exchanges a day. Can I switch to doing them in the morning instead of overnight?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2180-05-28 08:49:00",
+        "speaker": "Doctor",
+        "text": "We’ll discuss that with nephrology. For now, keep your current schedule. We don’t want to risk fluid buildup."
+      },
+      {
+        "turn_number": 33,
+        "time": "2180-05-28 14:20:00",
+        "speaker": "Doctor",
+        "text": "We’re switching your antibiotics. We’re stopping vancomycin and cefepime and continuing just levofloxacin. It covers your pneumonia well and is easier on your system."
+      },
+      {
+        "turn_number": 34,
+        "time": "2180-05-28 14:21:00",
+        "speaker": "Patient",
+        "text": "But I had a fever yesterday evening. I thought that meant things were worse?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2180-05-28 14:22:00",
+        "speaker": "Doctor",
+        "text": "You did spike a fever, so we added the stronger antibiotics back temporarily. But since you’ve been fever-free since, we’re stepping down safely."
+      },
+      {
+        "turn_number": 36,
+        "time": "2180-05-28 14:23:00",
+        "speaker": "Patient",
+        "text": "Got it. I’m glad I’m on the mend."
+      },
+      {
+        "turn_number": 37,
+        "time": "2180-05-29 09:10:00",
+        "speaker": "Doctor",
+        "text": "Another chest X-ray shows no change in the pneumonia. Lung volumes are a bit low, but no new fluid or worsening. That’s stable progress."
+      },
+      {
+        "turn_number": 38,
+        "time": "2180-05-29 09:11:00",
+        "speaker": "Patient",
+        "text": "So I’m not getting worse?"
+      },
+      {
+        "turn_number": 39,
+        "time": "2180-05-29 09:12:00",
+        "speaker": "Doctor",
+        "text": "No, you’re holding steady. Your oxygen levels are good, and you’re not struggling to breathe. That’s what matters."
+      },
+      {
+        "turn_number": 40,
+        "time": "2180-05-29 09:13:00",
+        "speaker": "Patient",
+        "text": "Good. And the diarrhea has stopped since I stopped the clindamycin."
+      },
+      {
+        "turn_number": 41,
+        "time": "2180-05-29 09:14:00",
+        "speaker": "Doctor",
+        "text": "And your stool test was negative for C. diff, so it wasn’t a serious infection. Just a side effect."
+      },
+      {
+        "turn_number": 42,
+        "time": "2180-05-29 15:00:00",
+        "speaker": "Doctor",
+        "text": "We’re planning to discharge you tomorrow. You’ll finish a full 7-day course of levofloxacin at home."
+      },
+      {
+        "turn_number": 43,
+        "time": "2180-05-29 15:01:00",
+        "speaker": "Patient",
+        "text": "That’s great. What about my catheter care?"
+      },
+      {
+        "turn_number": 44,
+        "time": "2180-05-29 15:02:00",
+        "speaker": "Doctor",
+        "text": "Continue the gentamicin cream and mupirocin ointment twice daily for two weeks. Watch for redness, swelling, or pus."
+      },
+      {
+        "turn_number": 45,
+        "time": "2180-05-29 15:03:00",
+        "speaker": "Patient",
+        "text": "And my dialysis schedule?"
+      },
+      {
+        "turn_number": 46,
+        "time": "2180-05-29 15:04:00",
+        "speaker": "Doctor",
+        "text": "Keep doing four exchanges daily. If you want to adjust timing, talk to your dialysis nurse at your next visit."
+      },
+      {
+        "turn_number": 47,
+        "time": "2180-05-30 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good news—you’re cleared to go home today. You’re off oxygen, afebrile, and eating well."
+      },
+      {
+        "turn_number": 48,
+        "time": "2180-05-30 08:01:00",
+        "speaker": "Patient",
+        "text": "Thank you. I’ll take the cough meds as needed?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2180-05-30 08:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, benzonatate or the guaifenesin syrup. And keep taking levofloxacin until it’s gone. Follow up with your primary doctor in a week."
+      },
+      {
+        "turn_number": 50,
+        "time": "2180-05-30 08:03:00",
+        "speaker": "Patient",
+        "text": "I will. I feel much better than when I came in."
+      },
+      {
+        "turn_number": 51,
+        "time": "2180-05-30 08:04:00",
+        "speaker": "Doctor",
+        "text": "I’m glad. Take care, and call if you develop fever, trouble breathing, or any issues with your catheter."
+      },
+      {
+        "turn_number": 52,
+        "time": "2180-05-30 08:05:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks again, Dr. Lee."
+      },
+      {
+        "turn_number": 53,
+        "time": "2180-05-30 10:15:00",
+        "speaker": "Doctor",
+        "text": "Just a quick check before discharge. Your labs this morning are stable. White count is still low but not dropping."
+      },
+      {
+        "turn_number": 54,
+        "time": "2180-05-30 10:16:00",
+        "speaker": "Patient",
+        "text": "Any concern about that?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2180-05-30 10:17:00",
+        "speaker": "Doctor",
+        "text": "Not at this time. It’s likely related to your chronic conditions. Your team will monitor it at your follow-ups."
+      },
+      {
+        "turn_number": 56,
+        "time": "2180-05-30 10:18:00",
+        "speaker": "Patient",
+        "text": "Okay, good to know."
+      },
+      {
+        "turn_number": 57,
+        "time": "2180-05-30 11:00:00",
+        "speaker": "Doctor",
+        "text": "Nursing will go over your discharge meds. You’ll have benzonatate, mupirocin ointment, and the antibiotic."
+      },
+      {
+        "turn_number": 58,
+        "time": "2180-05-30 11:01:00",
+        "speaker": "Patient",
+        "text": "And I keep using the pantoprazole and gabapentin like before?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2180-05-30 11:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, all your regular medications continue. No changes there."
+      },
+      {
+        "turn_number": 60,
+        "time": "2180-05-30 11:03:00",
+        "speaker": "Patient",
+        "text": "Perfect. I’m ready to go home."
+      },
+      {
+        "turn_number": 61,
+        "time": "2180-05-30 12:30:00",
+        "speaker": "Doctor",
+        "text": "One last thing—your husband can drive you, right? And you’ll have help at home?"
+      },
+      {
+        "turn_number": 62,
+        "time": "2180-05-30 12:31:00",
+        "speaker": "Patient",
+        "text": "Yes, he’s picking me up, and he’ll help with the dialysis for the next few days."
+      },
+      {
+        "turn_number": 63,
+        "time": "2180-05-30 12:32:00",
+        "speaker": "Doctor",
+        "text": "Excellent. Take it easy, rest, and keep up with your care. We’ll see you in follow-up soon."
+      },
+      {
+        "turn_number": 64,
+        "time": "2180-05-30 12:33:00",
+        "speaker": "Patient",
+        "text": "Thank you, Doctor. I really appreciate everything."
+      },
+      {
+        "turn_number": 65,
+        "time": "2180-05-30 12:34:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Get some rest and feel better soon."
+      },
+      {
+        "turn_number": 66,
+        "time": "2180-05-30 14:00:00",
+        "speaker": "Doctor",
+        "text": "Just confirming—you’ve reviewed the discharge instructions with the nurse?"
+      },
+      {
+        "turn_number": 67,
+        "time": "2180-05-30 14:01:00",
+        "speaker": "Patient",
+        "text": "Yes, all clear. I know what meds to take and when to follow up."
+      }
+    ],
+    "summary": {
+      "admission_start": "2180-05-25 19:57:00",
+      "admission_end": "2180-05-30 19:11:00",
+      "summary_paragraph": "The patient was admitted with cough, fever, and chills, and found to have right lower lobe pneumonia on chest X-ray. She was started on broad-spectrum antibiotics, which were later de-escalated to levofloxacin after clinical improvement. She had a history of a recent superficial PD catheter site infection, and oral clindamycin was discontinued due to antibiotic-associated diarrhea, with transition to topical gentamicin and mupirocin. Peritoneal fluid analysis showed no signs of peritonitis. A yeast infection was treated with fluconazole. The patient remained afebrile, her respiratory status stabilized, and she was discharged home on oral antibiotics with instructions for catheter site care and follow-up.",
+      "problems": [
+        "Pneumonia",
+        "End stage renal disease",
+        "Infection and inflammatory reaction due to peritoneal dialysis catheter",
+        "Diarrhea",
+        "Candidiasis of unspecified site",
+        "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Gastroparesis",
+        "Obstructive sleep apnea (adult)(pediatric)",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Unspecified acquired hypothyroidism",
+        "Esophageal reflux",
+        "Other and unspecified hyperlipidemia",
+        "Polyneuropathy in diabetes",
+        "Long-term (current) use of insulin",
+        "Renal dialysis status"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-8b1c4b9a3d1b444a",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2180-05-25 20:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I’ll be taking care of you during this stay. Can you tell me what brought you in today?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2180-05-25 20:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Hi, I’ve had a cough and fever for about two days. I’ve been feeling chills too. My husband had a cold recently, so I think I caught something.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2180-05-25 20:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. Any shortness of breath or chest pain?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2180-05-25 20:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No chest pain, and I’m not really short of breath. But my voice is a bit hoarse.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2180-05-25 20:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. I also see you’re on peritoneal dialysis. How’s that been going?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2180-05-25 20:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"It’s been okay, but I’m worried—the fluid is draining slower than usual. And I’ve been doing only three exchanges today instead of four.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2180-05-25 20:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s something we’ll monitor. We’ve already done a chest X-ray, and it shows pneumonia in your right lower lung.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2180-05-25 20:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh no, pneumonia? Is that serious?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2180-05-25 20:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We caught it early. You’re already on antibiotics—vancomycin, cefepime, and azithromycin—to cover possible infections. We’ll keep a close eye on you.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2180-05-25 20:24:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, thanks. I’ve also had some diarrhea at home. Could that be from the clindamycin I was taking for my catheter site?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2180-05-25 20:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s very possible. Clindamycin can cause diarrhea. We’ve stopped the oral clindamycin for now since you’re on other antibiotics. We’ll switch to a topical ointment to avoid that.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2180-05-25 20:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That makes sense. My catheter site still feels tender, though.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2180-05-25 20:27:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We checked it—the skin around it looks okay, no redness. We’ll keep using gentamicin cream and add mupirocin ointment to help prevent infection.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2180-05-26 08:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your blood cultures came back negative—no bacteria growing. That’s reassuring.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2180-05-26 08:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s good. Does that mean the antibiotics are working?\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2180-05-26 08:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It means there’s no bloodstream infection right now. We’re still treating the pneumonia aggressively. How’s your cough?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2180-05-26 08:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Still there, but maybe a little less. I’ve been using the guaifenesin.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2180-05-26 08:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. We’ll keep that and add benzonatate if the cough is bothering you.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2180-05-27 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did another chest X-ray yesterday. There’s some change in the pneumonia area—could be early improvement or a small cavity forming. We’re watching it closely.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2180-05-27 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"A cavity? Is that bad?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2180-05-27 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s not uncommon with certain pneumonias. Since you’re not getting worse, we think it’s healing. We’ll repeat the X-ray soon.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2180-05-27 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, that’s a relief. I’ve also been feeling a bit itchy down there—could it be a yeast infection?\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2180-05-27 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Given your history and recent antibiotics, that’s likely. I’ll prescribe a single dose of fluconazole to treat it.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2180-05-27 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, that would help a lot.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2180-05-27 18:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We also sent peritoneal fluid for testing. The results show no white blood cells or bacteria—so no sign of peritonitis. That’s excellent news.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2180-05-27 18:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So my dialysis fluid is clean?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2180-05-27 18:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The infection is just on the skin surface. We’ll keep the topical treatments going for two weeks.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2180-05-28 08:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your latest labs show your white blood cell count is still low, but stable. Your kidney function is consistent with baseline.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2180-05-28 08:46:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that dangerous, the low white count?\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2180-05-28 08:47:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can make you more prone to infections, but since you’re improving, we think it’s chronic for you. We’ll keep monitoring.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2180-05-28 08:48:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I’ve been doing my dialysis okay—still three exchanges a day. Can I switch to doing them in the morning instead of overnight?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2180-05-28 08:49:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll discuss that with nephrology. For now, keep your current schedule. We don’t want to risk fluid buildup.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2180-05-28 14:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re switching your antibiotics. We’re stopping vancomycin and cefepime and continuing just levofloxacin. It covers your pneumonia well and is easier on your system.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2180-05-28 14:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"But I had a fever yesterday evening. I thought that meant things were worse?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2180-05-28 14:22:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You did spike a fever, so we added the stronger antibiotics back temporarily. But since you’ve been fever-free since, we’re stepping down safely.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2180-05-28 14:23:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. I’m glad I’m on the mend.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2180-05-29 09:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Another chest X-ray shows no change in the pneumonia. Lung volumes are a bit low, but no new fluid or worsening. That’s stable progress.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2180-05-29 09:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I’m not getting worse?\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2180-05-29 09:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No, you’re holding steady. Your oxygen levels are good, and you’re not struggling to breathe. That’s what matters.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2180-05-29 09:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. And the diarrhea has stopped since I stopped the clindamycin.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2180-05-29 09:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"And your stool test was negative for C. diff, so it wasn’t a serious infection. Just a side effect.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2180-05-29 15:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re planning to discharge you tomorrow. You’ll finish a full 7-day course of levofloxacin at home.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2180-05-29 15:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great. What about my catheter care?\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2180-05-29 15:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Continue the gentamicin cream and mupirocin ointment twice daily for two weeks. Watch for redness, swelling, or pus.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2180-05-29 15:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my dialysis schedule?\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2180-05-29 15:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Keep doing four exchanges daily. If you want to adjust timing, talk to your dialysis nurse at your next visit.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2180-05-30 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good news—you’re cleared to go home today. You’re off oxygen, afebrile, and eating well.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2180-05-30 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I’ll take the cough meds as needed?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2180-05-30 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, benzonatate or the guaifenesin syrup. And keep taking levofloxacin until it’s gone. Follow up with your primary doctor in a week.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2180-05-30 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I feel much better than when I came in.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2180-05-30 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I’m glad. Take care, and call if you develop fever, trouble breathing, or any issues with your catheter.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2180-05-30 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks again, Dr. Lee.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2180-05-30 10:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just a quick check before discharge. Your labs this morning are stable. White count is still low but not dropping.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2180-05-30 10:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Any concern about that?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2180-05-30 10:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not at this time. It’s likely related to your chronic conditions. Your team will monitor it at your follow-ups.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2180-05-30 10:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, good to know.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2180-05-30 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Nursing will go over your discharge meds. You’ll have benzonatate, mupirocin ointment, and the antibiotic.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2180-05-30 11:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And I keep using the pantoprazole and gabapentin like before?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2180-05-30 11:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, all your regular medications continue. No changes there.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2180-05-30 11:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Perfect. I’m ready to go home.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2180-05-30 12:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—your husband can drive you, right? And you’ll have help at home?\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2180-05-30 12:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, he’s picking me up, and he’ll help with the dialysis for the next few days.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2180-05-30 12:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Excellent. Take it easy, rest, and keep up with your care. We’ll see you in follow-up soon.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2180-05-30 12:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Doctor. I really appreciate everything.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2180-05-30 12:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Get some rest and feel better soon.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2180-05-30 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just confirming—you’ve reviewed the discharge instructions with the nurse?\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2180-05-30 14:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, all clear. I know what meds to take and when to follow up.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2180-05-25 19:57:00\",\n    \"admission_end\": \"2180-05-30 19:11:00\",\n    \"summary_paragraph\": \"The patient was admitted with cough, fever, and chills, and found to have right lower lobe pneumonia on chest X-ray. She was started on broad-spectrum antibiotics, which were later de-escalated to levofloxacin after clinical improvement. She had a history of a recent superficial PD catheter site infection, and oral clindamycin was discontinued due to antibiotic-associated diarrhea, with transition to topical gentamicin and mupirocin. Peritoneal fluid analysis showed no signs of peritonitis. A yeast infection was treated with fluconazole. The patient remained afebrile, her respiratory status stabilized, and she was discharged home on oral antibiotics with instructions for catheter site care and follow-up.\",\n    \"problems\": [\n      \"Pneumonia\",\n      \"End stage renal disease\",\n      \"Infection and inflammatory reaction due to peritoneal dialysis catheter\",\n      \"Diarrhea\",\n      \"Candidiasis of unspecified site\",\n      \"Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled\",\n      \"Gastroparesis\",\n      \"Obstructive sleep apnea (adult)(pediatric)\",\n      \"Depressive disorder, not elsewhere classified\",\n      \"Anxiety state, unspecified\",\n      \"Unspecified acquired hypothyroidism\",\n      \"Esophageal reflux\",\n      \"Other and unspecified hyperlipidemia\",\n      \"Polyneuropathy in diabetes\",\n      \"Long-term (current) use of insulin\",\n      \"Renal dialysis status\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1777044262,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5145,
+      "prompt_tokens": 17069,
+      "total_tokens": 22214,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

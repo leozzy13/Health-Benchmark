@@ -1,0 +1,773 @@
+{
+  "subject_id": "19133405",
+  "hadm_id": "20488525",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T06:33:16Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 6 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2167-04-07 20:49:00 to 2167-04-13 14:11:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2167-03-19 15:52:00",
+    "admission_end": "2167-03-23 18:04:00",
+    "summary_paragraph": "A young woman with a history of congenital tracheomalacia, bronchomalacia, tracheostomy, and chronic respiratory colonization with MRSA and Pseudomonas was admitted for worsening cough, neck pain, odynophagia, and green tracheal discharge. Initial evaluation revealed tenderness and swelling at the trach site, but imaging showed only mild laryngeal edema without abscess, and labs showed no leukocytosis. Sputum and bronchial cultures grew MRSA and Pseudomonas, but minimal inflammatory cells suggested colonization rather than active infection. Antibiotics were discontinued after infectious disease consultation. Pain was managed with IV morphine initially, then transitioned to oral oxycodone and tramadol. The trach tube was replaced by interventional pulmonology, and ENT confirmed no tracheitis. Supportive care included hypertonic saline nebulizers, bronchodilators, and saline drops via trach. She was discharged home with instructions to use a heat-moisture exchanger during the day, humidified air at night, and scheduled saline drops, along with follow-up with pulmonary and ENT specialists.",
+    "problems": [
+      "Congenital tracheomalacia",
+      "Congenital bronchomalacia",
+      "Bronchopulmonary dysplasia originating in the perinatal period",
+      "Encounter for attention to tracheostomy",
+      "Iron deficiency anemia, unspecified",
+      "Major depressive disorder, single episode, unspecified",
+      "Gastro-esophageal reflux disease without esophagitis",
+      "Unspecified asthma, uncomplicated"
+    ]
+  },
+  "stay_days": 6,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2167-04-13 00:00:00): Name:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPenicillins / Tobramycin / Bactrim\n \nAttending: ___.\n \nChief Complaint:\nbacteremia\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\nThis is a ___ with hx of tracheobronchomalacia s/p tracheostomy, \nmultiple tracheal reconstructions, multiple admissions for \ntracheobronchitis w/indwelling trach (#7.0 cuffless Portex) who \nwas recently admitted on ___ with 1 day of neck pain. She was \nadmitted to the ___ but eloped shortly after and now \nrepresents after being notified of positive blood cultures.  \n\nShe complains of 1 week of shaking chills but no fever, pain \naround trach site,pain with swallowing both solids and liquids, \ncentral chest pain, cough productive of yellow phlegm (through \ntrach). She was last admitted with a throat infection last month \nand stayed in the hospital for 3 days. Her trach was changed \nlast month.  \n\nIn the ED, initial vital signs were: 96.0 110 129/77 22 100% RA  \n \n- Exam was notable for: mild secretions on tracheoscopy  \n- Labs were notable for: normal lactate, white cell count and \nstable H/H  \n- Imaging: CXR showed no acute process  \n- The patient was given: IV vancomycin  \n- Consults: ENT/IP  \nUpon arrival to the floor, patient reports that her breathing is \nnow at baseline with the exception of having secretions.  \n\nREVIEW OF SYSTEMS: Per HPI.  \n\n \nPast Medical History:\n- Tracheabronchomalacia ___ premature birth at 26 weeks, s/p 4 \nairway reconstructions, last at age ___, tracheostomy at age ___ \n___\n- Bronchopulmonary dysplasia\n- Chronic bronchitis and tracheitis \n- Laryngeal and tracheal stenosis\n- Revision tracheostomy, Anterior cartilage split, T-tube \nplacement ___\n- s/p ___ in ___ ___\n- s/p lysis supraglottic stenosis by ENT, ___\n- asthma\n- GERD\n \nFamily History:\nFather with history of DM. PGF with bone cancer, MGM with breast \ncancer at a young age. \n \nPhysical Exam:\nADMISSION EXAM:\nVS: T 98.3 113/83 79 18 100% trach mask FiO2 35%  \nGEN: Alert, lying in bed, no acute distress  \nHEENT: Moist MM, anicteric sclerae, no conjunctival pallor  \nNECK: Supple without LAD, tracheostomy c/d/I with humidified air \n \nPULM: CTA b/l with mild diffuse wheeze  \nCOR: RRR (+)S1/S2 no m/r/g  \nABD: Soft, non-tender, non-distended  \nEXTREM: Warm, well-perfused, no edema  \nNEURO: CN II-XII grossly intact, motor function grossly normal  \n \nDISCHARGE EXAM:\nVS98.1 107/43 88 18 100 TM\nGEN: Alert, lying in bed, no acute distress  \nHEENT: Moist MM, anicteric sclerae, no conjunctival pallor, \noropharynx without erythema/tonsillar exudate/enlargement, uvula \n midline  \nNECK: Supple without LAD, tracheostomy c/d/I with humidified air \n \nPULM: CTA b/l with minimal wheeze  \nCHEST: Mild TTP of sternum\nCOR: RRR (+)S1/S2, ___ systolic murmur @ LLSB \nABD: Soft, non-tender, non-distended  \nEXTREM: Warm, well-perfused, no edema  \nMSK: No spine TTP, no joint erythema or tenderness\nNEURO: CN II-XII grossly intact, motor function/light touch \ngrossly normal \nSKIN: changes c/w hydradenitis suppurativa in underarms with \nnon-tender abscess under L axilla, decreased in size from prior; \nno skin changes concerning for endocarditis\n \nPertinent Results:\nADMISSION LABS:\n\n___ 07:15PM BLOOD WBC-7.7# RBC-4.01 Hgb-9.0* Hct-29.5* \nMCV-74* MCH-22.4* MCHC-30.5* RDW-19.9* RDWSD-52.7* Plt ___\n___ 07:15PM BLOOD Glucose-94 UreaN-14 Creat-0.7 Na-139 \nK-3.7 Cl-106 HCO3-25 AnGap-12\n___ 07:26PM BLOOD Lactate-1.0\n\nPERTINENT LABS:\n\n___ 07:37PM BLOOD Vanco-8.1*\n___ 02:30AM BLOOD Vanco-29.1*\n___ 01:15PM BLOOD Vanco-18.8\n___ 07:18AM BLOOD CRP-6.1*\n___ 05:48AM BLOOD calTIBC-381 ___ Ferritn-14 TRF-293\n___ 07:30AM BLOOD cTropnT-<0.01\n___ 05:22AM BLOOD ALT-13 AST-15 AlkPhos-109* TotBili-0.1\n___ 05:48AM BLOOD LD(LDH)-146\n___ 05:48AM BLOOD Ret Aut-1.8 Abs Ret-0.06\n___ 06:00AM BLOOD SED RATE-9  \n\nDISCHARGE LABS:\n___ 05:55AM BLOOD WBC-7.4 RBC-3.58* Hgb-8.1* Hct-27.3* \nMCV-76* MCH-22.6* MCHC-29.7* RDW-21.2* RDWSD-56.5* Plt ___\n___ 05:55AM BLOOD Glucose-80 UreaN-10 Creat-0.8 Na-136 \nK-4.3 Cl-101 HCO3-28 AnGap-11\n___ 05:55AM BLOOD Calcium-8.7 Phos-3.5 Mg-1.9\n   \nMICROBIOLOGY:\n___ BCx: ___ STAPHYLOCOCCUS ___\n___ BCx: ___ STAPHYLOCOCCUS ___\n___ BCx: ___ Pending, no growth on day of discharge\n___ Urine culture: URINE CULTURE (Final ___:    <10,000 \norganisms/ml\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n___ Abscess aspirate culture: STAPH AUREUS COAG + \n(methicillin-resistant)\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n\nSTUDIES:\n___ CXR IMPRESSION: No signs of pneumonia or other acute \nintrathoracic process. \n___ LUE VENOUS DOPPLER: IMPRESSION: No evidence of deep vein \nthrombosis in the left upper extremity. \n___ TTE: Conclusions: The left atrium is normal in size. Left \nventricular wall thickness, cavity size and regional/global \nsystolic function are normal (LVEF >55%). Right ventricular \nchamber size and free wall motion are normal. The aortic valve \nleaflets (3) appear structurally normal with good leaflet \nexcursion and no aortic stenosis. No masses or vegetations are \nseen on the aortic valve. No aortic regurgitation is seen. The \nmitral valve leaflets are mildly thickened. There is no mitral \nvalve prolapse. No mass or vegetation is seen on the mitral \nvalve. The tricuspid valve leaflets are mildly thickened. The \nestimated pulmonary artery systolic pressure is normal. There is \nno pericardial effusion. \n\nIMPRESSION: No echocardiographic evidence of endocarditis. \nNormal biventricular wall thickness, cavity size and \nregional/global systolic function. No pathologic flow or \nabnormal valvular findings.\n\nCompared with the prior study (images reviewed) of ___, he \nfindings are similar.   \n\n___ CT NECK W/ CONTRAST:  \n1. Tracheostomy at the level of the thyroid is unchanged from \nprior exam. \n2. Unchanged deformity of the laryngeal and thyroid cartilage \nsuperior the \ntracheostomy with stenosis of the airway. \n3. Mild edema and thickening of the larynx abut the tracheostomy \nis similar in appearance to prior examination without evidence \nof increased enhancement or fluid collection. \n\n \nBrief Hospital Course:\nThis is a ___ year old female with chronic trach, recently \nadmitted on ___ with neck pain now re-presenting to ___ ED \nafter being called back for positive blood cultures (initially \ncoag negative staph). She was found to have high-grade \nStaphylococcus LUG___ bacteremia. \n\n#High-grade Staphylococcus LUG___ bacteremia. This bacteria \ncan be a skin contaminant, however, she had multiple subsequent \npositive blood cultures. Possible portals of entry to the \nbloodstream include trach and port. Her port/tracheostomy site \ndid not appear to be infected. She did have a tiny abscess under \nleft axilla, aspirate of which grew MRSA, suggesting that this \nwas not the source. TTE revealed no endocarditis. ID was \nconsulted for assistance with treatment. In an attempt to \nsalvage port, she was treated with both IV vancomycin and \nvancomycin dwells. She well need at least 4 weeks of both. \n\n#Chronic sore throat, cough, chest pain of atypical etiology: Pt \nhas had these complaints nearly every admission. CT neck did not \nshow abnormalities and EKGs were normal. Oropharynx appeared \nwithin normal limits. She continued home oxycodone and tramadol. \nShe did complete a 3 day course of toradol and lidocaine patch \nwith partial relief. \n\n#Hidradenitis suppurativa: Pt found to have moderately sized, \ntender abscess under left axilla. Given bacteremia, this was a \nsuspected source. Aspirate grew MRSA, however. ACS did not drain \nthis abscess, as this is relatively contraindicated in this \ndisease. She was given clindamycin ointment and IV vancomycin \n(for bacteremia as above). \n\n#Anemia: H/H were relatively stable. Ferritin was 14. She would \nbenefit from IV iron possibly. \n\nCHRONIC ISSUES: \n# S/p trach: She continued saline/duonebs. Seen by ENT with no \nacute processes noted. \n# Depression: She continued home fluoxetine.  \n# GERD: She continued home ranitidine and omeprazole.  \n\nTRANSTIONAL ISSUES:\n===================\n-Pt's chest pain partially relieved with lidocaine patch\n-Urine tox positive for methadone without obvious explanation, \nconsider repeat urine tox as an outpatient\n-Tentative ABx/vanco lock stop date = ___\n-Needs weekly CBC with diff, ESR/CRP, BUN/Cr, and vanco trough \n(q ___, faxed to Attn: ___ @ fax # \n___\n**Please keep vanco-heparin dwell in port for 12 hours in \nbetween each vancomycin dose. Draw vanco lock out before each \nmedication administration**\n# ___ (mother/HCP) ___  \n# CODE STATUS: Full (confirmed)  \n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Acetaminophen (Liquid) 650 mg PO Q6H:PRN pain \n2. Ferrous Sulfate 325 mg PO DAILY \n3. Fluoxetine 40 mg PO DAILY \n4. Gabapentin 100 mg PO TID \n5. Guaifenesin ___ mL PO Q6H:PRN cough \n6. Ipratropium-Albuterol Neb 1 NEB NEB Q6H \n7. Omeprazole 40 mg PO BID \n8. Ranitidine 150 mg PO QHS \n9. Sodium Chloride 3% Inhalation Soln 15 mL NEB TID \n10. Sodium Chloride Nasal ___ SPRY NU QID:PRN irritation \n11. OxycoDONE Liquid 5 mg PO BID:PRN pain \n12. ___ (21) (norethindrone ac-eth estradiol) ___ mg-mcg \noral DAILY \n13. TraMADOL (Ultram) 50 mg PO Q6H:PRN breakthrough pain \n14. sodium chloride 0.65 % through trach Q4H secretions \n\n \nDischarge Medications:\n1. Vancomycin 1250 mg IV Q 12H \nRX *vancomycin 500 mg 1250 mg IV every twelve (12) hours Disp \n#*120 Vial Refills:*0\n2. Vancomycin-Heparin Lock 10 mg LOCK Q12H \nVancomycin 2 mg/mL+Heparin 10 units/mL. Keep in port for 12 \nhours until next med administration.  \n3. Acetaminophen (Liquid) 650 mg PO Q6H:PRN pain \n4. Ferrous Sulfate 325 mg PO DAILY \n5. Fluoxetine 40 mg PO DAILY \n6. Gabapentin 100 mg PO TID \n7. Guaifenesin ___ mL PO Q6H:PRN cough \n8. Ipratropium-Albuterol Neb 1 NEB NEB Q6H \n9. Omeprazole 40 mg PO BID \n10. OxycoDONE Liquid 5 mg PO BID:PRN pain \n11. Ranitidine 150 mg PO QHS \n12. Sodium Chloride 3% Inhalation Soln 15 mL NEB TID \n13. Sodium Chloride Nasal ___ SPRY NU QID:PRN irritation \n14. TraMADOL (Ultram) 50 mg PO Q6H:PRN breakthrough pain \n15. Lidocaine 5% Patch 1 PTCH TD QAM \nRX *lidocaine 5 % Apply to chest qAM Disp #*10 Patch Refills:*0\n16. ___ (21) (norethindrone ac-eth estradiol) ___ mg-mcg \noral DAILY \n17. Sodium Chloride 0.65 % THROUGH TRACH Q4H secretions \n18. Clindamycin 1% Solution 1 Appl TP BID \nRX *clindamycin phosphate 1 % Apply thin layer to underarms \ntwice a day Refills:*0\n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary: Staphylococcus LUGDUNENSIS bacteremia\nSecondary: chest pain of atypical etiology, hidradenitis \nsuppurativa\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n \nDischarge Instructions:\nDear Ms ___,\n\nIt was a pleasure taking care of you at the ___ \n___. You were admitted for bacteria that \ngrew in blood cultures from your previous ED visit. \n\nYou had several new blood cultures grow bacteria, which we think \nmay be from your skin. You are at risk for this given your \ntracheostomy and port. \n\nWe treated you with intravenous vancomycin and vancomycin locks, \nwhich keep vancomycin in port when you are not using it. \n\nYou will need these antibiotics for at least 4 weeks. Your labs \nwill need to be drawn at least once weekly to make sure the \nlevels of antibiotic are high enough. \n\nYou also complained of chest and throat pain, as well as cough. \nWe found to new infection or other cause that could be \ncontributing to this. You continued your home medications and we \nalso gave you a lidocaine patch to put on your chest, which \nhelped somewhat. \n\nYou were also found to have a small abscess in your left \nunderarm. Some of the fluid was aspirated with a needle. It did \nnot grow the same bacteria as the bacteria in your blood, so it \nis not the source. Your intravenous antibiotic should be \ntreating it, and we also gave you a new prescription for an \nantibiotic lotion called clindamycin for you to use at home. \n\nYou should follow-up with the appointments listed below. \n\nOn behalf of your ___ team,\nWe wish you all the best\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Bacteremia\n- Tracheostomy status\n- Cutaneous abscess of left axilla\n- Other staphylococcus as the cause of diseases classified elsewhere\n- Major depressive disorder, single episode, unspecified\n- Chest pain, unspecified\n- Hidradenitis suppurativa\n- Anemia, unspecified\n- Unspecified asthma, uncomplicated\n- Gastro-esophageal reflux disease without esophagitis\n- Acute pharyngitis, unspecified",
+  "supporting_context_block": "Radiology:\n- 2167-04-07 20:01:00: EXAMINATION: CHEST (PA AND LAT) INDICATION: ___ with tracheobronchomalacia s/p tracheostomy comes in with positive blood cultures and a cough COMPARISON: ___ FINDINGS: PA and lateral views of the chest provided. Trach...\n- 2167-04-09 14:56:00: EXAMINATION: UNILAT UP EXT VEINS US INDICATION: ___ year old woman with left-sided port-a-cath and GPC bacteremia. // evaluate for left upper extremity DVT TECHNIQUE: Grey scale and Doppler evaluation was performed on...\n- 2167-04-10 11:42:00: EXAMINATION: CT NECK W/CONTRAST (EG:PAROTIDS) Q22 CT NECK INDICATION: ___ year old woman s/p trach with increased secretions, sore throat and GPC bacteremia. // Evaluate for cause of increased secretions +/- sore thro...\n\nProcedures:\n- None recorded.\n\nMicrobiology:\n- 2167-04-08 07:30:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-08 08:12:00: URINE (<10,000 organisms/ml.)\n- 2167-04-09 06:13:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-09 07:18:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-09 10:49:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-09 16:00:00: SPUTUM (>25 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.)\n- 2167-04-09 16:00:00: SPUTUM (TEST CANCELLED, PATIENT CREDITED.)\n- 2167-04-10 06:00:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-11 09:15:00: BLOOD CULTURE (NO GROWTH.)\n- 2167-04-11 09:50:00: BLOOD CULTURE (NO GROWTH.)",
+  "formed_packet": {
+    "subject_id": "19133405",
+    "hadm_id": "20488525",
+    "admission_start": "2167-04-07 20:49:00",
+    "admission_end": "2167-04-13 14:11:00",
+    "previous_admission_summary": {
+      "admission_start": "2167-03-19 15:52:00",
+      "admission_end": "2167-03-23 18:04:00",
+      "summary_paragraph": "A young woman with a history of congenital tracheomalacia, bronchomalacia, tracheostomy, and chronic respiratory colonization with MRSA and Pseudomonas was admitted for worsening cough, neck pain, odynophagia, and green tracheal discharge. Initial evaluation revealed tenderness and swelling at the trach site, but imaging showed only mild laryngeal edema without abscess, and labs showed no leukocytosis. Sputum and bronchial cultures grew MRSA and Pseudomonas, but minimal inflammatory cells suggested colonization rather than active infection. Antibiotics were discontinued after infectious disease consultation. Pain was managed with IV morphine initially, then transitioned to oral oxycodone and tramadol. The trach tube was replaced by interventional pulmonology, and ENT confirmed no tracheitis. Supportive care included hypertonic saline nebulizers, bronchodilators, and saline drops via trach. She was discharged home with instructions to use a heat-moisture exchanger during the day, humidified air at night, and scheduled saline drops, along with follow-up with pulmonary and ENT specialists.",
+      "problems": [
+        "Congenital tracheomalacia",
+        "Congenital bronchomalacia",
+        "Bronchopulmonary dysplasia originating in the perinatal period",
+        "Encounter for attention to tracheostomy",
+        "Iron deficiency anemia, unspecified",
+        "Major depressive disorder, single episode, unspecified",
+        "Gastro-esophageal reflux disease without esophagitis",
+        "Unspecified asthma, uncomplicated"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "19133405-DS-70",
+        "note_seq": 70,
+        "charttime": "2167-04-13 00:00:00",
+        "storetime": "2167-04-14 14:38:00",
+        "text": " \nName:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPenicillins / Tobramycin / Bactrim\n \nAttending: ___.\n \nChief Complaint:\nbacteremia\n \nMajor Surgical or Invasive Procedure:\nNone\n \nHistory of Present Illness:\nThis is a ___ with hx of tracheobronchomalacia s/p tracheostomy, \nmultiple tracheal reconstructions, multiple admissions for \ntracheobronchitis w/indwelling trach (#7.0 cuffless Portex) who \nwas recently admitted on ___ with 1 day of neck pain. She was \nadmitted to the ___ but eloped shortly after and now \nrepresents after being notified of positive blood cultures.  \n\nShe complains of 1 week of shaking chills but no fever, pain \naround trach site,pain with swallowing both solids and liquids, \ncentral chest pain, cough productive of yellow phlegm (through \ntrach). She was last admitted with a throat infection last month \nand stayed in the hospital for 3 days. Her trach was changed \nlast month.  \n\nIn the ED, initial vital signs were: 96.0 110 129/77 22 100% RA  \n \n- Exam was notable for: mild secretions on tracheoscopy  \n- Labs were notable for: normal lactate, white cell count and \nstable H/H  \n- Imaging: CXR showed no acute process  \n- The patient was given: IV vancomycin  \n- Consults: ENT/IP  \nUpon arrival to the floor, patient reports that her breathing is \nnow at baseline with the exception of having secretions.  \n\nREVIEW OF SYSTEMS: Per HPI.  \n\n \nPast Medical History:\n- Tracheabronchomalacia ___ premature birth at 26 weeks, s/p 4 \nairway reconstructions, last at age ___, tracheostomy at age ___ \n___\n- Bronchopulmonary dysplasia\n- Chronic bronchitis and tracheitis \n- Laryngeal and tracheal stenosis\n- Revision tracheostomy, Anterior cartilage split, T-tube \nplacement ___\n- s/p ___ in ___ ___\n- s/p lysis supraglottic stenosis by ENT, ___\n- asthma\n- GERD\n \nFamily History:\nFather with history of DM. PGF with bone cancer, MGM with breast \ncancer at a young age. \n \nPhysical Exam:\nADMISSION EXAM:\nVS: T 98.3 113/83 79 18 100% trach mask FiO2 35%  \nGEN: Alert, lying in bed, no acute distress  \nHEENT: Moist MM, anicteric sclerae, no conjunctival pallor  \nNECK: Supple without LAD, tracheostomy c/d/I with humidified air \n \nPULM: CTA b/l with mild diffuse wheeze  \nCOR: RRR (+)S1/S2 no m/r/g  \nABD: Soft, non-tender, non-distended  \nEXTREM: Warm, well-perfused, no edema  \nNEURO: CN II-XII grossly intact, motor function grossly normal  \n \nDISCHARGE EXAM:\nVS98.1 107/43 88 18 100 TM\nGEN: Alert, lying in bed, no acute distress  \nHEENT: Moist MM, anicteric sclerae, no conjunctival pallor, \noropharynx without erythema/tonsillar exudate/enlargement, uvula \n midline  \nNECK: Supple without LAD, tracheostomy c/d/I with humidified air \n \nPULM: CTA b/l with minimal wheeze  \nCHEST: Mild TTP of sternum\nCOR: RRR (+)S1/S2, ___ systolic murmur @ LLSB \nABD: Soft, non-tender, non-distended  \nEXTREM: Warm, well-perfused, no edema  \nMSK: No spine TTP, no joint erythema or tenderness\nNEURO: CN II-XII grossly intact, motor function/light touch \ngrossly normal \nSKIN: changes c/w hydradenitis suppurativa in underarms with \nnon-tender abscess under L axilla, decreased in size from prior; \nno skin changes concerning for endocarditis\n \nPertinent Results:\nADMISSION LABS:\n\n___ 07:15PM BLOOD WBC-7.7# RBC-4.01 Hgb-9.0* Hct-29.5* \nMCV-74* MCH-22.4* MCHC-30.5* RDW-19.9* RDWSD-52.7* Plt ___\n___ 07:15PM BLOOD Glucose-94 UreaN-14 Creat-0.7 Na-139 \nK-3.7 Cl-106 HCO3-25 AnGap-12\n___ 07:26PM BLOOD Lactate-1.0\n\nPERTINENT LABS:\n\n___ 07:37PM BLOOD Vanco-8.1*\n___ 02:30AM BLOOD Vanco-29.1*\n___ 01:15PM BLOOD Vanco-18.8\n___ 07:18AM BLOOD CRP-6.1*\n___ 05:48AM BLOOD calTIBC-381 ___ Ferritn-14 TRF-293\n___ 07:30AM BLOOD cTropnT-<0.01\n___ 05:22AM BLOOD ALT-13 AST-15 AlkPhos-109* TotBili-0.1\n___ 05:48AM BLOOD LD(LDH)-146\n___ 05:48AM BLOOD Ret Aut-1.8 Abs Ret-0.06\n___ 06:00AM BLOOD SED RATE-9  \n\nDISCHARGE LABS:\n___ 05:55AM BLOOD WBC-7.4 RBC-3.58* Hgb-8.1* Hct-27.3* \nMCV-76* MCH-22.6* MCHC-29.7* RDW-21.2* RDWSD-56.5* Plt ___\n___ 05:55AM BLOOD Glucose-80 UreaN-10 Creat-0.8 Na-136 \nK-4.3 Cl-101 HCO3-28 AnGap-11\n___ 05:55AM BLOOD Calcium-8.7 Phos-3.5 Mg-1.9\n   \nMICROBIOLOGY:\n___ BCx: ___ STAPHYLOCOCCUS ___\n___ BCx: ___ STAPHYLOCOCCUS ___\n___ BCx: ___ Pending, no growth on day of discharge\n___ Urine culture: URINE CULTURE (Final ___:    <10,000 \norganisms/ml\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n___ Abscess aspirate culture: STAPH AUREUS COAG + \n(methicillin-resistant)\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n___ BCx: ___ Pending, no growth on day of discharge\n\nSTUDIES:\n___ CXR IMPRESSION: No signs of pneumonia or other acute \nintrathoracic process. \n___ LUE VENOUS DOPPLER: IMPRESSION: No evidence of deep vein \nthrombosis in the left upper extremity. \n___ TTE: Conclusions: The left atrium is normal in size. Left \nventricular wall thickness, cavity size and regional/global \nsystolic function are normal (LVEF >55%). Right ventricular \nchamber size and free wall motion are normal. The aortic valve \nleaflets (3) appear structurally normal with good leaflet \nexcursion and no aortic stenosis. No masses or vegetations are \nseen on the aortic valve. No aortic regurgitation is seen. The \nmitral valve leaflets are mildly thickened. There is no mitral \nvalve prolapse. No mass or vegetation is seen on the mitral \nvalve. The tricuspid valve leaflets are mildly thickened. The \nestimated pulmonary artery systolic pressure is normal. There is \nno pericardial effusion. \n\nIMPRESSION: No echocardiographic evidence of endocarditis. \nNormal biventricular wall thickness, cavity size and \nregional/global systolic function. No pathologic flow or \nabnormal valvular findings.\n\nCompared with the prior study (images reviewed) of ___, he \nfindings are similar.   \n\n___ CT NECK W/ CONTRAST:  \n1. Tracheostomy at the level of the thyroid is unchanged from \nprior exam. \n2. Unchanged deformity of the laryngeal and thyroid cartilage \nsuperior the \ntracheostomy with stenosis of the airway. \n3. Mild edema and thickening of the larynx abut the tracheostomy \nis similar in appearance to prior examination without evidence \nof increased enhancement or fluid collection. \n\n \nBrief Hospital Course:\nThis is a ___ year old female with chronic trach, recently \nadmitted on ___ with neck pain now re-presenting to ___ ED \nafter being called back for positive blood cultures (initially \ncoag negative staph). She was found to have high-grade \nStaphylococcus LUG___ bacteremia. \n\n#High-grade Staphylococcus LUG___ bacteremia. This bacteria \ncan be a skin contaminant, however, she had multiple subsequent \npositive blood cultures. Possible portals of entry to the \nbloodstream include trach and port. Her port/tracheostomy site \ndid not appear to be infected. She did have a tiny abscess under \nleft axilla, aspirate of which grew MRSA, suggesting that this \nwas not the source. TTE revealed no endocarditis. ID was \nconsulted for assistance with treatment. In an attempt to \nsalvage port, she was treated with both IV vancomycin and \nvancomycin dwells. She well need at least 4 weeks of both. \n\n#Chronic sore throat, cough, chest pain of atypical etiology: Pt \nhas had these complaints nearly every admission. CT neck did not \nshow abnormalities and EKGs were normal. Oropharynx appeared \nwithin normal limits. She continued home oxycodone and tramadol. \nShe did complete a 3 day course of toradol and lidocaine patch \nwith partial relief. \n\n#Hidradenitis suppurativa: Pt found to have moderately sized, \ntender abscess under left axilla. Given bacteremia, this was a \nsuspected source. Aspirate grew MRSA, however. ACS did not drain \nthis abscess, as this is relatively contraindicated in this \ndisease. She was given clindamycin ointment and IV vancomycin \n(for bacteremia as above). \n\n#Anemia: H/H were relatively stable. Ferritin was 14. She would \nbenefit from IV iron possibly. \n\nCHRONIC ISSUES: \n# S/p trach: She continued saline/duonebs. Seen by ENT with no \nacute processes noted. \n# Depression: She continued home fluoxetine.  \n# GERD: She continued home ranitidine and omeprazole.  \n\nTRANSTIONAL ISSUES:\n===================\n-Pt's chest pain partially relieved with lidocaine patch\n-Urine tox positive for methadone without obvious explanation, \nconsider repeat urine tox as an outpatient\n-Tentative ABx/vanco lock stop date = ___\n-Needs weekly CBC with diff, ESR/CRP, BUN/Cr, and vanco trough \n(q ___, faxed to Attn: ___ @ fax # \n___\n**Please keep vanco-heparin dwell in port for 12 hours in \nbetween each vancomycin dose. Draw vanco lock out before each \nmedication administration**\n# ___ (mother/HCP) ___  \n# CODE STATUS: Full (confirmed)  \n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Acetaminophen (Liquid) 650 mg PO Q6H:PRN pain \n2. Ferrous Sulfate 325 mg PO DAILY \n3. Fluoxetine 40 mg PO DAILY \n4. Gabapentin 100 mg PO TID \n5. Guaifenesin ___ mL PO Q6H:PRN cough \n6. Ipratropium-Albuterol Neb 1 NEB NEB Q6H \n7. Omeprazole 40 mg PO BID \n8. Ranitidine 150 mg PO QHS \n9. Sodium Chloride 3% Inhalation Soln 15 mL NEB TID \n10. Sodium Chloride Nasal ___ SPRY NU QID:PRN irritation \n11. OxycoDONE Liquid 5 mg PO BID:PRN pain \n12. ___ (21) (norethindrone ac-eth estradiol) ___ mg-mcg \noral DAILY \n13. TraMADOL (Ultram) 50 mg PO Q6H:PRN breakthrough pain \n14. sodium chloride 0.65 % through trach Q4H secretions \n\n \nDischarge Medications:\n1. Vancomycin 1250 mg IV Q 12H \nRX *vancomycin 500 mg 1250 mg IV every twelve (12) hours Disp \n#*120 Vial Refills:*0\n2. Vancomycin-Heparin Lock 10 mg LOCK Q12H \nVancomycin 2 mg/mL+Heparin 10 units/mL. Keep in port for 12 \nhours until next med administration.  \n3. Acetaminophen (Liquid) 650 mg PO Q6H:PRN pain \n4. Ferrous Sulfate 325 mg PO DAILY \n5. Fluoxetine 40 mg PO DAILY \n6. Gabapentin 100 mg PO TID \n7. Guaifenesin ___ mL PO Q6H:PRN cough \n8. Ipratropium-Albuterol Neb 1 NEB NEB Q6H \n9. Omeprazole 40 mg PO BID \n10. OxycoDONE Liquid 5 mg PO BID:PRN pain \n11. Ranitidine 150 mg PO QHS \n12. Sodium Chloride 3% Inhalation Soln 15 mL NEB TID \n13. Sodium Chloride Nasal ___ SPRY NU QID:PRN irritation \n14. TraMADOL (Ultram) 50 mg PO Q6H:PRN breakthrough pain \n15. Lidocaine 5% Patch 1 PTCH TD QAM \nRX *lidocaine 5 % Apply to chest qAM Disp #*10 Patch Refills:*0\n16. ___ (21) (norethindrone ac-eth estradiol) ___ mg-mcg \noral DAILY \n17. Sodium Chloride 0.65 % THROUGH TRACH Q4H secretions \n18. Clindamycin 1% Solution 1 Appl TP BID \nRX *clindamycin phosphate 1 % Apply thin layer to underarms \ntwice a day Refills:*0\n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary: Staphylococcus LUGDUNENSIS bacteremia\nSecondary: chest pain of atypical etiology, hidradenitis \nsuppurativa\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n \nDischarge Instructions:\nDear Ms ___,\n\nIt was a pleasure taking care of you at the ___ \n___. You were admitted for bacteria that \ngrew in blood cultures from your previous ED visit. \n\nYou had several new blood cultures grow bacteria, which we think \nmay be from your skin. You are at risk for this given your \ntracheostomy and port. \n\nWe treated you with intravenous vancomycin and vancomycin locks, \nwhich keep vancomycin in port when you are not using it. \n\nYou will need these antibiotics for at least 4 weeks. Your labs \nwill need to be drawn at least once weekly to make sure the \nlevels of antibiotic are high enough. \n\nYou also complained of chest and throat pain, as well as cough. \nWe found to new infection or other cause that could be \ncontributing to this. You continued your home medications and we \nalso gave you a lidocaine patch to put on your chest, which \nhelped somewhat. \n\nYou were also found to have a small abscess in your left \nunderarm. Some of the fluid was aspirated with a needle. It did \nnot grow the same bacteria as the bacteria in your blood, so it \nis not the source. Your intravenous antibiotic should be \ntreating it, and we also gave you a new prescription for an \nantibiotic lotion called clindamycin for you to use at home. \n\nYou should follow-up with the appointments listed below. \n\nOn behalf of your ___ team,\nWe wish you all the best\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "19133405-RR-138",
+        "charttime": "2167-04-07 20:01:00",
+        "storetime": "2167-04-07 20:21:00",
+        "text": "EXAMINATION:  CHEST (PA AND LAT)\n\nINDICATION:  ___ with tracheobronchomalacia s/p tracheostomy comes in with\npositive blood cultures and a cough\n\nCOMPARISON:  ___\n\nFINDINGS: \n\nPA and lateral views of the chest provided.   Tracheostomy tube projects over\nthe superior mediastinum.  A left chest wall Port-A-Cath is in place with\ncatheter tip in the region of the low SVC.  The lungs are clear without focal\nconsolidation, large effusion or pneumothorax.  No signs of congestion or\nedema.  Heart and mediastinal contours are stable.  Imaged osseous structures\nare intact.  No free air below the right hemidiaphragm is seen.\n\nIMPRESSION: \n\nNo signs of pneumonia or other acute intrathoracic process.\n"
+      },
+      {
+        "note_id": "19133405-RR-139",
+        "charttime": "2167-04-09 14:56:00",
+        "storetime": "2167-04-09 16:11:00",
+        "text": "EXAMINATION:  UNILAT UP EXT VEINS US\n\nINDICATION:  ___ year old woman with left-sided port-a-cath and GPC bacteremia.\n// evaluate for left upper extremity DVT\n\nTECHNIQUE:  Grey scale and Doppler evaluation was performed on the left upper\nextremity veins.\n\nCOMPARISON:  None.\n\nFINDINGS: \n\nThere is normal flow with respiratory variation in the bilateral subclavian\nvein.\nThe left internal jugular and axillary veins are patent, show normal color\nflow and compressibility. The left brachial, basilic, and cephalic veins are\npatent, compressible and show normal color flow and augmentation.\n\nIMPRESSION: \n\nNo evidence of deep vein thrombosis in the left upper extremity.\n"
+      },
+      {
+        "note_id": "19133405-RR-140",
+        "charttime": "2167-04-10 11:42:00",
+        "storetime": "2167-04-10 15:39:00",
+        "text": "EXAMINATION:  CT NECK W/CONTRAST (EG:PAROTIDS) Q22 CT NECK\n\nINDICATION:  ___ year old woman s/p trach with increased secretions, sore\nthroat and GPC bacteremia.  // Evaluate for cause of increased secretions +/-\nsore throat.\n\nTECHNIQUE:  Imaging was performed after administration of 70 ml of Omnipaque\nintravenous contrast material.\n\nMDCT acquired helical axial images were obtained from the thoracic inlet\nthrough the skull base.\n\nCoronal and sagittal multiplanar reformats were then produced and reviewed.\n\nDOSE:  Acquisition sequence:\n   1) Spiral Acquisition 3.9 s, 30.3 cm; CTDIvol = 12.3 mGy (Body) DLP = 374.1\nmGy-cm.\n   2) Sequenced Acquisition 0.5 s, 2.0 cm; CTDIvol = 4.4 mGy (Body) DLP = 8.8\nmGy-cm.\n   3) Sequenced Acquisition 0.5 s, 2.0 cm; CTDIvol = 4.4 mGy (Body) DLP = 8.8\nmGy-cm.\n Total DLP (Body) = 392 mGy-cm.\n\nCOMPARISON:  CT neck with contrast of ___.\n\nFINDINGS: \n\nTracheostomy at the level of the thyroid is unchanged from prior examination. \nRe-identified is deformity of the laryngeal and thyroid cartilage, superior\nthe tracheostomy with stenosis of the airway at this level, unchanged from\nprior exam.\n\nThere is mild edema and thickening of the larynx above the tracheostomy,\nsimilar in appearance to prior examination of ___ without evidence\nof increased enhancement or fluid collection.  There is no cervical\nlymphadenopathy by size criteria.  Re-identified is a sub cm thyroid nodule in\nthe left lobe, unchanged from prior exam for which no further follow-up is\nrecommended by current ACR guidelines for incidentally noted thyroid nodules.\n\nThe major salivary glands are unremarkable.  The cervical vessels are patent. \nThe visualized lung apices are clear.  There is a left Port-A-Cath unchanged\nin position from prior exam.\n\nNo suspicious osseous lesions.\n\nIMPRESSION:\n\n\n1. Tracheostomy at the level of the thyroid is unchanged from prior exam.\n2. Unchanged deformity of the laryngeal and thyroid cartilage superior the\ntracheostomy with stenosis of the airway.\n3. Mild edema and thickening of the larynx abut the tracheostomy is similar in\nappearance to prior examination without evidence of increased enhancement or\nfluid collection.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "R7881",
+        "icd_version": 10,
+        "long_title": "Bacteremia",
+        "normalized_time": "2167-04-13 13:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "Z930",
+        "icd_version": 10,
+        "long_title": "Tracheostomy status",
+        "normalized_time": "2167-04-13 13:17:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "L02412",
+        "icd_version": 10,
+        "long_title": "Cutaneous abscess of left axilla",
+        "normalized_time": "2167-04-13 13:23:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "B957",
+        "icd_version": 10,
+        "long_title": "Other staphylococcus as the cause of diseases classified elsewhere",
+        "normalized_time": "2167-04-13 13:29:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "F329",
+        "icd_version": 10,
+        "long_title": "Major depressive disorder, single episode, unspecified",
+        "normalized_time": "2167-04-13 13:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "R079",
+        "icd_version": 10,
+        "long_title": "Chest pain, unspecified",
+        "normalized_time": "2167-04-13 13:41:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "L732",
+        "icd_version": 10,
+        "long_title": "Hidradenitis suppurativa",
+        "normalized_time": "2167-04-13 13:47:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "D649",
+        "icd_version": 10,
+        "long_title": "Anemia, unspecified",
+        "normalized_time": "2167-04-13 13:53:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "J45909",
+        "icd_version": 10,
+        "long_title": "Unspecified asthma, uncomplicated",
+        "normalized_time": "2167-04-13 13:59:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "K219",
+        "icd_version": 10,
+        "long_title": "Gastro-esophageal reflux disease without esophagitis",
+        "normalized_time": "2167-04-13 14:05:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "J029",
+        "icd_version": 10,
+        "long_title": "Acute pharyngitis, unspecified",
+        "normalized_time": "2167-04-13 14:11:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [],
+    "microbiology": [
+      {
+        "chartdate": "2167-04-08 00:00:00",
+        "charttime": "2167-04-08 07:30:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-08 00:00:00",
+        "charttime": "2167-04-08 08:12:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "<10,000 organisms/ml.  "
+      },
+      {
+        "chartdate": "2167-04-09 00:00:00",
+        "charttime": "2167-04-09 06:13:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-09 00:00:00",
+        "charttime": "2167-04-09 07:18:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-09 00:00:00",
+        "charttime": "2167-04-09 10:49:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-09 00:00:00",
+        "charttime": "2167-04-09 16:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": ">25 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.  "
+      },
+      {
+        "chartdate": "2167-04-09 00:00:00",
+        "charttime": "2167-04-09 16:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "RESPIRATORY CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "TEST CANCELLED, PATIENT CREDITED.  "
+      },
+      {
+        "chartdate": "2167-04-10 00:00:00",
+        "charttime": "2167-04-10 06:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-11 00:00:00",
+        "charttime": "2167-04-11 09:15:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2167-04-11 00:00:00",
+        "charttime": "2167-04-11 09:50:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 13686,
+    "output_tokens": 5012,
+    "total_tokens": 18698
+  },
+  "response_id": "chatcmpl-bbf490ea42d26693",
+  "latency_ms": 88847,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2167-04-07 20:55:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I’ll be taking care of you during this stay. Can you tell me what’s been going on?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2167-04-07 20:56:00",
+        "speaker": "Patient",
+        "text": "Hi. I’ve had shaking chills for about a week, and pain around my trach site. It hurts to swallow, and I’ve been coughing up yellow mucus."
+      },
+      {
+        "turn_number": 3,
+        "time": "2167-04-07 20:57:00",
+        "speaker": "Doctor",
+        "text": "I see. And you mentioned chest pain too?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2167-04-07 20:58:00",
+        "speaker": "Patient",
+        "text": "Yes, right in the center. It’s been there for a few days. Not sharp, but constant."
+      },
+      {
+        "turn_number": 5,
+        "time": "2167-04-07 20:59:00",
+        "speaker": "Doctor",
+        "text": "Okay. We got a call from the lab about your blood cultures from last time — they showed bacteria. That’s why we brought you back."
+      },
+      {
+        "turn_number": 6,
+        "time": "2167-04-07 21:00:00",
+        "speaker": "Patient",
+        "text": "Oh, right. I left last time because I felt okay, but then they called me."
+      },
+      {
+        "turn_number": 7,
+        "time": "2167-04-07 21:01:00",
+        "speaker": "Doctor",
+        "text": "I understand. But this bacteremia is serious. We’ve started you on IV vancomycin to treat it."
+      },
+      {
+        "turn_number": 8,
+        "time": "2167-04-07 21:02:00",
+        "speaker": "Patient",
+        "text": "Is it from my trach or port?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2167-04-07 21:03:00",
+        "speaker": "Doctor",
+        "text": "Those are possible sources. We’re checking everything. Your chest X-ray was clear, no pneumonia."
+      },
+      {
+        "turn_number": 10,
+        "time": "2167-04-07 21:04:00",
+        "speaker": "Patient",
+        "text": "Good. My breathing’s okay, just more secretions than usual."
+      },
+      {
+        "turn_number": 11,
+        "time": "2167-04-07 21:05:00",
+        "speaker": "Doctor",
+        "text": "We’ll keep managing that with saline through your trach and nebulizers. We’ll also check your port and trach site closely."
+      },
+      {
+        "turn_number": 12,
+        "time": "2167-04-08 08:15:00",
+        "speaker": "Doctor",
+        "text": "Morning. Your repeat blood cultures are still pending, but the first one grew Staphylococcus lugdunensis — it’s a skin-type bacteria, but with multiple positives, we’re treating it seriously."
+      },
+      {
+        "turn_number": 13,
+        "time": "2167-04-08 08:16:00",
+        "speaker": "Patient",
+        "text": "Is that like MRSA?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2167-04-08 08:17:00",
+        "speaker": "Doctor",
+        "text": "It’s a different staph, but we’re using vancomycin because it works well. We’re also doing a heart ultrasound to make sure it hasn’t spread to your valves."
+      },
+      {
+        "turn_number": 15,
+        "time": "2167-04-08 08:18:00",
+        "speaker": "Patient",
+        "text": "Oh, okay. That makes sense."
+      },
+      {
+        "turn_number": 16,
+        "time": "2167-04-08 14:30:00",
+        "speaker": "Doctor",
+        "text": "The echo came back — good news. No sign of endocarditis. Your heart looks structurally normal."
+      },
+      {
+        "turn_number": 17,
+        "time": "2167-04-08 14:31:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. What about the abscess under my arm?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2167-04-08 14:32:00",
+        "speaker": "Doctor",
+        "text": "We aspirated it. It grew MRSA, but that’s different from the bacteria in your blood. So it’s not the source of the bacteremia, but we’re treating it with the vancomycin too."
+      },
+      {
+        "turn_number": 19,
+        "time": "2167-04-08 14:33:00",
+        "speaker": "Patient",
+        "text": "Will I need surgery to drain it?"
+      },
+      {
+        "turn_number": 20,
+        "time": "2167-04-08 14:34:00",
+        "speaker": "Doctor",
+        "text": "Not right now. For hidradenitis, draining can sometimes make it worse. We’ll use antibiotics and a topical cream instead."
+      },
+      {
+        "turn_number": 21,
+        "time": "2167-04-09 09:00:00",
+        "speaker": "Doctor",
+        "text": "We did a Doppler ultrasound on your arm — no blood clot in the veins near your port. That’s good."
+      },
+      {
+        "turn_number": 22,
+        "time": "2167-04-09 09:01:00",
+        "speaker": "Patient",
+        "text": "Great. Any update on the blood cultures?"
+      },
+      {
+        "turn_number": 23,
+        "time": "2167-04-09 09:02:00",
+        "speaker": "Doctor",
+        "text": "All recent ones are negative — that means the antibiotic is working. But we still need to treat for at least four weeks to be safe."
+      },
+      {
+        "turn_number": 24,
+        "time": "2167-04-09 09:03:00",
+        "speaker": "Patient",
+        "text": "Four weeks? That’s long."
+      },
+      {
+        "turn_number": 25,
+        "time": "2167-04-09 09:04:00",
+        "speaker": "Doctor",
+        "text": "I know. But with a port and trach, we want to make sure we fully clear the infection to protect your port."
+      },
+      {
+        "turn_number": 26,
+        "time": "2167-04-10 10:00:00",
+        "speaker": "Doctor",
+        "text": "We got the CT neck results. Your airway looks stable — no new swelling or abscess. The trach site is unchanged from before."
+      },
+      {
+        "turn_number": 27,
+        "time": "2167-04-10 10:01:00",
+        "speaker": "Patient",
+        "text": "So why do I still have throat and chest pain?"
+      },
+      {
+        "turn_number": 28,
+        "time": "2167-04-10 10:02:00",
+        "speaker": "Doctor",
+        "text": "We don’t see a new infection or structural issue. It might be related to your chronic airway changes. We’re continuing your pain meds and added a lidocaine patch for the chest."
+      },
+      {
+        "turn_number": 29,
+        "time": "2167-04-10 10:03:00",
+        "speaker": "Patient",
+        "text": "The patch helps a little. But it’s frustrating — I get this every time."
+      },
+      {
+        "turn_number": 30,
+        "time": "2167-04-10 10:04:00",
+        "speaker": "Doctor",
+        "text": "I hear you. We’ll keep supporting you and make sure nothing’s missed."
+      },
+      {
+        "turn_number": 31,
+        "time": "2167-04-11 08:00:00",
+        "speaker": "Doctor",
+        "text": "All your blood cultures since admission are negative. That’s excellent progress."
+      },
+      {
+        "turn_number": 32,
+        "time": "2167-04-11 08:01:00",
+        "speaker": "Patient",
+        "text": "So I’m getting better?"
+      },
+      {
+        "turn_number": 33,
+        "time": "2167-04-11 08:02:00",
+        "speaker": "Doctor",
+        "text": "Yes. The antibiotic is working. We’ll keep going for the full course, but you’re on the right track."
+      },
+      {
+        "turn_number": 34,
+        "time": "2167-04-11 08:03:00",
+        "speaker": "Patient",
+        "text": "Will I go home with the IV vancomycin?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2167-04-11 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes. You’ll get it twice a day through your port. And we’ll use a vancomycin-heparin lock between doses to protect the port."
+      },
+      {
+        "turn_number": 36,
+        "time": "2167-04-11 08:05:00",
+        "speaker": "Patient",
+        "text": "How do I manage that at home?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2167-04-11 08:06:00",
+        "speaker": "Doctor",
+        "text": "A nurse will visit to give the IV doses. The lock stays in 12 hours between doses — we’ll draw it out before each infusion."
+      },
+      {
+        "turn_number": 38,
+        "time": "2167-04-11 08:07:00",
+        "speaker": "Patient",
+        "text": "Okay, that sounds doable."
+      },
+      {
+        "turn_number": 39,
+        "time": "2167-04-12 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your labs are stable. Hemoglobin is a bit low — your ferritin is 14, which suggests iron deficiency. We’ll discuss IV iron later."
+      },
+      {
+        "turn_number": 40,
+        "time": "2167-04-12 09:01:00",
+        "speaker": "Patient",
+        "text": "I’ve had anemia before. Is it worse now?"
+      },
+      {
+        "turn_number": 41,
+        "time": "2167-04-12 09:02:00",
+        "speaker": "Doctor",
+        "text": "It’s stable, but you could benefit from iron. We’ll talk to your team about IV iron as an outpatient."
+      },
+      {
+        "turn_number": 42,
+        "time": "2167-04-12 09:03:00",
+        "speaker": "Patient",
+        "text": "Okay. And my urine test showed methadone — I’m not taking that."
+      },
+      {
+        "turn_number": 43,
+        "time": "2167-04-12 09:04:00",
+        "speaker": "Doctor",
+        "text": "We noted that. It might be a false positive or contamination. We’ll repeat it as an outpatient to be sure."
+      },
+      {
+        "turn_number": 44,
+        "time": "2167-04-12 09:05:00",
+        "speaker": "Patient",
+        "text": "I don’t want anyone thinking I’m on something I’m not."
+      },
+      {
+        "turn_number": 45,
+        "time": "2167-04-12 09:06:00",
+        "speaker": "Doctor",
+        "text": "Absolutely. We’ll clarify that at follow-up."
+      },
+      {
+        "turn_number": 46,
+        "time": "2167-04-13 08:00:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. We’re planning to discharge you today."
+      },
+      {
+        "turn_number": 47,
+        "time": "2167-04-13 08:01:00",
+        "speaker": "Patient",
+        "text": "Great. What do I need to do at home?"
+      },
+      {
+        "turn_number": 48,
+        "time": "2167-04-13 08:02:00",
+        "speaker": "Doctor",
+        "text": "Continue vancomycin IV twice daily with the vancomycin-heparin lock in between. Use the lidocaine patch for chest pain. And apply clindamycin cream to your underarms twice a day."
+      },
+      {
+        "turn_number": 49,
+        "time": "2167-04-13 08:03:00",
+        "speaker": "Patient",
+        "text": "And my regular meds?"
+      },
+      {
+        "turn_number": 50,
+        "time": "2167-04-13 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, all your usual meds — for breathing, reflux, depression, and pain — stay the same."
+      },
+      {
+        "turn_number": 51,
+        "time": "2167-04-13 08:05:00",
+        "speaker": "Patient",
+        "text": "When do I come back?"
+      },
+      {
+        "turn_number": 52,
+        "time": "2167-04-13 08:06:00",
+        "speaker": "Doctor",
+        "text": "You’ll have weekly labs — CBC, CRP, vancomycin levels, kidney function. And follow up with infectious disease, ENT, and your primary team."
+      },
+      {
+        "turn_number": 53,
+        "time": "2167-04-13 08:07:00",
+        "speaker": "Patient",
+        "text": "Thanks for explaining everything."
+      },
+      {
+        "turn_number": 54,
+        "time": "2167-04-13 08:08:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’re here to support you. Let the nurse know when you’re ready to go home."
+      },
+      {
+        "turn_number": 55,
+        "time": "2167-04-13 08:09:00",
+        "speaker": "Patient",
+        "text": "I will. I feel much better than when I came in."
+      },
+      {
+        "turn_number": 56,
+        "time": "2167-04-13 08:10:00",
+        "speaker": "Doctor",
+        "text": "That’s great to hear. Keep up with the treatment, and we’ll get you through this."
+      },
+      {
+        "turn_number": 57,
+        "time": "2167-04-13 08:11:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you."
+      },
+      {
+        "turn_number": 58,
+        "time": "2167-04-13 08:12:00",
+        "speaker": "Doctor",
+        "text": "Take care. We’ll see you soon for follow-up."
+      },
+      {
+        "turn_number": 59,
+        "time": "2167-04-13 08:13:00",
+        "speaker": "Patient",
+        "text": "Will my chest pain keep coming back?"
+      },
+      {
+        "turn_number": 60,
+        "time": "2167-04-13 08:14:00",
+        "speaker": "Doctor",
+        "text": "It might, given your airway history. But we’ll monitor it. If it changes, let us know right away."
+      },
+      {
+        "turn_number": 61,
+        "time": "2167-04-13 08:15:00",
+        "speaker": "Patient",
+        "text": "Okay. I’ll watch it."
+      },
+      {
+        "turn_number": 62,
+        "time": "2167-04-13 08:16:00",
+        "speaker": "Doctor",
+        "text": "And keep using the humidifier and saline drops — they help prevent irritation."
+      },
+      {
+        "turn_number": 63,
+        "time": "2167-04-13 08:17:00",
+        "speaker": "Patient",
+        "text": "I won’t forget. I’ve learned my routine."
+      },
+      {
+        "turn_number": 64,
+        "time": "2167-04-13 08:18:00",
+        "speaker": "Doctor",
+        "text": "Good. You’re doing a great job managing your health."
+      },
+      {
+        "turn_number": 65,
+        "time": "2167-04-13 08:19:00",
+        "speaker": "Patient",
+        "text": "It’s not easy, but I’m trying."
+      },
+      {
+        "turn_number": 66,
+        "time": "2167-04-13 08:20:00",
+        "speaker": "Doctor",
+        "text": "And you’re succeeding. We’re proud of your progress."
+      },
+      {
+        "turn_number": 67,
+        "time": "2167-04-13 08:21:00",
+        "speaker": "Patient",
+        "text": "Thanks, Dr. Lee. I’ll see you at follow-up."
+      }
+    ],
+    "summary": {
+      "admission_start": "2167-04-07 20:49:00",
+      "admission_end": "2167-04-13 14:11:00",
+      "summary_paragraph": "A young woman with a history of tracheobronchomalacia, tracheostomy, and chronic respiratory issues was readmitted after being notified of positive blood cultures from a prior emergency visit. She reported a week of shaking chills, trach site pain, odynophagia, and central chest pain. She was started on IV vancomycin for Staphylococcus lugdunensis bacteremia, confirmed by high-grade positive cultures. Workup included a normal echocardiogram ruling out endocarditis, a CT neck showing stable airway anatomy, and a Doppler ultrasound excluding deep vein thrombosis. A left axillary abscess was aspirated and grew MRSA, but was not the source of bacteremia. She continued home medications for asthma, GERD, depression, and pain, with addition of a lidocaine patch for chest pain. She was discharged on a four-week course of IV vancomycin with vancomycin-heparin port locks, clindamycin cream for hidradenitis suppurativa, and plans for weekly lab monitoring and outpatient follow-up.",
+      "problems": [
+        "Bacteremia",
+        "Tracheostomy status",
+        "Cutaneous abscess of left axilla",
+        "Other staphylococcus as the cause of diseases classified elsewhere",
+        "Major depressive disorder, single episode, unspecified",
+        "Chest pain, unspecified",
+        "Hidradenitis suppurativa",
+        "Anemia, unspecified",
+        "Unspecified asthma, uncomplicated",
+        "Gastro-esophageal reflux disease without esophagitis",
+        "Acute pharyngitis, unspecified"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-bbf490ea42d26693",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2167-04-07 20:55:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I’ll be taking care of you during this stay. Can you tell me what’s been going on?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2167-04-07 20:56:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Hi. I’ve had shaking chills for about a week, and pain around my trach site. It hurts to swallow, and I’ve been coughing up yellow mucus.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2167-04-07 20:57:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And you mentioned chest pain too?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2167-04-07 20:58:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, right in the center. It’s been there for a few days. Not sharp, but constant.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2167-04-07 20:59:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. We got a call from the lab about your blood cultures from last time — they showed bacteria. That’s why we brought you back.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2167-04-07 21:00:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh, right. I left last time because I felt okay, but then they called me.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2167-04-07 21:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. But this bacteremia is serious. We’ve started you on IV vancomycin to treat it.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2167-04-07 21:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is it from my trach or port?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2167-04-07 21:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Those are possible sources. We’re checking everything. Your chest X-ray was clear, no pneumonia.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2167-04-07 21:04:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. My breathing’s okay, just more secretions than usual.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2167-04-07 21:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll keep managing that with saline through your trach and nebulizers. We’ll also check your port and trach site closely.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2167-04-08 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Morning. Your repeat blood cultures are still pending, but the first one grew Staphylococcus lugdunensis — it’s a skin-type bacteria, but with multiple positives, we’re treating it seriously.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2167-04-08 08:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that like MRSA?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2167-04-08 08:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s a different staph, but we’re using vancomycin because it works well. We’re also doing a heart ultrasound to make sure it hasn’t spread to your valves.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2167-04-08 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh, okay. That makes sense.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2167-04-08 14:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The echo came back — good news. No sign of endocarditis. Your heart looks structurally normal.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2167-04-08 14:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. What about the abscess under my arm?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2167-04-08 14:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We aspirated it. It grew MRSA, but that’s different from the bacteria in your blood. So it’s not the source of the bacteremia, but we’re treating it with the vancomycin too.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2167-04-08 14:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I need surgery to drain it?\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2167-04-08 14:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not right now. For hidradenitis, draining can sometimes make it worse. We’ll use antibiotics and a topical cream instead.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2167-04-09 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did a Doppler ultrasound on your arm — no blood clot in the veins near your port. That’s good.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2167-04-09 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Great. Any update on the blood cultures?\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2167-04-09 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All recent ones are negative — that means the antibiotic is working. But we still need to treat for at least four weeks to be safe.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2167-04-09 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Four weeks? That’s long.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2167-04-09 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I know. But with a port and trach, we want to make sure we fully clear the infection to protect your port.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2167-04-10 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We got the CT neck results. Your airway looks stable — no new swelling or abscess. The trach site is unchanged from before.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2167-04-10 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So why do I still have throat and chest pain?\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2167-04-10 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We don’t see a new infection or structural issue. It might be related to your chronic airway changes. We’re continuing your pain meds and added a lidocaine patch for the chest.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2167-04-10 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"The patch helps a little. But it’s frustrating — I get this every time.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2167-04-10 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I hear you. We’ll keep supporting you and make sure nothing’s missed.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2167-04-11 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All your blood cultures since admission are negative. That’s excellent progress.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2167-04-11 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I’m getting better?\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2167-04-11 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The antibiotic is working. We’ll keep going for the full course, but you’re on the right track.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2167-04-11 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I go home with the IV vancomycin?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2167-04-11 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. You’ll get it twice a day through your port. And we’ll use a vancomycin-heparin lock between doses to protect the port.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2167-04-11 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"How do I manage that at home?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2167-04-11 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"A nurse will visit to give the IV doses. The lock stays in 12 hours between doses — we’ll draw it out before each infusion.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2167-04-11 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, that sounds doable.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2167-04-12 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your labs are stable. Hemoglobin is a bit low — your ferritin is 14, which suggests iron deficiency. We’ll discuss IV iron later.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2167-04-12 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had anemia before. Is it worse now?\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2167-04-12 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s stable, but you could benefit from iron. We’ll talk to your team about IV iron as an outpatient.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2167-04-12 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. And my urine test showed methadone — I’m not taking that.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2167-04-12 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noted that. It might be a false positive or contamination. We’ll repeat it as an outpatient to be sure.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2167-04-12 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I don’t want anyone thinking I’m on something I’m not.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2167-04-12 09:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Absolutely. We’ll clarify that at follow-up.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2167-04-13 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. We’re planning to discharge you today.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2167-04-13 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Great. What do I need to do at home?\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2167-04-13 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Continue vancomycin IV twice daily with the vancomycin-heparin lock in between. Use the lidocaine patch for chest pain. And apply clindamycin cream to your underarms twice a day.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2167-04-13 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my regular meds?\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2167-04-13 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, all your usual meds — for breathing, reflux, depression, and pain — stay the same.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2167-04-13 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"When do I come back?\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2167-04-13 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll have weekly labs — CBC, CRP, vancomycin levels, kidney function. And follow up with infectious disease, ENT, and your primary team.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2167-04-13 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks for explaining everything.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2167-04-13 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’re here to support you. Let the nurse know when you’re ready to go home.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2167-04-13 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. I feel much better than when I came in.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2167-04-13 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s great to hear. Keep up with the treatment, and we’ll get you through this.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2167-04-13 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2167-04-13 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care. We’ll see you soon for follow-up.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2167-04-13 08:13:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will my chest pain keep coming back?\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2167-04-13 08:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It might, given your airway history. But we’ll monitor it. If it changes, let us know right away.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2167-04-13 08:15:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I’ll watch it.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2167-04-13 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"And keep using the humidifier and saline drops — they help prevent irritation.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2167-04-13 08:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I won’t forget. I’ve learned my routine.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2167-04-13 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. You’re doing a great job managing your health.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2167-04-13 08:19:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"It’s not easy, but I’m trying.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2167-04-13 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"And you’re succeeding. We’re proud of your progress.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2167-04-13 08:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks, Dr. Lee. I’ll see you at follow-up.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2167-04-07 20:49:00\",\n    \"admission_end\": \"2167-04-13 14:11:00\",\n    \"summary_paragraph\": \"A young woman with a history of tracheobronchomalacia, tracheostomy, and chronic respiratory issues was readmitted after being notified of positive blood cultures from a prior emergency visit. She reported a week of shaking chills, trach site pain, odynophagia, and central chest pain. She was started on IV vancomycin for Staphylococcus lugdunensis bacteremia, confirmed by high-grade positive cultures. Workup included a normal echocardiogram ruling out endocarditis, a CT neck showing stable airway anatomy, and a Doppler ultrasound excluding deep vein thrombosis. A left axillary abscess was aspirated and grew MRSA, but was not the source of bacteremia. She continued home medications for asthma, GERD, depression, and pain, with addition of a lidocaine patch for chest pain. She was discharged on a four-week course of IV vancomycin with vancomycin-heparin port locks, clindamycin cream for hidradenitis suppurativa, and plans for weekly lab monitoring and outpatient follow-up.\",\n    \"problems\": [\n      \"Bacteremia\",\n      \"Tracheostomy status\",\n      \"Cutaneous abscess of left axilla\",\n      \"Other staphylococcus as the cause of diseases classified elsewhere\",\n      \"Major depressive disorder, single episode, unspecified\",\n      \"Chest pain, unspecified\",\n      \"Hidradenitis suppurativa\",\n      \"Anemia, unspecified\",\n      \"Unspecified asthma, uncomplicated\",\n      \"Gastro-esophageal reflux disease without esophagitis\",\n      \"Acute pharyngitis, unspecified\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776925996,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5012,
+      "prompt_tokens": 13686,
+      "total_tokens": 18698,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

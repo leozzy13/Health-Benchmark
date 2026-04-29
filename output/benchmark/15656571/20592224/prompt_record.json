@@ -1,0 +1,785 @@
+{
+  "subject_id": "15656571",
+  "hadm_id": "20592224",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-24T13:50:31Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 5 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2119-04-08 14:05:00 to 2119-04-12 15:10:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2119-03-02 13:22:00",
+    "admission_end": "2119-03-10 16:35:00",
+    "summary_paragraph": "Mr. Johnson, a male with a history of systolic heart failure (LVEF 20%), coronary artery disease, type 2 diabetes, chronic kidney disease, and obesity, was admitted for dyspnea and a 20-pound weight gain due to acute on chronic heart failure exacerbation, precipitated by medication noncompliance. He had stopped taking his diuretics and cardiac medications due to insurance and access issues. He was treated with IV furosemide, which improved his symptoms and reduced his weight to 130.8 kg. He experienced transient episodes of asymptomatic ventricular tachycardia, managed with ICD optimization and initiation of metoprolol. His kidney function temporarily worsened but improved with adjusted diuresis. He was discharged on home medications with spironolactone discontinued, hydralazine increased, and metoprolol started at 50 mg daily, with follow-up arranged to ensure medication access and ongoing management.",
+    "problems": [
+      "Acute on chronic systolic heart failure",
+      "Paroxysmal ventricular tachycardia",
+      "Acute kidney failure, unspecified",
+      "Chronic kidney disease, unspecified",
+      "Coronary atherosclerosis of native coronary artery",
+      "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+      "Personal history of noncompliance with medical treatment, presenting hazards to health",
+      "Hypertension",
+      "Obesity, unspecified",
+      "Old myocardial infarction",
+      "Automatic implantable cardiac defibrillator in situ",
+      "Long-term (current) use of insulin",
+      "Long-term (current) use of antiplatelet/antithrombotic",
+      "First degree atrioventricular block",
+      "Right bundle branch block and left anterior fascicular block"
+    ]
+  },
+  "stay_days": 5,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2119-04-12 00:00:00): Name:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nmetformin / Neurontin\n \nAttending: ___.\n \nChief Complaint:\nchest pressure and SOB\n \nMajor Surgical or Invasive Procedure:\n___ attempted ablation\n\n \nHistory of Present Illness:\n___ w/CHF s/p AICD who complains of 3 weeks of gradual worsening \nchest pressure and dyspnea. He endorses exertional CP, DOE, \nweight gain. He has been taking his meds as prescribed. He \nreports his defibrillator has shocked him x2 in the last day. \n\nWhen the patient arrived in the ED his vitals were t: 97 HR: 74 \nBP: 116/85 RR: 19 O2 sat: 92%. EKG showed: RBBB @ 85, sinus, no \nsignificant change from prior. Physical exam showed slight \nbibasilar crackles, JVD to mastoid. Interrogation of his \npacemaker showed runs of vtach that had reoccured over the last \n24hr. Patient had multiple episodes of VT in the ED, received \nATP from his AICD and paced out it. Symptomatic with \nlightheadedness during his episodes. Patient was given \nFurosemide 40mg IV x2 in the ED with improvement in his dyspnea. \nHe was also given Lidocaine 150mg IV bolus and then started on \nan Lidocaine 1mg/min IV gtt. \n\nPatient was transferred to the CCU for further management. On \narrival to the CCU, the patient was NAD with vitals of T: 36.7 \nHR: 91 BP: 116/93 RR 21 satting 97% on 2L NC, but continuing to \nhave runs of VT with ATP that would pace him out of his rhythm. \n\nOf note: On interrogation of his device in the ED(see device \nnote), there have been multiple episodes of VT since ___ up to about 10 episodes a day. These episodes have been \neither self terminating or responsive to ATP. His episode \nyesterday did not terminate with ATP and required a single shock \nwhich converted him back to sinus rhythm. The episodes \ndemonstrate a monomorphic VT with cycle length 315-330 ms. \n\n___ review of systems, he denies any prior history of stroke, \nTIA, deep venous thrombosis, pulmonary embolism, bleeding at the \n\ntime of surgery, myalgias, joint pains, cough, hemoptysis, black \n\nstools or red stools. he denies recent fevers, chills or \nrigors. he denies exertional buttock or calf pain. All of the \nother review of systems were negative.  \n \nCardiac review of systems is notable for absence of \npalpitations, syncope or presyncope. However pt admits to \nfeeling slightly lightheaded during some of his \"\"episodes\n \nPast Medical History:\n1. CARDIAC RISK FACTORS: DM (Hba1c 9.4 in ___,  \nperipheral neuropathy), Dyslipidemia, HTN, CHF, CAD  \n2. CARDIAC HISTORY:  \n- ECHO (___): EF ___, severely dilated left ventricle \nwith severelY depressed function - inferior and inferlateral \nakinesis and severe hypokinesis of the other segments. At least \nmild mitral regurgitation. Hypokinetic right ventricle.  \n- Cath (___): Two-vessel coronary artery disease, LCx \ntotally occluded and RCA with a distal 60% lesion, Mildly \nelevated left-sided filling pressure with a LVEDP of 16 mmHg, \nSuccesful PCI of LCx with drug eluting stents, Aspirin \nindefinetly and plavix for at least one year.  \n- ICD, dual, ___ ___ ___ ___. ___ for primary \n \nprevention of sudden cardiac death.  \n- Recurrent CHF exacerbations due to dietary/medication  \nnoncompliance  \n3. OTHER PAST MEDICAL HISTORY:  \n- DISC DISEASE - LUMBAR  \n- OCULAR HYPERTENSION  \n- TENDON RUPTURE, TRAUMATIC - PATELLA  \n- ERECTILE DYSFUNCTION  \n- Obesity  \n- h/o Colonic Adenoma  \n- Pulmonary nodule - pt was not aware of this diagnosis  \n- CKD (baseline Cr 1.4-1.7)- pt was not aware of this diagnosis  \n\n- Tachy-brady syndrome \n\n \nSocial History:\n___\nFamily History:\nNo family history of early MI, arrhythmia, cardiomyopathies, or \nsudden cardiac death; His brother died in the setting of heroin \nuse, but had heart disease. Mother and father died of lung \ncancer.\n \nPhysical Exam:\n====================\nADMISSION EXAM\n====================\nGen: Pleasant, calm, NAD  \nHEENT: No conjunctival pallor. No icterus. MMM. OP clear.  \nNECK: Supple, No LAD. JVP difficult to assess given body \nhabitus. Normal carotid upstroke without bruits. No thyromegaly. \n \nCV: PMI in ___ intercostal space, mid clavicular line. RRR. \nnormal S1,S2. No murmurs, rubs, clicks, or gallops  \nLUNGS: minimal crackles bialterally in the bases; distant breath \nsounds; No wheezes, rales, or rhonchi.  \nABD: NABS. Soft, NT, ND. No HSM. Abdominal aorta was not \nenlarged by palpation. No abdominal bruits.  \nEXT: WWP, NO CCE. Full distal pulses bilaterally. No femoral \nbruits.  \nSKIN: No rashes/lesions, ecchymoses.  \nNEURO: A&Ox3. CN ___ grossly intact. Preserved sensation \nthroughout. ___ strength throughout. ___ reflexes, equal ___. \nNormal coordination. Gait assessment deferred  \nEXT: +3 pitting edema bilaterally\n====================\nDISCHARGE PHYSICAL\nTmax: 37.1 °C (98.7 °F)\nHR: 73 (69 - 93) bpm\nBP: 109/62(76) {91/49(62) - 122/73(88)} mmHg\nRR: 14 (14 - 31) insp/min\nSpO2: 96% \nHeart rhythm: SR (Sinus Rhythm), ___ AV (First degree AV Block) \n, RBBB (Right Bundle Branch Block) \nGen: Pleasant, calm, NAD  \nHEENT: No conjunctival pallor. No icterus. MMM. OP clear.  \nNECK: Supple, No LAD. JVP difficult to assess given body \nhabitus. Normal carotid upstroke without bruits. No thyromegaly. \n \nCV: PMI in ___ intercostal space, mid clavicular line. RRR. \nnormal S1,S2. No murmurs, rubs, clicks, or gallops  \nLUNGS: minimal crackles bialterally in the bases; distant breath \nsounds; No wheezes, rales, or rhonchi.  \nABD: NABS. Soft, NT, ND. No HSM. Abdominal aorta was not \nenlarged by palpation. No abdominal bruits.  \nEXT: WWP, NO CCE. Full distal pulses bilaterally. No femoral \nbruits.  \nSKIN: No rashes/lesions, ecchymoses.  \nNEURO: A&Ox3. CN ___ grossly intact. Preserved sensation \nthroughout. ___ strength throughout. Grossly Normal \ncoordination. \nEXT: ___ pitting edema bilaterally to midshins\n\n \nPertinent Results:\nINITIAL LABS: \n\n___ 12:10PM BLOOD WBC-7.6 RBC-4.96 Hgb-14.8 Hct-44.9 MCV-91 \nMCH-29.7 MCHC-32.8 RDW-16.9* Plt ___\n___ 12:10PM BLOOD Neuts-66.5 ___ Monos-7.6 Eos-3.4 \nBaso-0.5\n___ 12:10PM BLOOD Plt ___\n___ 02:21PM BLOOD ___ PTT-32.7 ___\n___ 12:10PM BLOOD Glucose-331* UreaN-27* Creat-1.6* Na-136 \nK-3.7 Cl-98 HCO3-28 AnGap-14\n___ 11:58PM BLOOD Glucose-274* UreaN-26* Creat-1.6* Na-139 \nK-4.0 Cl-97 HCO3-29 AnGap-17\n___ 12:10PM BLOOD CK-MB-5 proBNP-4126*\n___ 12:10PM BLOOD Calcium-9.7 Phos-3.4 Mg-2.2\n___ 12:32PM BLOOD K-3.9\n\nDISCHARGE LABS: \n___ 05:18AM BLOOD WBC-11.6* RBC-4.82 Hgb-14.6 Hct-42.1 \nMCV-88 MCH-30.4 MCHC-34.7 RDW-16.3* Plt ___\n___ 06:05AM BLOOD WBC-8.1 RBC-4.54* Hgb-13.7* Hct-40.2 \nMCV-89 MCH-30.2 MCHC-34.2 RDW-16.5* Plt ___\n___ 05:18AM BLOOD Neuts-83.9* Lymphs-7.6* Monos-5.0 Eos-3.4 \nBaso-0.1\n___ 12:10PM BLOOD Neuts-66.5 ___ Monos-7.6 Eos-3.4 \nBaso-0.5\n___ 05:18AM BLOOD Glucose-119* UreaN-30* Creat-1.6* Na-139 \nK-3.6 Cl-104 HCO3-25 AnGap-14\n___ 06:05AM BLOOD Glucose-101* UreaN-31* Creat-1.7* Na-140 \nK-3.4 Cl-102 HCO3-31 AnGap-10\n___ 05:18AM BLOOD ALT-17 AST-22 LD(LDH)-220 AlkPhos-96 \nTotBili-2.0*\n___ 05:19AM BLOOD ALT-24 AST-28 LD(LDH)-362* CK(CPK)-79 \nAlkPhos-96 TotBili-1.9*\n___ 05:18AM BLOOD Albumin-3.6 Calcium-9.3 Phos-3.4 Mg-2.2\n___ 06:05AM BLOOD Calcium-8.9 Phos-3.6 Mg-2.2\n___ 04:42PM BLOOD Calcium-9.3 Phos-3.7 Mg-2.2\n___ 05:18AM BLOOD Digoxin-0.5*\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nIMAGING: \n___ ECG Sinus rhythm. Prior inferior wall myocardial \ninfarction. Right bundle-branch block. \n\n___ CXR IMPRESSION: As compared to the previous image, no \nrelevant change is seen. The patient is in moderate pulmonary \nedema. Moderate cardiomegaly. No larger pleural effusions. No \npneumonia. Mild atelectasis in the retrocardiac lung regions. \nThe left pectoral pacemaker is unchanged. Moderate elongation of \nthe descending aorta. \n\n___ Sinus rhythm. Right bundle-branch block. Prior inferior \nwall myocardial infarction. Probable biventricular hypertrophy \nTRACING #6 \n\n___ ECHO The left atrium is mildly dilated. The right \natrium is moderately dilated. There is mild symmetric left \nventricular hypertrophy. The left ventricular cavity is severely \ndilated. Overall left ventricular systolic function is severely \ndepressed (LVEF<= 30 %) with akinesis of the inferior and \ninferolateral walls. The anterior septum contracts best. The \nremaining segments are not well seen. The right ventricle is \ndilated. The aortic root is mildly dilated at the sinus level. \nThe aortic valve leaflets (3) are mildly thickened but aortic \nstenosis is not present. No aortic regurgitation is seen. The \nmitral valve leaflets are mildly thickened. There is no mitral \nvalve prolapse. At least mild (1+) mitral regurgitation is seen. \nThe pulmonary artery systolic pressure could not be determined. \nThere is no pericardial effusion. \n\nIMPRESSION: Mild symmetric left ventricular hypertrophy with \nseverely depressed LV systolic function and severe LV dilation. \nMild aortic valve thickening without aortic stenosis. Mild \naortic root dilation. \n\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nICD interrogation report: \nReason for interrogation: Patient reports experiencing a shock\nGenerator ___\nModel Name: ___ ___\nModel Number: ___\n\nDiagnostic information: arrhythmias, morphologies, rates, Rx:\nSince ___- \nPace terminated episodes of VT/VF 172 of 173 \nShock terminated episodes 1 of 1 on ___ at 11:19, \n00:35\navg bpm 188\nTotal shocks ___ male with a history of mixed cardiomyopathy with EF \n20%, s/p primary prevention ICD in ___, DM2, CKD, multiple \nheart failure admissions over the last year, now presenting post \nICD shock and heart failure exacerbation. Increased burden of \nventricular tachycardia on his device following his worsening \nsymptoms of heart failure.  Increased burden of VT thought \nlikely due to his heart failure.  Patient was diuresed paying \nclose attention to his electrolytes during diuresis. He was also \nstarted on lidocaine drip but continue to have episodes of \nmonomorphic VT with likely inferolateral origin. Given likely \nscar related monomorphic VT, VT ablation was attempted on ___ \nbut they were unable to induce VT on ___ EP study.  Patient \nwas started on amiodarone per EP recs and advised to follow up \nin ___ clinic. \n \n# Acute on Chronic Congestive Heart Failure: Likely triggered by \ndietary non-compliance. Patient states he is taking all of his \nmedications as directed. Patient was found to be 12 lbs above \ndry weight. Patient was actively diuresed until he appears \neuvolemic and then was restarted on home dose of lasix. Digoxin \ndose was reduced given concomitant amiodarone.  Patient \ncontinued on hydralazine Imdur and Metoprolol\n \n# Chest Pain/Reflux pain: Patient had mild chest pain in the ED \nand in the CCU after eating. The patient states that this is \nidentical to his GERD. MB negative on admission. EKG showing no \nischemic changes.  \n\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nCHRONIC ISSUES\n\n# DM type II:Coverage with ISS and continue lantus 50u at night.\n\n#  Acute on chronic kidney disease: Patient at baseline cr 1.6 \n(1.4-1.7). Cr. on discharge 1.6\n\n# Coronary Artery Disease: Known two-vessel coronary artery \ndisease with LCx totally occluded s/p DES and RCA with a distal \n60% lesion from last catheterization in ___. MB negative on \nadmission. He was continued on his aspirin, plavix, \natorvastatin, imdur, hydalazine, and hydralazine. \n\n # Hypertension: Continueon home imdur, hydralazine. Metoprolol \nwas modified as above.\n============================================= \n\n# CONTACT: ___ (sister) Phone number: ___\nSISTER, ___ IS ALTERNATE HCP, MAY BE REACHED AT \n(___)\n\n================================================\nTRANSITIONAL ISSUES:\n- Started amiodarone 400 TID for a week (last day ___ which \nshould be followed  200 BID for a month (starting ___ Patient \nwill have follow up with ___ in a month.  He should have \nCr. and electrolyte labs in 1 week post discharge with ___.\n- follow up with cardiology in a month to determine whether to \ncontinue amiodarone and dose\n- digoxin decreased given concomitant amiodarone\n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Aspirin 81 mg PO DAILY \n2. Atorvastatin 80 mg PO DAILY \n3. Clopidogrel 75 mg PO DAILY \n4. Digoxin 0.125 mg PO DAILY \n5. HydrALAzine 20 mg PO Q8H \n6. Isosorbide Mononitrate (Extended Release) 60 mg PO DAILY \n7. Nitroglycerin SL 0.3 mg SL Q5MIN:PRN Chest Pain \n8. Pantoprazole 40 mg PO Q24H \n9. Lantus (insulin glargine) 100 unit/mL subcutaneous daily \n10. Torsemide 80 mg PO QAM \n11. Metoprolol Succinate XL 50 mg PO DAILY \n12. Torsemide 40 mg PO QPM \n\n \nDischarge Medications:\n1. Aspirin 81 mg PO DAILY \nRX *aspirin [Aspir-81] 81 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n2. Atorvastatin 80 mg PO DAILY \nRX *atorvastatin 80 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n3. Clopidogrel 75 mg PO DAILY \nRX *clopidogrel 75 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n4. Digoxin 0.0625 mg PO DAILY \nRX *digoxin 125 mcg 0.5 (One half) tablet(s) by mouth daily Disp \n#*15 Tablet Refills:*0\n5. HydrALAzine 20 mg PO Q8H \nRX *hydralazine 10 mg 2 tablet(s) by mouth three times day Disp \n#*150 Tablet Refills:*0\n6. Isosorbide Mononitrate (Extended Release) 60 mg PO DAILY \nRX *isosorbide mononitrate 60 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n7. Pantoprazole 40 mg PO Q24H \nRX *pantoprazole 40 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n8. Amiodarone 400 mg PO TID \nPlease take for 6 days through ___, after which take smaller \ndose of amiodarone \nRX *amiodarone 400 mg 1 tablet(s) by mouth three times a day \n(once every 8 hours) Disp #*18 Tablet Refills:*0\n9. Metoprolol Succinate XL 50 mg PO DAILY \nRX *metoprolol succinate 50 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n10. Nitroglycerin SL 0.3 mg SL Q5MIN:PRN Chest Pain \nRX *nitroglycerin [Nitrostat] 0.3 mg 1 tablet(s) sublingually \nevery 5 min. Disp #*1 Package Refills:*0\n11. Lantus (insulin glargine) 100 unit/mL subcutaneous daily \nRX *insulin glargine [Lantus] 100 unit/mL 50 units SC bedtime \nDisp #*2 Vial Refills:*0\n12. Amiodarone 200 mg PO BID \nPlease start taking this dose on ___ \nRX *amiodarone 200 mg 1 tablet(s) by mouth twice a day Disp #*60 \nTablet Refills:*0\n13. Torsemide 80 mg PO QAM \nRX *torsemide [Demadex] 20 mg 4 tablet(s) by mouth qAM Disp \n#*112 Tablet Refills:*2\n14. Torsemide 40 mg PO QPM \nRX *torsemide [Demadex] 20 mg 2 tablet(s) by mouth qpm Disp #*56 \nTablet Refills:*2\n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary:\nsymptomatic ventricular fibrillation\nacute on chronic congestive heart failure\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking part in your care at ___ \n___. You were admitted for worsening chest \npressure and shortness of breath, and had an abnormal heart \nrhythm causing your cardiodefibrillator to shock you. You \nunderwent a number of laboratory tests and a procedure to try \nand stop the irregular rhythm from re-occurring, but it was not \nable to be completed because the area of your heart that causes \nthis irregular rhythm could not be identified. You were started \non a medication, amiodarone, to try and prevent this rhythm from \noccurring again. You will take this as follows: 400mg three \ntimes per day for 1 week (___), then decrease to 200mg \ntwice a day for one month. Please have your primary care \nphysician check your labs next week.\n\nGoing forward it will be very important for you to follow up \nwith the appointments as listed below. Please weigh yourself \nevery morning, call MD if weight goes up more than 3 lbs.  \nPlease take your medications as prescribed, including the new \nmedication to help control your heart rhythm.\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Ventricular fibrillation\n- Acute on chronic systolic heart failure\n- Acute kidney failure, unspecified\n- Coronary atherosclerosis of native coronary artery\n- Other and unspecified hyperlipidemia\n- Other primary cardiomyopathies\n- Personal history of noncompliance with medical treatment, presenting hazards to health\n- Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\n- Long-term (current) use of insulin\n- Procedure not carried out for other reasons\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified\n- Chronic kidney disease, unspecified\n- Esophageal reflux\n- Percutaneous transluminal coronary angioplasty status\n- Obesity, unspecified\n- Personal history of tobacco use\n- Unspecified hereditary and idiopathic peripheral neuropathy\n- Body Mass Index 38.0-38.9, adult\n- Congestive heart failure, unspecified\n- Fitting and adjustment of automatic implantable cardiac defibrillator\n- Old myocardial infarction\n- Right bundle branch block\n- Long-term (current) use of aspirin\n- Long-term (current) use of antiplatelet/antithrombotic",
+  "supporting_context_block": "Radiology:\n- 2119-04-08 13:51:00: EXAMINATION: CHEST (PA AND LAT) INDICATION: History: ___ with chest pain, clinically overloaded, Hx of CHF // evaluate for fluid overload, acute process COMPARISON: ___ IMPRESSION: As compared to the previous image, n...\n\nProcedures:\n- 2119-04-11 12:00:00: Catheter based invasive electrophysiologic testing\n\nMicrobiology:\n- 2119-04-08 18:09:00: MRSA SCREEN (No MRSA isolated.)",
+  "formed_packet": {
+    "subject_id": "15656571",
+    "hadm_id": "20592224",
+    "admission_start": "2119-04-08 14:05:00",
+    "admission_end": "2119-04-12 15:10:00",
+    "previous_admission_summary": {
+      "admission_start": "2119-03-02 13:22:00",
+      "admission_end": "2119-03-10 16:35:00",
+      "summary_paragraph": "Mr. Johnson, a male with a history of systolic heart failure (LVEF 20%), coronary artery disease, type 2 diabetes, chronic kidney disease, and obesity, was admitted for dyspnea and a 20-pound weight gain due to acute on chronic heart failure exacerbation, precipitated by medication noncompliance. He had stopped taking his diuretics and cardiac medications due to insurance and access issues. He was treated with IV furosemide, which improved his symptoms and reduced his weight to 130.8 kg. He experienced transient episodes of asymptomatic ventricular tachycardia, managed with ICD optimization and initiation of metoprolol. His kidney function temporarily worsened but improved with adjusted diuresis. He was discharged on home medications with spironolactone discontinued, hydralazine increased, and metoprolol started at 50 mg daily, with follow-up arranged to ensure medication access and ongoing management.",
+      "problems": [
+        "Acute on chronic systolic heart failure",
+        "Paroxysmal ventricular tachycardia",
+        "Acute kidney failure, unspecified",
+        "Chronic kidney disease, unspecified",
+        "Coronary atherosclerosis of native coronary artery",
+        "Diabetes with renal manifestations, type II or unspecified type, not stated as uncontrolled",
+        "Personal history of noncompliance with medical treatment, presenting hazards to health",
+        "Hypertension",
+        "Obesity, unspecified",
+        "Old myocardial infarction",
+        "Automatic implantable cardiac defibrillator in situ",
+        "Long-term (current) use of insulin",
+        "Long-term (current) use of antiplatelet/antithrombotic",
+        "First degree atrioventricular block",
+        "Right bundle branch block and left anterior fascicular block"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "15656571-DS-22",
+        "note_seq": 22,
+        "charttime": "2119-04-12 00:00:00",
+        "storetime": "2119-04-12 20:22:00",
+        "text": " \nName:  ___                 Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nmetformin / Neurontin\n \nAttending: ___.\n \nChief Complaint:\nchest pressure and SOB\n \nMajor Surgical or Invasive Procedure:\n___ attempted ablation\n\n \nHistory of Present Illness:\n___ w/CHF s/p AICD who complains of 3 weeks of gradual worsening \nchest pressure and dyspnea. He endorses exertional CP, DOE, \nweight gain. He has been taking his meds as prescribed. He \nreports his defibrillator has shocked him x2 in the last day. \n\nWhen the patient arrived in the ED his vitals were t: 97 HR: 74 \nBP: 116/85 RR: 19 O2 sat: 92%. EKG showed: RBBB @ 85, sinus, no \nsignificant change from prior. Physical exam showed slight \nbibasilar crackles, JVD to mastoid. Interrogation of his \npacemaker showed runs of vtach that had reoccured over the last \n24hr. Patient had multiple episodes of VT in the ED, received \nATP from his AICD and paced out it. Symptomatic with \nlightheadedness during his episodes. Patient was given \nFurosemide 40mg IV x2 in the ED with improvement in his dyspnea. \nHe was also given Lidocaine 150mg IV bolus and then started on \nan Lidocaine 1mg/min IV gtt. \n\nPatient was transferred to the CCU for further management. On \narrival to the CCU, the patient was NAD with vitals of T: 36.7 \nHR: 91 BP: 116/93 RR 21 satting 97% on 2L NC, but continuing to \nhave runs of VT with ATP that would pace him out of his rhythm. \n\nOf note: On interrogation of his device in the ED(see device \nnote), there have been multiple episodes of VT since ___ up to about 10 episodes a day. These episodes have been \neither self terminating or responsive to ATP. His episode \nyesterday did not terminate with ATP and required a single shock \nwhich converted him back to sinus rhythm. The episodes \ndemonstrate a monomorphic VT with cycle length 315-330 ms. \n\n___ review of systems, he denies any prior history of stroke, \nTIA, deep venous thrombosis, pulmonary embolism, bleeding at the \n\ntime of surgery, myalgias, joint pains, cough, hemoptysis, black \n\nstools or red stools. he denies recent fevers, chills or \nrigors. he denies exertional buttock or calf pain. All of the \nother review of systems were negative.  \n \nCardiac review of systems is notable for absence of \npalpitations, syncope or presyncope. However pt admits to \nfeeling slightly lightheaded during some of his \"\"episodes\n \nPast Medical History:\n1. CARDIAC RISK FACTORS: DM (Hba1c 9.4 in ___,  \nperipheral neuropathy), Dyslipidemia, HTN, CHF, CAD  \n2. CARDIAC HISTORY:  \n- ECHO (___): EF ___, severely dilated left ventricle \nwith severelY depressed function - inferior and inferlateral \nakinesis and severe hypokinesis of the other segments. At least \nmild mitral regurgitation. Hypokinetic right ventricle.  \n- Cath (___): Two-vessel coronary artery disease, LCx \ntotally occluded and RCA with a distal 60% lesion, Mildly \nelevated left-sided filling pressure with a LVEDP of 16 mmHg, \nSuccesful PCI of LCx with drug eluting stents, Aspirin \nindefinetly and plavix for at least one year.  \n- ICD, dual, ___ ___ ___ ___. ___ for primary \n \nprevention of sudden cardiac death.  \n- Recurrent CHF exacerbations due to dietary/medication  \nnoncompliance  \n3. OTHER PAST MEDICAL HISTORY:  \n- DISC DISEASE - LUMBAR  \n- OCULAR HYPERTENSION  \n- TENDON RUPTURE, TRAUMATIC - PATELLA  \n- ERECTILE DYSFUNCTION  \n- Obesity  \n- h/o Colonic Adenoma  \n- Pulmonary nodule - pt was not aware of this diagnosis  \n- CKD (baseline Cr 1.4-1.7)- pt was not aware of this diagnosis  \n\n- Tachy-brady syndrome \n\n \nSocial History:\n___\nFamily History:\nNo family history of early MI, arrhythmia, cardiomyopathies, or \nsudden cardiac death; His brother died in the setting of heroin \nuse, but had heart disease. Mother and father died of lung \ncancer.\n \nPhysical Exam:\n====================\nADMISSION EXAM\n====================\nGen: Pleasant, calm, NAD  \nHEENT: No conjunctival pallor. No icterus. MMM. OP clear.  \nNECK: Supple, No LAD. JVP difficult to assess given body \nhabitus. Normal carotid upstroke without bruits. No thyromegaly. \n \nCV: PMI in ___ intercostal space, mid clavicular line. RRR. \nnormal S1,S2. No murmurs, rubs, clicks, or gallops  \nLUNGS: minimal crackles bialterally in the bases; distant breath \nsounds; No wheezes, rales, or rhonchi.  \nABD: NABS. Soft, NT, ND. No HSM. Abdominal aorta was not \nenlarged by palpation. No abdominal bruits.  \nEXT: WWP, NO CCE. Full distal pulses bilaterally. No femoral \nbruits.  \nSKIN: No rashes/lesions, ecchymoses.  \nNEURO: A&Ox3. CN ___ grossly intact. Preserved sensation \nthroughout. ___ strength throughout. ___ reflexes, equal ___. \nNormal coordination. Gait assessment deferred  \nEXT: +3 pitting edema bilaterally\n====================\nDISCHARGE PHYSICAL\nTmax: 37.1 °C (98.7 °F)\nHR: 73 (69 - 93) bpm\nBP: 109/62(76) {91/49(62) - 122/73(88)} mmHg\nRR: 14 (14 - 31) insp/min\nSpO2: 96% \nHeart rhythm: SR (Sinus Rhythm), ___ AV (First degree AV Block) \n, RBBB (Right Bundle Branch Block) \nGen: Pleasant, calm, NAD  \nHEENT: No conjunctival pallor. No icterus. MMM. OP clear.  \nNECK: Supple, No LAD. JVP difficult to assess given body \nhabitus. Normal carotid upstroke without bruits. No thyromegaly. \n \nCV: PMI in ___ intercostal space, mid clavicular line. RRR. \nnormal S1,S2. No murmurs, rubs, clicks, or gallops  \nLUNGS: minimal crackles bialterally in the bases; distant breath \nsounds; No wheezes, rales, or rhonchi.  \nABD: NABS. Soft, NT, ND. No HSM. Abdominal aorta was not \nenlarged by palpation. No abdominal bruits.  \nEXT: WWP, NO CCE. Full distal pulses bilaterally. No femoral \nbruits.  \nSKIN: No rashes/lesions, ecchymoses.  \nNEURO: A&Ox3. CN ___ grossly intact. Preserved sensation \nthroughout. ___ strength throughout. Grossly Normal \ncoordination. \nEXT: ___ pitting edema bilaterally to midshins\n\n \nPertinent Results:\nINITIAL LABS: \n\n___ 12:10PM BLOOD WBC-7.6 RBC-4.96 Hgb-14.8 Hct-44.9 MCV-91 \nMCH-29.7 MCHC-32.8 RDW-16.9* Plt ___\n___ 12:10PM BLOOD Neuts-66.5 ___ Monos-7.6 Eos-3.4 \nBaso-0.5\n___ 12:10PM BLOOD Plt ___\n___ 02:21PM BLOOD ___ PTT-32.7 ___\n___ 12:10PM BLOOD Glucose-331* UreaN-27* Creat-1.6* Na-136 \nK-3.7 Cl-98 HCO3-28 AnGap-14\n___ 11:58PM BLOOD Glucose-274* UreaN-26* Creat-1.6* Na-139 \nK-4.0 Cl-97 HCO3-29 AnGap-17\n___ 12:10PM BLOOD CK-MB-5 proBNP-4126*\n___ 12:10PM BLOOD Calcium-9.7 Phos-3.4 Mg-2.2\n___ 12:32PM BLOOD K-3.9\n\nDISCHARGE LABS: \n___ 05:18AM BLOOD WBC-11.6* RBC-4.82 Hgb-14.6 Hct-42.1 \nMCV-88 MCH-30.4 MCHC-34.7 RDW-16.3* Plt ___\n___ 06:05AM BLOOD WBC-8.1 RBC-4.54* Hgb-13.7* Hct-40.2 \nMCV-89 MCH-30.2 MCHC-34.2 RDW-16.5* Plt ___\n___ 05:18AM BLOOD Neuts-83.9* Lymphs-7.6* Monos-5.0 Eos-3.4 \nBaso-0.1\n___ 12:10PM BLOOD Neuts-66.5 ___ Monos-7.6 Eos-3.4 \nBaso-0.5\n___ 05:18AM BLOOD Glucose-119* UreaN-30* Creat-1.6* Na-139 \nK-3.6 Cl-104 HCO3-25 AnGap-14\n___ 06:05AM BLOOD Glucose-101* UreaN-31* Creat-1.7* Na-140 \nK-3.4 Cl-102 HCO3-31 AnGap-10\n___ 05:18AM BLOOD ALT-17 AST-22 LD(LDH)-220 AlkPhos-96 \nTotBili-2.0*\n___ 05:19AM BLOOD ALT-24 AST-28 LD(LDH)-362* CK(CPK)-79 \nAlkPhos-96 TotBili-1.9*\n___ 05:18AM BLOOD Albumin-3.6 Calcium-9.3 Phos-3.4 Mg-2.2\n___ 06:05AM BLOOD Calcium-8.9 Phos-3.6 Mg-2.2\n___ 04:42PM BLOOD Calcium-9.3 Phos-3.7 Mg-2.2\n___ 05:18AM BLOOD Digoxin-0.5*\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nIMAGING: \n___ ECG Sinus rhythm. Prior inferior wall myocardial \ninfarction. Right bundle-branch block. \n\n___ CXR IMPRESSION: As compared to the previous image, no \nrelevant change is seen. The patient is in moderate pulmonary \nedema. Moderate cardiomegaly. No larger pleural effusions. No \npneumonia. Mild atelectasis in the retrocardiac lung regions. \nThe left pectoral pacemaker is unchanged. Moderate elongation of \nthe descending aorta. \n\n___ Sinus rhythm. Right bundle-branch block. Prior inferior \nwall myocardial infarction. Probable biventricular hypertrophy \nTRACING #6 \n\n___ ECHO The left atrium is mildly dilated. The right \natrium is moderately dilated. There is mild symmetric left \nventricular hypertrophy. The left ventricular cavity is severely \ndilated. Overall left ventricular systolic function is severely \ndepressed (LVEF<= 30 %) with akinesis of the inferior and \ninferolateral walls. The anterior septum contracts best. The \nremaining segments are not well seen. The right ventricle is \ndilated. The aortic root is mildly dilated at the sinus level. \nThe aortic valve leaflets (3) are mildly thickened but aortic \nstenosis is not present. No aortic regurgitation is seen. The \nmitral valve leaflets are mildly thickened. There is no mitral \nvalve prolapse. At least mild (1+) mitral regurgitation is seen. \nThe pulmonary artery systolic pressure could not be determined. \nThere is no pericardial effusion. \n\nIMPRESSION: Mild symmetric left ventricular hypertrophy with \nseverely depressed LV systolic function and severe LV dilation. \nMild aortic valve thickening without aortic stenosis. Mild \naortic root dilation. \n\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nICD interrogation report: \nReason for interrogation: Patient reports experiencing a shock\nGenerator ___\nModel Name: ___ ___\nModel Number: ___\n\nDiagnostic information: arrhythmias, morphologies, rates, Rx:\nSince ___- \nPace terminated episodes of VT/VF 172 of 173 \nShock terminated episodes 1 of 1 on ___ at 11:19, \n00:35\navg bpm 188\nTotal shocks ___ male with a history of mixed cardiomyopathy with EF \n20%, s/p primary prevention ICD in ___, DM2, CKD, multiple \nheart failure admissions over the last year, now presenting post \nICD shock and heart failure exacerbation. Increased burden of \nventricular tachycardia on his device following his worsening \nsymptoms of heart failure.  Increased burden of VT thought \nlikely due to his heart failure.  Patient was diuresed paying \nclose attention to his electrolytes during diuresis. He was also \nstarted on lidocaine drip but continue to have episodes of \nmonomorphic VT with likely inferolateral origin. Given likely \nscar related monomorphic VT, VT ablation was attempted on ___ \nbut they were unable to induce VT on ___ EP study.  Patient \nwas started on amiodarone per EP recs and advised to follow up \nin ___ clinic. \n \n# Acute on Chronic Congestive Heart Failure: Likely triggered by \ndietary non-compliance. Patient states he is taking all of his \nmedications as directed. Patient was found to be 12 lbs above \ndry weight. Patient was actively diuresed until he appears \neuvolemic and then was restarted on home dose of lasix. Digoxin \ndose was reduced given concomitant amiodarone.  Patient \ncontinued on hydralazine Imdur and Metoprolol\n \n# Chest Pain/Reflux pain: Patient had mild chest pain in the ED \nand in the CCU after eating. The patient states that this is \nidentical to his GERD. MB negative on admission. EKG showing no \nischemic changes.  \n\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n=\n================================================================\nCHRONIC ISSUES\n\n# DM type II:Coverage with ISS and continue lantus 50u at night.\n\n#  Acute on chronic kidney disease: Patient at baseline cr 1.6 \n(1.4-1.7). Cr. on discharge 1.6\n\n# Coronary Artery Disease: Known two-vessel coronary artery \ndisease with LCx totally occluded s/p DES and RCA with a distal \n60% lesion from last catheterization in ___. MB negative on \nadmission. He was continued on his aspirin, plavix, \natorvastatin, imdur, hydalazine, and hydralazine. \n\n # Hypertension: Continueon home imdur, hydralazine. Metoprolol \nwas modified as above.\n============================================= \n\n# CONTACT: ___ (sister) Phone number: ___\nSISTER, ___ IS ALTERNATE HCP, MAY BE REACHED AT \n(___)\n\n================================================\nTRANSITIONAL ISSUES:\n- Started amiodarone 400 TID for a week (last day ___ which \nshould be followed  200 BID for a month (starting ___ Patient \nwill have follow up with ___ in a month.  He should have \nCr. and electrolyte labs in 1 week post discharge with ___.\n- follow up with cardiology in a month to determine whether to \ncontinue amiodarone and dose\n- digoxin decreased given concomitant amiodarone\n\n \nMedications on Admission:\nThe Preadmission Medication list is accurate and complete.\n1. Aspirin 81 mg PO DAILY \n2. Atorvastatin 80 mg PO DAILY \n3. Clopidogrel 75 mg PO DAILY \n4. Digoxin 0.125 mg PO DAILY \n5. HydrALAzine 20 mg PO Q8H \n6. Isosorbide Mononitrate (Extended Release) 60 mg PO DAILY \n7. Nitroglycerin SL 0.3 mg SL Q5MIN:PRN Chest Pain \n8. Pantoprazole 40 mg PO Q24H \n9. Lantus (insulin glargine) 100 unit/mL subcutaneous daily \n10. Torsemide 80 mg PO QAM \n11. Metoprolol Succinate XL 50 mg PO DAILY \n12. Torsemide 40 mg PO QPM \n\n \nDischarge Medications:\n1. Aspirin 81 mg PO DAILY \nRX *aspirin [Aspir-81] 81 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n2. Atorvastatin 80 mg PO DAILY \nRX *atorvastatin 80 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n3. Clopidogrel 75 mg PO DAILY \nRX *clopidogrel 75 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n4. Digoxin 0.0625 mg PO DAILY \nRX *digoxin 125 mcg 0.5 (One half) tablet(s) by mouth daily Disp \n#*15 Tablet Refills:*0\n5. HydrALAzine 20 mg PO Q8H \nRX *hydralazine 10 mg 2 tablet(s) by mouth three times day Disp \n#*150 Tablet Refills:*0\n6. Isosorbide Mononitrate (Extended Release) 60 mg PO DAILY \nRX *isosorbide mononitrate 60 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n7. Pantoprazole 40 mg PO Q24H \nRX *pantoprazole 40 mg 1 tablet(s) by mouth daily Disp #*30 \nTablet Refills:*0\n8. Amiodarone 400 mg PO TID \nPlease take for 6 days through ___, after which take smaller \ndose of amiodarone \nRX *amiodarone 400 mg 1 tablet(s) by mouth three times a day \n(once every 8 hours) Disp #*18 Tablet Refills:*0\n9. Metoprolol Succinate XL 50 mg PO DAILY \nRX *metoprolol succinate 50 mg 1 tablet(s) by mouth daily Disp \n#*30 Tablet Refills:*0\n10. Nitroglycerin SL 0.3 mg SL Q5MIN:PRN Chest Pain \nRX *nitroglycerin [Nitrostat] 0.3 mg 1 tablet(s) sublingually \nevery 5 min. Disp #*1 Package Refills:*0\n11. Lantus (insulin glargine) 100 unit/mL subcutaneous daily \nRX *insulin glargine [Lantus] 100 unit/mL 50 units SC bedtime \nDisp #*2 Vial Refills:*0\n12. Amiodarone 200 mg PO BID \nPlease start taking this dose on ___ \nRX *amiodarone 200 mg 1 tablet(s) by mouth twice a day Disp #*60 \nTablet Refills:*0\n13. Torsemide 80 mg PO QAM \nRX *torsemide [Demadex] 20 mg 4 tablet(s) by mouth qAM Disp \n#*112 Tablet Refills:*2\n14. Torsemide 40 mg PO QPM \nRX *torsemide [Demadex] 20 mg 2 tablet(s) by mouth qpm Disp #*56 \nTablet Refills:*2\n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nPrimary:\nsymptomatic ventricular fibrillation\nacute on chronic congestive heart failure\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking part in your care at ___ \n___. You were admitted for worsening chest \npressure and shortness of breath, and had an abnormal heart \nrhythm causing your cardiodefibrillator to shock you. You \nunderwent a number of laboratory tests and a procedure to try \nand stop the irregular rhythm from re-occurring, but it was not \nable to be completed because the area of your heart that causes \nthis irregular rhythm could not be identified. You were started \non a medication, amiodarone, to try and prevent this rhythm from \noccurring again. You will take this as follows: 400mg three \ntimes per day for 1 week (___), then decrease to 200mg \ntwice a day for one month. Please have your primary care \nphysician check your labs next week.\n\nGoing forward it will be very important for you to follow up \nwith the appointments as listed below. Please weigh yourself \nevery morning, call MD if weight goes up more than 3 lbs.  \nPlease take your medications as prescribed, including the new \nmedication to help control your heart rhythm.\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "15656571-RR-38",
+        "charttime": "2119-04-08 13:51:00",
+        "storetime": "2119-04-08 14:07:00",
+        "text": "EXAMINATION:  CHEST (PA AND LAT)\n\nINDICATION:  History: ___ with chest pain, clinically overloaded, Hx of CHF \n// evaluate for fluid overload, acute process\n\nCOMPARISON:  ___\n\nIMPRESSION: \n\nAs compared to the previous image, no relevant change is seen. The patient is\nin moderate pulmonary edema. Moderate cardiomegaly.  No larger pleural\neffusions.  No pneumonia. Mild atelectasis in the retrocardiac lung regions.\nThe left pectoral pacemaker is unchanged. Moderate elongation of the\ndescending aorta.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "42741",
+        "icd_version": 9,
+        "long_title": "Ventricular fibrillation",
+        "normalized_time": "2119-04-12 14:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "42823",
+        "icd_version": 9,
+        "long_title": "Acute on chronic systolic heart failure",
+        "normalized_time": "2119-04-12 14:12:37",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "5849",
+        "icd_version": 9,
+        "long_title": "Acute kidney failure, unspecified",
+        "normalized_time": "2119-04-12 14:15:13",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "41401",
+        "icd_version": 9,
+        "long_title": "Coronary atherosclerosis of native coronary artery",
+        "normalized_time": "2119-04-12 14:17:50",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2119-04-12 14:20:26",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "4254",
+        "icd_version": 9,
+        "long_title": "Other primary cardiomyopathies",
+        "normalized_time": "2119-04-12 14:23:03",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "V1581",
+        "icd_version": 9,
+        "long_title": "Personal history of noncompliance with medical treatment, presenting hazards to health",
+        "normalized_time": "2119-04-12 14:25:39",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "25000",
+        "icd_version": 9,
+        "long_title": "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2119-04-12 14:28:16",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2119-04-12 14:30:52",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "V643",
+        "icd_version": 9,
+        "long_title": "Procedure not carried out for other reasons",
+        "normalized_time": "2119-04-12 14:33:29",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "40390",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "normalized_time": "2119-04-12 14:36:05",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "5859",
+        "icd_version": 9,
+        "long_title": "Chronic kidney disease, unspecified",
+        "normalized_time": "2119-04-12 14:38:42",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2119-04-12 14:41:18",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "V4582",
+        "icd_version": 9,
+        "long_title": "Percutaneous transluminal coronary angioplasty status",
+        "normalized_time": "2119-04-12 14:43:55",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "27800",
+        "icd_version": 9,
+        "long_title": "Obesity, unspecified",
+        "normalized_time": "2119-04-12 14:46:31",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "V1582",
+        "icd_version": 9,
+        "long_title": "Personal history of tobacco use",
+        "normalized_time": "2119-04-12 14:49:08",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "3569",
+        "icd_version": 9,
+        "long_title": "Unspecified hereditary and idiopathic peripheral neuropathy",
+        "normalized_time": "2119-04-12 14:51:44",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "V8538",
+        "icd_version": 9,
+        "long_title": "Body Mass Index 38.0-38.9, adult",
+        "normalized_time": "2119-04-12 14:54:21",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "4280",
+        "icd_version": 9,
+        "long_title": "Congestive heart failure, unspecified",
+        "normalized_time": "2119-04-12 14:56:57",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "V5332",
+        "icd_version": 9,
+        "long_title": "Fitting and adjustment of automatic implantable cardiac defibrillator",
+        "normalized_time": "2119-04-12 14:59:34",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "412",
+        "icd_version": 9,
+        "long_title": "Old myocardial infarction",
+        "normalized_time": "2119-04-12 15:02:10",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "4264",
+        "icd_version": 9,
+        "long_title": "Right bundle branch block",
+        "normalized_time": "2119-04-12 15:04:47",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "V5866",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of aspirin",
+        "normalized_time": "2119-04-12 15:07:23",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "V5863",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of antiplatelet/antithrombotic",
+        "normalized_time": "2119-04-12 15:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2119-04-11",
+        "icd_code": "3726",
+        "icd_version": 9,
+        "long_title": "Catheter based invasive electrophysiologic testing",
+        "normalized_time": "2119-04-11 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2119-04-08 00:00:00",
+        "charttime": "2119-04-08 18:09:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "MRSA SCREEN",
+        "test_name": "MRSA SCREEN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "No MRSA isolated.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 15089,
+    "output_tokens": 5226,
+    "total_tokens": 20315
+  },
+  "response_id": "chatcmpl-85dc0c1a3cd6bef9",
+  "latency_ms": 92282,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2119-04-08 14:10:00",
+        "speaker": "Doctor",
+        "text": "Mr. Johnson, I'm Dr. Patel. I've been reviewing your case. You came in today because of chest pressure and shortness of breath, and your defibrillator shocked you twice. Is that right?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2119-04-08 14:12:00",
+        "speaker": "Patient",
+        "text": "Yes, that’s correct. The shocks were scary. I’ve been feeling more winded over the last few weeks, especially when I walk."
+      },
+      {
+        "turn_number": 3,
+        "time": "2119-04-08 14:14:00",
+        "speaker": "Doctor",
+        "text": "I understand. We checked your device, and it shows you’ve had several episodes of a fast heart rhythm—ventricular tachycardia—over the past day. One didn’t stop on its own, so the defibrillator gave a shock to reset it."
+      },
+      {
+        "turn_number": 4,
+        "time": "2119-04-08 14:16:00",
+        "speaker": "Patient",
+        "text": "I felt lightheaded during those episodes, but no fainting. I’ve been taking all my meds like I’m supposed to."
+      },
+      {
+        "turn_number": 5,
+        "time": "2119-04-08 14:18:00",
+        "speaker": "Doctor",
+        "text": "Good. That’s important. Your labs show your heart is under stress—your proBNP is high—and your chest X-ray shows fluid in your lungs, which means your heart failure is flaring up."
+      },
+      {
+        "turn_number": 6,
+        "time": "2119-04-08 14:20:00",
+        "speaker": "Patient",
+        "text": "So the fluid is making me short of breath?"
+      },
+      {
+        "turn_number": 7,
+        "time": "2119-04-08 14:21:00",
+        "speaker": "Doctor",
+        "text": "Exactly. You were about 12 pounds above your dry weight. We gave you IV furosemide in the ER, which helped. We’ll keep giving diuretics to get that fluid off safely."
+      },
+      {
+        "turn_number": 8,
+        "time": "2119-04-08 14:23:00",
+        "speaker": "Patient",
+        "text": "And the fast heartbeats? Are they related?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2119-04-08 14:25:00",
+        "speaker": "Doctor",
+        "text": "Yes. The increased fluid and strain on your heart likely triggered more ventricular tachycardia. It’s monomorphic VT, probably from scar tissue in your heart from past damage."
+      },
+      {
+        "turn_number": 10,
+        "time": "2119-04-08 14:27:00",
+        "speaker": "Patient",
+        "text": "Can we fix that?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2119-04-08 14:29:00",
+        "speaker": "Doctor",
+        "text": "We’re going to try. An electrophysiologist will see you. They may do a procedure called ablation to target the area causing the rhythm. But first, we need to stabilize you."
+      },
+      {
+        "turn_number": 12,
+        "time": "2119-04-08 14:31:00",
+        "speaker": "Patient",
+        "text": "Okay. I’m on a lidocaine drip now—will that help?"
+      },
+      {
+        "turn_number": 13,
+        "time": "2119-04-08 14:33:00",
+        "speaker": "Doctor",
+        "text": "Yes, it helps suppress the abnormal rhythms. But it’s temporary. We’re starting you on a longer-term medication called amiodarone to prevent future episodes."
+      },
+      {
+        "turn_number": 14,
+        "time": "2119-04-08 14:35:00",
+        "speaker": "Patient",
+        "text": "I’ve heard that drug has side effects."
+      },
+      {
+        "turn_number": 15,
+        "time": "2119-04-08 14:37:00",
+        "speaker": "Doctor",
+        "text": "It can, but we’ll monitor you closely. The benefits outweigh the risks right now. We’ll also check your thyroid and liver with blood tests in the coming weeks."
+      },
+      {
+        "turn_number": 16,
+        "time": "2119-04-08 14:39:00",
+        "speaker": "Patient",
+        "text": "Alright. And my diabetes? My glucose was high in the ER."
+      },
+      {
+        "turn_number": 17,
+        "time": "2119-04-08 14:41:00",
+        "speaker": "Doctor",
+        "text": "Yes, your glucose was 331. We’ll manage it with your usual Lantus insulin at night. We’ll check your levels regularly and adjust if needed."
+      },
+      {
+        "turn_number": 18,
+        "time": "2119-04-08 14:43:00",
+        "speaker": "Patient",
+        "text": "Good. And my kidneys? I remember last time they got worse."
+      },
+      {
+        "turn_number": 19,
+        "time": "2119-04-08 14:45:00",
+        "speaker": "Doctor",
+        "text": "Your creatinine is 1.6, which is within your usual range. We’re watching it closely, especially as we give diuretics. We’ll keep your electrolytes balanced."
+      },
+      {
+        "turn_number": 20,
+        "time": "2119-04-09 09:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning, Mr. Johnson. How are you feeling today?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2119-04-09 09:02:00",
+        "speaker": "Patient",
+        "text": "Better. I’m not as short of breath. Still a little swollen in my legs."
+      },
+      {
+        "turn_number": 22,
+        "time": "2119-04-09 09:04:00",
+        "speaker": "Doctor",
+        "text": "Your exam shows less fluid in your lungs, and your oxygen levels are good. The edema is improving. We’ll keep the diuretics going until you’re euvolemic."
+      },
+      {
+        "turn_number": 23,
+        "time": "2119-04-09 09:06:00",
+        "speaker": "Patient",
+        "text": "Any word on the ablation?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2119-04-09 09:08:00",
+        "speaker": "Doctor",
+        "text": "It’s scheduled for tomorrow. The team wants to make sure you’re stable and well-hydrated before the procedure."
+      },
+      {
+        "turn_number": 25,
+        "time": "2119-04-09 09:10:00",
+        "speaker": "Patient",
+        "text": "I hope they can fix it. I don’t want to get shocked again."
+      },
+      {
+        "turn_number": 26,
+        "time": "2119-04-09 09:12:00",
+        "speaker": "Doctor",
+        "text": "We all hope so. Even if they can’t ablate it today, amiodarone should reduce the frequency. And your ICD will still protect you."
+      },
+      {
+        "turn_number": 27,
+        "time": "2119-04-10 10:30:00",
+        "speaker": "Doctor",
+        "text": "Mr. Johnson, you just came back from the EP study. They tried to do the ablation, but they couldn’t induce the VT rhythm, so they couldn’t map the exact spot."
+      },
+      {
+        "turn_number": 28,
+        "time": "2119-04-10 10:32:00",
+        "speaker": "Patient",
+        "text": "So they couldn’t do it?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2119-04-10 10:34:00",
+        "speaker": "Doctor",
+        "text": "Not today. It’s not uncommon. The rhythm might not show up on demand. But you’re still on amiodarone, which should help prevent it. We’ll follow up with EP clinic in a month."
+      },
+      {
+        "turn_number": 30,
+        "time": "2119-04-10 10:36:00",
+        "speaker": "Patient",
+        "text": "Okay. I guess that’s the best we can do for now."
+      },
+      {
+        "turn_number": 31,
+        "time": "2119-04-10 10:38:00",
+        "speaker": "Doctor",
+        "text": "Yes. And your heart function is still low—your echo shows an ejection fraction under 30%—so managing your heart failure is key to preventing more arrhythmias."
+      },
+      {
+        "turn_number": 32,
+        "time": "2119-04-10 10:40:00",
+        "speaker": "Patient",
+        "text": "I’ve been watching my salt. No chips or canned food."
+      },
+      {
+        "turn_number": 33,
+        "time": "2119-04-10 10:42:00",
+        "speaker": "Doctor",
+        "text": "That’s excellent. Diet is just as important as meds. Keep weighing yourself daily. Call us if you gain more than 3 pounds in a day or two."
+      },
+      {
+        "turn_number": 34,
+        "time": "2119-04-11 14:00:00",
+        "speaker": "Doctor",
+        "text": "Your labs are stable. Creatinine is still 1.6, potassium is good. You’re down to mid-shin swelling. We’re planning to discharge you tomorrow if all goes well."
+      },
+      {
+        "turn_number": 35,
+        "time": "2119-04-11 14:02:00",
+        "speaker": "Patient",
+        "text": "That’s good news. What meds am I going home with?"
+      },
+      {
+        "turn_number": 36,
+        "time": "2119-04-11 14:04:00",
+        "speaker": "Doctor",
+        "text": "Same as before, but with two changes: you’ll start amiodarone—400 mg three times a day for one week, then drop to 200 mg twice a day."
+      },
+      {
+        "turn_number": 37,
+        "time": "2119-04-11 14:06:00",
+        "speaker": "Patient",
+        "text": "And the other change?"
+      },
+      {
+        "turn_number": 38,
+        "time": "2119-04-11 14:08:00",
+        "speaker": "Doctor",
+        "text": "Your digoxin dose is being cut in half—now 0.0625 mg daily—because amiodarone can increase digoxin levels, which could be dangerous."
+      },
+      {
+        "turn_number": 39,
+        "time": "2119-04-11 14:10:00",
+        "speaker": "Patient",
+        "text": "Got it. No doubling up."
+      },
+      {
+        "turn_number": 40,
+        "time": "2119-04-11 14:12:00",
+        "speaker": "Doctor",
+        "text": "Exactly. And keep taking your torsemide, metoprolol, aspirin, and the others as prescribed."
+      },
+      {
+        "turn_number": 41,
+        "time": "2119-04-11 14:14:00",
+        "speaker": "Patient",
+        "text": "I will. Should I still come in for follow-up?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2119-04-11 14:16:00",
+        "speaker": "Doctor",
+        "text": "Yes. See your primary doctor in one week for blood work—creatinine, electrolytes, and digoxin level. Then cardiology in a month to review the amiodarone."
+      },
+      {
+        "turn_number": 43,
+        "time": "2119-04-11 14:18:00",
+        "speaker": "Patient",
+        "text": "And if I feel dizzy or get shocked again?"
+      },
+      {
+        "turn_number": 44,
+        "time": "2119-04-11 14:20:00",
+        "speaker": "Doctor",
+        "text": "Go to the ER or call 911. Even one shock means the device did its job, but we need to check you."
+      },
+      {
+        "turn_number": 45,
+        "time": "2119-04-12 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. You’re cleared for discharge. Your breathing is better, swelling is down, and your rhythm is sinus now."
+      },
+      {
+        "turn_number": 46,
+        "time": "2119-04-12 08:02:00",
+        "speaker": "Patient",
+        "text": "I feel much better. Thank you."
+      },
+      {
+        "turn_number": 47,
+        "time": "2119-04-12 08:04:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Remember: weigh yourself daily, low-salt diet, take all meds—including the new amiodarone as directed."
+      },
+      {
+        "turn_number": 48,
+        "time": "2119-04-12 08:06:00",
+        "speaker": "Patient",
+        "text": "And follow up for labs next week, then cardiology in a month."
+      },
+      {
+        "turn_number": 49,
+        "time": "2119-04-12 08:08:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Your sister is listed as your contact—she can help if you have questions or feel unwell."
+      },
+      {
+        "turn_number": 50,
+        "time": "2119-04-12 08:10:00",
+        "speaker": "Patient",
+        "text": "Yes, she’s very involved. I’ll make sure she knows the plan."
+      },
+      {
+        "turn_number": 51,
+        "time": "2119-04-12 08:12:00",
+        "speaker": "Doctor",
+        "text": "Great. We’ll send all instructions to you and your sister. Take care, Mr. Johnson."
+      },
+      {
+        "turn_number": 52,
+        "time": "2119-04-12 08:14:00",
+        "speaker": "Patient",
+        "text": "Thank you, Doctor. I’ll do my best to stay healthy."
+      },
+      {
+        "turn_number": 53,
+        "time": "2119-04-12 08:16:00",
+        "speaker": "Doctor",
+        "text": "You’re on the right track. We’re here if you need us."
+      },
+      {
+        "turn_number": 54,
+        "time": "2119-04-12 08:18:00",
+        "speaker": "Patient",
+        "text": "One last thing—my chest pain after eating. Is that still GERD?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2119-04-12 08:20:00",
+        "speaker": "Doctor",
+        "text": "Yes, your EKG showed no ischemia, and the pain matches your usual reflux. Keep taking pantoprazole and avoid large meals."
+      },
+      {
+        "turn_number": 56,
+        "time": "2119-04-12 08:22:00",
+        "speaker": "Patient",
+        "text": "Will do. Thanks for explaining everything."
+      },
+      {
+        "turn_number": 57,
+        "time": "2119-04-12 08:24:00",
+        "speaker": "Doctor",
+        "text": "Of course. Stay well."
+      },
+      {
+        "turn_number": 58,
+        "time": "2119-04-12 08:26:00",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 59,
+        "time": "2119-04-12 08:28:00",
+        "speaker": "Doctor",
+        "text": "Nurse will bring your discharge papers and prescriptions shortly."
+      },
+      {
+        "turn_number": 60,
+        "time": "2119-04-12 08:30:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll wait for her."
+      },
+      {
+        "turn_number": 61,
+        "time": "2119-04-12 08:32:00",
+        "speaker": "Doctor",
+        "text": "Take care, Mr. Johnson."
+      },
+      {
+        "turn_number": 62,
+        "time": "2119-04-12 08:34:00",
+        "speaker": "Patient",
+        "text": "Thank you again."
+      },
+      {
+        "turn_number": 63,
+        "time": "2119-04-12 08:36:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome."
+      },
+      {
+        "turn_number": 64,
+        "time": "2119-04-12 08:38:00",
+        "speaker": "Patient",
+        "text": "I’ll see you in clinic."
+      },
+      {
+        "turn_number": 65,
+        "time": "2119-04-12 08:40:00",
+        "speaker": "Doctor",
+        "text": "Looking forward to it. Stay safe."
+      },
+      {
+        "turn_number": 66,
+        "time": "2119-04-12 08:42:00",
+        "speaker": "Patient",
+        "text": "I will."
+      },
+      {
+        "turn_number": 67,
+        "time": "2119-04-12 08:44:00",
+        "speaker": "Doctor",
+        "text": "Have a good day."
+      }
+    ],
+    "summary": {
+      "admission_start": "2119-04-08 14:05:00",
+      "admission_end": "2119-04-12 15:10:00",
+      "summary_paragraph": "Mr. Johnson, a male with a history of systolic heart failure (LVEF ≤30%), ischemic cardiomyopathy, type 2 diabetes, chronic kidney disease, and obesity, was admitted for worsening chest pressure, shortness of breath, and an ICD shock due to symptomatic ventricular tachycardia. He was found to be fluid overloaded, with bilateral crackles, elevated proBNP, and pulmonary edema on imaging. He was treated with IV diuresis, which improved his volume status, and started on a lidocaine drip and amiodarone for VT suppression. An attempted VT ablation was unsuccessful due to inability to induce the arrhythmia during electrophysiology study. His digoxin dose was reduced due to amiodarone interaction. He stabilized with improved symptoms and was discharged on amiodarone, adjusted digoxin, and home heart failure medications, with follow-up planned for lab monitoring and cardiology evaluation.",
+      "problems": [
+        "Ventricular fibrillation",
+        "Acute on chronic systolic heart failure",
+        "Acute kidney failure, unspecified",
+        "Coronary atherosclerosis of native coronary artery",
+        "Other primary cardiomyopathies",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "Chronic kidney disease, unspecified",
+        "Esophageal reflux",
+        "Old myocardial infarction",
+        "Right bundle branch block",
+        "Long-term (current) use of insulin",
+        "Long-term (current) use of antiplatelet/antithrombotic",
+        "Personal history of noncompliance with medical treatment, presenting hazards to health",
+        "Obesity, unspecified"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-85dc0c1a3cd6bef9",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2119-04-08 14:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Mr. Johnson, I'm Dr. Patel. I've been reviewing your case. You came in today because of chest pressure and shortness of breath, and your defibrillator shocked you twice. Is that right?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2119-04-08 14:12:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, that’s correct. The shocks were scary. I’ve been feeling more winded over the last few weeks, especially when I walk.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2119-04-08 14:14:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. We checked your device, and it shows you’ve had several episodes of a fast heart rhythm—ventricular tachycardia—over the past day. One didn’t stop on its own, so the defibrillator gave a shock to reset it.\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2119-04-08 14:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I felt lightheaded during those episodes, but no fainting. I’ve been taking all my meds like I’m supposed to.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2119-04-08 14:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. That’s important. Your labs show your heart is under stress—your proBNP is high—and your chest X-ray shows fluid in your lungs, which means your heart failure is flaring up.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2119-04-08 14:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So the fluid is making me short of breath?\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2119-04-08 14:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. You were about 12 pounds above your dry weight. We gave you IV furosemide in the ER, which helped. We’ll keep giving diuretics to get that fluid off safely.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2119-04-08 14:23:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the fast heartbeats? Are they related?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2119-04-08 14:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. The increased fluid and strain on your heart likely triggered more ventricular tachycardia. It’s monomorphic VT, probably from scar tissue in your heart from past damage.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2119-04-08 14:27:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Can we fix that?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2119-04-08 14:29:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re going to try. An electrophysiologist will see you. They may do a procedure called ablation to target the area causing the rhythm. But first, we need to stabilize you.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2119-04-08 14:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I’m on a lidocaine drip now—will that help?\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2119-04-08 14:33:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, it helps suppress the abnormal rhythms. But it’s temporary. We’re starting you on a longer-term medication called amiodarone to prevent future episodes.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2119-04-08 14:35:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve heard that drug has side effects.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2119-04-08 14:37:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can, but we’ll monitor you closely. The benefits outweigh the risks right now. We’ll also check your thyroid and liver with blood tests in the coming weeks.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2119-04-08 14:39:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Alright. And my diabetes? My glucose was high in the ER.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2119-04-08 14:41:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your glucose was 331. We’ll manage it with your usual Lantus insulin at night. We’ll check your levels regularly and adjust if needed.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2119-04-08 14:43:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. And my kidneys? I remember last time they got worse.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2119-04-08 14:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your creatinine is 1.6, which is within your usual range. We’re watching it closely, especially as we give diuretics. We’ll keep your electrolytes balanced.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2119-04-09 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning, Mr. Johnson. How are you feeling today?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2119-04-09 09:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Better. I’m not as short of breath. Still a little swollen in my legs.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2119-04-09 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your exam shows less fluid in your lungs, and your oxygen levels are good. The edema is improving. We’ll keep the diuretics going until you’re euvolemic.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2119-04-09 09:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Any word on the ablation?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2119-04-09 09:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s scheduled for tomorrow. The team wants to make sure you’re stable and well-hydrated before the procedure.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2119-04-09 09:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I hope they can fix it. I don’t want to get shocked again.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2119-04-09 09:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We all hope so. Even if they can’t ablate it today, amiodarone should reduce the frequency. And your ICD will still protect you.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2119-04-10 10:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Mr. Johnson, you just came back from the EP study. They tried to do the ablation, but they couldn’t induce the VT rhythm, so they couldn’t map the exact spot.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2119-04-10 10:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So they couldn’t do it?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2119-04-10 10:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not today. It’s not uncommon. The rhythm might not show up on demand. But you’re still on amiodarone, which should help prevent it. We’ll follow up with EP clinic in a month.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2119-04-10 10:36:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I guess that’s the best we can do for now.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2119-04-10 10:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. And your heart function is still low—your echo shows an ejection fraction under 30%—so managing your heart failure is key to preventing more arrhythmias.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2119-04-10 10:40:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been watching my salt. No chips or canned food.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2119-04-10 10:42:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s excellent. Diet is just as important as meds. Keep weighing yourself daily. Call us if you gain more than 3 pounds in a day or two.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2119-04-11 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your labs are stable. Creatinine is still 1.6, potassium is good. You’re down to mid-shin swelling. We’re planning to discharge you tomorrow if all goes well.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2119-04-11 14:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s good news. What meds am I going home with?\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2119-04-11 14:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Same as before, but with two changes: you’ll start amiodarone—400 mg three times a day for one week, then drop to 200 mg twice a day.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2119-04-11 14:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the other change?\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2119-04-11 14:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your digoxin dose is being cut in half—now 0.0625 mg daily—because amiodarone can increase digoxin levels, which could be dangerous.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2119-04-11 14:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. No doubling up.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2119-04-11 14:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. And keep taking your torsemide, metoprolol, aspirin, and the others as prescribed.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2119-04-11 14:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Should I still come in for follow-up?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2119-04-11 14:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. See your primary doctor in one week for blood work—creatinine, electrolytes, and digoxin level. Then cardiology in a month to review the amiodarone.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2119-04-11 14:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And if I feel dizzy or get shocked again?\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2119-04-11 14:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Go to the ER or call 911. Even one shock means the device did its job, but we need to check you.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2119-04-12 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. You’re cleared for discharge. Your breathing is better, swelling is down, and your rhythm is sinus now.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2119-04-12 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I feel much better. Thank you.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2119-04-12 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Remember: weigh yourself daily, low-salt diet, take all meds—including the new amiodarone as directed.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2119-04-12 08:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And follow up for labs next week, then cardiology in a month.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2119-04-12 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Your sister is listed as your contact—she can help if you have questions or feel unwell.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2119-04-12 08:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, she’s very involved. I’ll make sure she knows the plan.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2119-04-12 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Great. We’ll send all instructions to you and your sister. Take care, Mr. Johnson.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2119-04-12 08:14:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Doctor. I’ll do my best to stay healthy.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2119-04-12 08:16:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re on the right track. We’re here if you need us.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2119-04-12 08:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"One last thing—my chest pain after eating. Is that still GERD?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2119-04-12 08:20:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your EKG showed no ischemia, and the pain matches your usual reflux. Keep taking pantoprazole and avoid large meals.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2119-04-12 08:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will do. Thanks for explaining everything.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2119-04-12 08:24:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Of course. Stay well.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2119-04-12 08:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2119-04-12 08:28:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Nurse will bring your discharge papers and prescriptions shortly.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2119-04-12 08:30:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll wait for her.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2119-04-12 08:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care, Mr. Johnson.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2119-04-12 08:34:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you again.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2119-04-12 08:36:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2119-04-12 08:38:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll see you in clinic.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2119-04-12 08:40:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Looking forward to it. Stay safe.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2119-04-12 08:42:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2119-04-12 08:44:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Have a good day.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2119-04-08 14:05:00\",\n    \"admission_end\": \"2119-04-12 15:10:00\",\n    \"summary_paragraph\": \"Mr. Johnson, a male with a history of systolic heart failure (LVEF ≤30%), ischemic cardiomyopathy, type 2 diabetes, chronic kidney disease, and obesity, was admitted for worsening chest pressure, shortness of breath, and an ICD shock due to symptomatic ventricular tachycardia. He was found to be fluid overloaded, with bilateral crackles, elevated proBNP, and pulmonary edema on imaging. He was treated with IV diuresis, which improved his volume status, and started on a lidocaine drip and amiodarone for VT suppression. An attempted VT ablation was unsuccessful due to inability to induce the arrhythmia during electrophysiology study. His digoxin dose was reduced due to amiodarone interaction. He stabilized with improved symptoms and was discharged on amiodarone, adjusted digoxin, and home heart failure medications, with follow-up planned for lab monitoring and cardiology evaluation.\",\n    \"problems\": [\n      \"Ventricular fibrillation\",\n      \"Acute on chronic systolic heart failure\",\n      \"Acute kidney failure, unspecified\",\n      \"Coronary atherosclerosis of native coronary artery\",\n      \"Other primary cardiomyopathies\",\n      \"Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\",\n      \"Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified\",\n      \"Chronic kidney disease, unspecified\",\n      \"Esophageal reflux\",\n      \"Old myocardial infarction\",\n      \"Right bundle branch block\",\n      \"Long-term (current) use of insulin\",\n      \"Long-term (current) use of antiplatelet/antithrombotic\",\n      \"Personal history of noncompliance with medical treatment, presenting hazards to health\",\n      \"Obesity, unspecified\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1777038631,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5226,
+      "prompt_tokens": 15089,
+      "total_tokens": 20315,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

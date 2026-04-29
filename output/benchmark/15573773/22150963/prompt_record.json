@@ -1,0 +1,769 @@
+{
+  "subject_id": "15573773",
+  "hadm_id": "22150963",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T11:36:23Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 4 day(s).\n- Recommended turn range: 50-70 turns.\n- Exact admission window: 2171-04-03 19:04:00 to 2171-04-07 17:15:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2171-03-21 20:06:00",
+    "admission_end": "2171-03-23 18:29:00",
+    "summary_paragraph": "The patient, a woman with T1-T2 paraplegia and a history of COPD and recurrent pneumonias, was admitted for respiratory distress, hypotension, and altered mental status. She was initially managed in the ICU with IV antibiotics, a norepinephrine drip, and a central line due to hypotension and severe hypoxia. Imaging confirmed right lower lobe pneumonia with possible pleural effusion. Her condition improved rapidly with nebulized treatments and antibiotics. She was weaned off vasopressors, transitioned to oral levofloxacin, and started on a prednisone taper. Anxiety was noted to exacerbate her dyspnea. She remained stable, was discharged home with service, and instructed to complete her antibiotic and steroid courses, continue home medications, and reduce her nicotine patch dose.",
+    "problems": [
+      "Pneumonia, organism unspecified",
+      "Paraplegia",
+      "Chronic obstructive asthma, unspecified",
+      "Hypotension, unspecified",
+      "Chronic hepatitis C without mention of hepatic coma",
+      "Late effect of spinal cord injury",
+      "Late effects of motor vehicle accident",
+      "Unspecified acquired hypothyroidism",
+      "Atrophic gastritis, without mention of hemorrhage",
+      "Other chronic pain",
+      "Other specified anemias",
+      "Other diseases of lung, not elsewhere classified",
+      "Anxiety state, unspecified",
+      "Tobacco use disorder",
+      "Personal history, urinary (tract) infection",
+      "Personal history of venous thrombosis and embolism"
+    ]
+  },
+  "stay_days": 4,
+  "recommended_turn_range": [
+    50,
+    70
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2171-04-07 00:00:00): Name:  ___                      Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPatient recorded as having No Known Allergies to Drugs\n \nAttending: ___.\n \nChief Complaint:\nHypoxia.\n \nMajor Surgical or Invasive Procedure:\nRight femoral central venous line placement (___).\nPICC line placement (___).\n \nHistory of Present Illness:\nPatient is a ___ y/o woman with PMHx of T1-T2 paraplegia \nfollowing MVC ___, COPD and recent admission for PNA on \n___ who presented to her PCP today with hypoxia, lethargy, \ncough and increased work of breathing. Of note, she was \ndischarged on ___ after a two day hospital stay for PNA and \nCOPD exacerbation. She was treated with a short course of \nLevofloxacin and steroid taper. Per husband, pt has been doing \nwell for the last week and has been out socializing and feeling \nwell. However, she was notably tachypneic, satting in the ___ \nand requiring increased NC oxygen this morning. He brought her \nin for evaluation in HCA and they referred her into the ED for \nfurther evaluation. \n\nIn the ED, initial vs were: T 97.9 P ___ BP 109/84 R 24 O2 sat \n97% on NRB. Pt underwent CXR which showed bilateral hazy \nopacities at bases, essentially unchanged from prior film on \n___. CTA was performed for hypoxia but did not show any PE, \nthere was bilateral atelectasis with RLL consolidations. Blood & \nUrine Cx were sent and pt had right femoral line placed before \nshe was given 1L NS, Vanc and Zosyn for possible PNA. Per ED, pt \nbecame more somnolent with ABG showing pH 7.34 pCO2 64 pO2 62. \nShe was given Solumedrol 125mg IV, alb/atrovent and was placed \non BIPAP to treat a component of COPD exacerbation and CO2 \nretention.\n\nOn arrival to the ICU, pt was wearing BIPAP and complaining \nabout the discomfort of the mask. Overall, she was still \nsomnolent and husband provided most of the history.   \n\nReview of systems: as above, provided by husband. ___ fevers, \nchills, nausea, vomiting, diarrhea, chest pain, med changes, \nrash, cough. Husband did note increased somnolence while eating \nand snoring while asleep.\n \nPast Medical History:\n1. T1-T2 paraplegia following MVC ___. Recurrent UTIs: ESBL klebsiella  \n3. HCV, viral load suppressed  \n4. H/o recurrent PNAs: MRSA, pan-sensitive Kleb  \n5. Anxiety  \n6. DVT in ___ -IVC filter placed in ___  \n7. Pulmonary nodules  \n8. Hypothyroidism  \n9. Chronic pain  \n10. Chronic gastritis  \n11. H/o obstructive lung disease  \n12. Anemia of chronic disease  \n13. S/p PEA arrest during last hospitalization in ___ \n \nSocial History:\n___\nFamily History:\nNo history of lung disease.\n \nPhysical Exam:\nVitals: BP 114/70 HR 80 Sats 99% on Face tent and 2L NC \nGeneral: NAD, sleepy but easily arousable\nHEENT: Sclera anicteric, MMM, PERRLA\nLungs: CTAB, no wheezes, occaisional RLL rhonchi\nCV: RRR no murmurs, rubs, gallops\nAbdomen:  soft, NT/ND/NABS, no rebound tenderness or guarding\nExt: warm, 2+ pulses, trace edema bilaterally\nNeuro: following commands, symmetric facial movement, squeezing \nhands bilaterally\n \nPertinent Results:\nLabs at Admission:\n___ 02:45PM BLOOD WBC-18.3*# RBC-4.00* Hgb-10.7* Hct-35.0* \nMCV-88 MCH-26.7* MCHC-30.4* RDW-15.5 Plt ___\n___ 02:45PM BLOOD Neuts-93.6* Lymphs-3.5* Monos-1.7* \nEos-1.0 Baso-0.3\n___ 02:45PM BLOOD ___ PTT-27.4 ___\n___ 02:45PM BLOOD Glucose-123* UreaN-11 Creat-0.3* Na-142 \nK-4.9 Cl-101 HCO3-32 AnGap-14\n___ 02:45PM BLOOD Calcium-8.9 Phos-3.3 Mg-1.9\n\nLactate:\n___ 03:10PM BLOOD Lactate-2.1* K-4.1\n___ 11:40PM BLOOD Lactate-1.9\n___ 02:47PM BLOOD Lactate-3.0*\n\nMicro Data:\n___ SPUTUM GRAM STAIN-FINAL; RESPIRATORY \nCULTURE- negative\n___ URINE URINE CULTURE- negative\n___ BLOOD CULTURE Blood Culture, Routine- \nnegative\n___ BLOOD CULTURE Blood Culture, Routine- \nnegative\n\nCTA chest (___):\n1. Assessment for pulmonary embolism within the segmental and \nsubsegmental pulmonary arterial branches is limited due to \nsuboptimal bolus timing. No  \nevidence of pulmonary embolism in the main pulmonary arteries.\n2. Moderate-to-severe bibasilar atelectasis, predominately \nwithin the right\nlower lobe. A more consolidative element within the right lower \nlobe along \nwith a new lingular patchy opacity may reflect an infectious \nprocess.   \n3. Paraseptal emphysema. \n4. Unchanged chronic rib cage deformities. \n \nBrief Hospital Course:\n___ y/o woman with PMHx of T1-T2 paraplegia, COPD and recurrent \nPNAs who presents after recent discharge with respiratory \ndistress and somnolence, concern for new RLL infiltrate.\n\n# Respiratory Distress: Mixed hypoxic/hypercarbic resp failure. \nPt with COPD and recurrent PNAs who developped tachypnea, \nincreased O2 requirement, cough and lethargy acutely this \nmorning. She was referred into the ED by her PCP and underwent ___ \nCTA that was negative for PE but revealed RLL consolidation, \nunclear if new or resolving from prior admission. Pt became \nincreasingly somnolent in the ED with pCO2 in ___. In the ED she \ngot steroids, alb/atrov and BIPAP, with improved mental status \nand minimal O2 requirement. Given increased WBC and possible \nconsolidation and recent hospital admission, she was treated for \nHAP with cefepime and vancomycin. A PICC line was placed so that \nshe could complete a 7-day course of antibiotics. There was \nconcern of recurrent aspiration. Patient underwent a speech and \nswallow eval and passed. Her diet was restarted.  Her initial \nPICC placed at the bedside went up the right IJ, so it was \nremoved and replaced by interventional radiology.  ___ she \nhad hypotension and a low-grade fever to 100.7 at 1am.  She was \ngiven fluids and looked well clinically.  Her CXR was unchanged, \nU/A was negative and blood cultures had no growth at the time of \ndischarge. Her vancomycin was originally dosed 1250mg Q24 hours, \nbut a trough level was 3.8, so the dosing was changed to 1000mg \nQ12 hours for the remainder of the course.\n\n# T1-T2 Paraplegia with chronic pain: pt is maintained on \nmultiple sedating drugs for spasms and pain. She presented with \nrespiratory distress and progressive somnolence and hypercarbia. \nSuspect a component of obesity hypoventilation with possible \naspiration PNA. During this admission, her clonazpeam, \npregabalin, and trazodone were initially held. Baclofen was \ndecreased to 5 mg tid. Methadone and oxybutynin were continued \nat outpatient doses.  Her pregabalin and trazodone were added \nback on, but her Baclofen was continued at 5mg TID with some \nminor leg spasticity, but adequate pain control.  She was \nswitched to Ultram for breakthrough pain, but did not find this \neffective, so she was switched back to Oxycodone.  She was \ndischarged, finally, on the same doses of methadone and \noxycodone, a reduced dose of baclofen, and off of Klonopin.  She \nwas given 2 weeks of methadone and oxycodone to last until she \ncan see Dr. ___ she was supposed to get refills the \nday of her admission but ended up being transferred to the ED.\n.\n# Possible UTI: Urine Cx from ___ grew out +enterococcus \n>100,000 and this was not treated, possibly thought to be \ncontaminant. Repeat UAs appeared bland without WBCs and she \nremained asymptomatic, so any possible UTI was probably treated \nwith vanco/cefepime.\n.\n# Access: She originally had a right femoral CVL, which was \npulled once she was stabilized.\n \nMedications on Admission:\n- albuterol nebs q4-6h prn  \n- baclofen 10 mg up to 5 tabs daily  \n- citalopram 40 mg daily  \n- clonazepam 2mg qhs (occaisionally during the day for pain) \n- Combivent 2 puffs tid  \n- levothyroxine 75 mcg qday  \n- lidocaine patch qday  \n- methadone 5 mg tid  \n- omeprazole 20 mg prn\n- oxybutynin 5 mg up to five tabs daily   \n- pregabalin 150 mg tid  \n- sucralfate 1 g qid  \n- trazodone 200 mg qhs  \n- calcium carbonate 500 mg bid  \n- loratadine 10 mg daily prn  \n- nicotine patch 21 mg daily  \n- polyethylene glycol prn \n \nDischarge Medications:\n1. Cefepime 2 gram Recon Soln Sig: Two (2) grams Intravenous \nevery twelve (12) hours for 3 days.\nDisp:*12 grams* Refills:*0*\n2. Vancomycin in D5W 1 gram/200 mL Piggyback Sig: One (1) gram \nIntravenous Q 12H (Every 12 Hours).\nDisp:*6 gram* Refills:*0*\n3. Albuterol Sulfate 2.5 mg /3 mL (0.083 %) Solution for \nNebulization Sig: One (1) treatment Inhalation Q6H (every 6 \nhours) as needed for wheeze.  \n4. Baclofen 10 mg Tablet Sig: 0.5 Tablet PO TID (3 times a day). \n \n5. Citalopram 20 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily). \n \n6. Combivent ___ mcg/Actuation Aerosol Sig: Two (2) puffs \nInhalation three times a day.  \n7. Levothyroxine 75 mcg Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n8. Lidocaine 5 %(700 mg/patch) Adhesive Patch, Medicated Sig: \nOne (1) Adhesive Patch, Medicated Topical DAILY (Daily) as \nneeded for pain.  \n9. Methadone 5 mg Tablet Sig: One (1) Tablet PO TID (3 times a \nday).  \n10. Oxybutynin Chloride 5 mg Tablet Sig: One (1) Tablet PO TID \n(3 times a day).  \n11. Pregabalin 150 mg Capsule Sig: One (1) Capsule PO once a \nday.  \n12. Trazodone 100 mg Tablet Sig: Two (2) Tablet PO HS (at \nbedtime).  \n13. Calcium Carbonate 500 mg Tablet, Chewable Sig: One (1) \nTablet, Chewable PO BID (2 times a day).  \n14. Loratadine 10 mg Tablet Sig: One (1) Tablet PO once a day.  \n15. Nicotine 7 mg/24 hr Patch 24 hr Sig: One (1) Patch 24 hr \nTransdermal DAILY (Daily).  \n16. Polyethylene Glycol 3350 17 gram/dose Powder Sig: One (1) \npacket PO DAILY (Daily).  \n17. Ranitidine HCl 150 mg Tablet Sig: One (1) Tablet PO DAILY \n(Daily) as needed for heartburn.  \n18. Colace 100 mg Capsule Sig: One (1) Capsule PO twice a day.  \n19. Percocet ___ mg Tablet Sig: One (1) Tablet PO every six \n(6) hours as needed for pain: For breakthrough pain. Take \nmethadone as prescriped.  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nAspiration pneumonia\nRespiratory failure\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n \nDischarge Instructions:\nYou were admitted because you were having difficulty breathing.  \nWe think that you had some contents from your stomach go into \nyour lungs because you were oversedated by your medications.  \nYou went to the intensive care unit overnight, but your \nbreathing has now improved and we think you are safe to go home. \n We cut back on your medications to try to avoid having this \nhappen again.\n.\n- You should get 3 more days of antibiotics.  A visiting nurse \n___ come to give you the antibiotics through your PICC line.\n- Please STOP taking Klonopin for at this time.\n- Please DECREASE your Baclofen dose to 5mg every 8 hours. 5mg \nis half of a 10mg dose.\n- Please continue using methadone for pain control and percocet \nfor breakthrough pain.\n- Please use ranitidine instead of omeprazole as needed for \nheartburn.\n- You can use colace and Miralax for constipation.  You should \ntake them every day unless you are having diarrhea.\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Pneumonitis due to inhalation of food or vomitus\n- Acute respiratory failure\n- Acidosis\n- Paraplegia\n- Pulmonary collapse\n- Obstructive chronic bronchitis with (acute) exacerbation\n- Unspecified viral hepatitis C without hepatic coma\n- Unspecified acquired hypothyroidism\n- Anxiety state, unspecified\n- Personal history of venous thrombosis and embolism\n- Atrophic gastritis, without mention of hemorrhage\n- Dysphagia, oropharyngeal phase\n- Anemia, unspecified",
+  "supporting_context_block": "Radiology:\n- 2171-04-03 15:50:00: INDICATION: Shortness of breath. Comparison radiographs are available from ___ through ___. UPRIGHT PA AND LATERAL VIEWS OF THE CHEST: Patchy ground glass opacities at the lung bases and the left upper lobe are redemo...\n- 2171-04-03 17:06:00: INDICATION: Shortness of breath and hypoxia. COMPARISON: Radiographs available from ___ through ___ and CTA chest from ___. TECHNIQUE: MDCT-acquired axial images of the chest were performed with and without IV contras...\n- 2171-04-04 03:51:00: INDICATION: Respiratory distress and possible right lower lobe pneumonia. Comparison is made to the prior CTA of the chest of ___. FINDINGS: Right middle lobe consolidation,left upper and lower lobe consolidative chan...\n- 2171-04-04 13:11:00: INDICATION: Question aspiration. COMPARISON: None available. SWALLOWING VIDEOFLUOROSCOPY: Swallowing videofluoroscopy was performed in conjunction with the speech and swallow division. Multiple consistencies of barium...\n- 2171-04-04 17:24:00: HISTORY: PICC placement. FINDINGS: The PICC line extends into the right IJ system, out of view superiorly. It must be withdrawn at least 11-12 cm to be in the subclavian vein. This information was conveyed to ___, the...\n- 2171-04-05 16:08:00: PICC LINE EXCHANGE/REPOSITIONING INDICATION: Malposition of indwelling PICC line. The procedure was explained to the patient. A timeout was performed. RADIOLOGIST: Dr. ___ the procedure. TECHNIQUE: Using sterile techn...\n- 2171-04-06 08:51:00: INDICATION: Fever and hypotension. Comparison is made to the prior study of ___. Findings: Moderately enlarged cardiac silhouette is unchanged. There is slight worsening of mild right pleural effusion. Worsening bibas...\n\nProcedures:\n- 2171-04-03 12:00:00: Venous catheterization, not elsewhere classified\n\nMicrobiology:\n- 2171-04-04 05:19:00: SPUTUM (>25 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.)\n- 2171-04-04 05:19:00: SPUTUM (TEST CANCELLED, PATIENT CREDITED.)\n- 2171-04-06 08:40:00: BLOOD CULTURE (NO GROWTH.)\n- 2171-04-06 08:54:00: URINE (NO GROWTH.)",
+  "formed_packet": {
+    "subject_id": "15573773",
+    "hadm_id": "22150963",
+    "admission_start": "2171-04-03 19:04:00",
+    "admission_end": "2171-04-07 17:15:00",
+    "previous_admission_summary": {
+      "admission_start": "2171-03-21 20:06:00",
+      "admission_end": "2171-03-23 18:29:00",
+      "summary_paragraph": "The patient, a woman with T1-T2 paraplegia and a history of COPD and recurrent pneumonias, was admitted for respiratory distress, hypotension, and altered mental status. She was initially managed in the ICU with IV antibiotics, a norepinephrine drip, and a central line due to hypotension and severe hypoxia. Imaging confirmed right lower lobe pneumonia with possible pleural effusion. Her condition improved rapidly with nebulized treatments and antibiotics. She was weaned off vasopressors, transitioned to oral levofloxacin, and started on a prednisone taper. Anxiety was noted to exacerbate her dyspnea. She remained stable, was discharged home with service, and instructed to complete her antibiotic and steroid courses, continue home medications, and reduce her nicotine patch dose.",
+      "problems": [
+        "Pneumonia, organism unspecified",
+        "Paraplegia",
+        "Chronic obstructive asthma, unspecified",
+        "Hypotension, unspecified",
+        "Chronic hepatitis C without mention of hepatic coma",
+        "Late effect of spinal cord injury",
+        "Late effects of motor vehicle accident",
+        "Unspecified acquired hypothyroidism",
+        "Atrophic gastritis, without mention of hemorrhage",
+        "Other chronic pain",
+        "Other specified anemias",
+        "Other diseases of lung, not elsewhere classified",
+        "Anxiety state, unspecified",
+        "Tobacco use disorder",
+        "Personal history, urinary (tract) infection",
+        "Personal history of venous thrombosis and embolism"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "15573773-DS-33",
+        "note_seq": 33,
+        "charttime": "2171-04-07 00:00:00",
+        "storetime": "2171-04-08 16:59:00",
+        "text": " \nName:  ___                      Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nPatient recorded as having No Known Allergies to Drugs\n \nAttending: ___.\n \nChief Complaint:\nHypoxia.\n \nMajor Surgical or Invasive Procedure:\nRight femoral central venous line placement (___).\nPICC line placement (___).\n \nHistory of Present Illness:\nPatient is a ___ y/o woman with PMHx of T1-T2 paraplegia \nfollowing MVC ___, COPD and recent admission for PNA on \n___ who presented to her PCP today with hypoxia, lethargy, \ncough and increased work of breathing. Of note, she was \ndischarged on ___ after a two day hospital stay for PNA and \nCOPD exacerbation. She was treated with a short course of \nLevofloxacin and steroid taper. Per husband, pt has been doing \nwell for the last week and has been out socializing and feeling \nwell. However, she was notably tachypneic, satting in the ___ \nand requiring increased NC oxygen this morning. He brought her \nin for evaluation in HCA and they referred her into the ED for \nfurther evaluation. \n\nIn the ED, initial vs were: T 97.9 P ___ BP 109/84 R 24 O2 sat \n97% on NRB. Pt underwent CXR which showed bilateral hazy \nopacities at bases, essentially unchanged from prior film on \n___. CTA was performed for hypoxia but did not show any PE, \nthere was bilateral atelectasis with RLL consolidations. Blood & \nUrine Cx were sent and pt had right femoral line placed before \nshe was given 1L NS, Vanc and Zosyn for possible PNA. Per ED, pt \nbecame more somnolent with ABG showing pH 7.34 pCO2 64 pO2 62. \nShe was given Solumedrol 125mg IV, alb/atrovent and was placed \non BIPAP to treat a component of COPD exacerbation and CO2 \nretention.\n\nOn arrival to the ICU, pt was wearing BIPAP and complaining \nabout the discomfort of the mask. Overall, she was still \nsomnolent and husband provided most of the history.   \n\nReview of systems: as above, provided by husband. ___ fevers, \nchills, nausea, vomiting, diarrhea, chest pain, med changes, \nrash, cough. Husband did note increased somnolence while eating \nand snoring while asleep.\n \nPast Medical History:\n1. T1-T2 paraplegia following MVC ___. Recurrent UTIs: ESBL klebsiella  \n3. HCV, viral load suppressed  \n4. H/o recurrent PNAs: MRSA, pan-sensitive Kleb  \n5. Anxiety  \n6. DVT in ___ -IVC filter placed in ___  \n7. Pulmonary nodules  \n8. Hypothyroidism  \n9. Chronic pain  \n10. Chronic gastritis  \n11. H/o obstructive lung disease  \n12. Anemia of chronic disease  \n13. S/p PEA arrest during last hospitalization in ___ \n \nSocial History:\n___\nFamily History:\nNo history of lung disease.\n \nPhysical Exam:\nVitals: BP 114/70 HR 80 Sats 99% on Face tent and 2L NC \nGeneral: NAD, sleepy but easily arousable\nHEENT: Sclera anicteric, MMM, PERRLA\nLungs: CTAB, no wheezes, occaisional RLL rhonchi\nCV: RRR no murmurs, rubs, gallops\nAbdomen:  soft, NT/ND/NABS, no rebound tenderness or guarding\nExt: warm, 2+ pulses, trace edema bilaterally\nNeuro: following commands, symmetric facial movement, squeezing \nhands bilaterally\n \nPertinent Results:\nLabs at Admission:\n___ 02:45PM BLOOD WBC-18.3*# RBC-4.00* Hgb-10.7* Hct-35.0* \nMCV-88 MCH-26.7* MCHC-30.4* RDW-15.5 Plt ___\n___ 02:45PM BLOOD Neuts-93.6* Lymphs-3.5* Monos-1.7* \nEos-1.0 Baso-0.3\n___ 02:45PM BLOOD ___ PTT-27.4 ___\n___ 02:45PM BLOOD Glucose-123* UreaN-11 Creat-0.3* Na-142 \nK-4.9 Cl-101 HCO3-32 AnGap-14\n___ 02:45PM BLOOD Calcium-8.9 Phos-3.3 Mg-1.9\n\nLactate:\n___ 03:10PM BLOOD Lactate-2.1* K-4.1\n___ 11:40PM BLOOD Lactate-1.9\n___ 02:47PM BLOOD Lactate-3.0*\n\nMicro Data:\n___ SPUTUM GRAM STAIN-FINAL; RESPIRATORY \nCULTURE- negative\n___ URINE URINE CULTURE- negative\n___ BLOOD CULTURE Blood Culture, Routine- \nnegative\n___ BLOOD CULTURE Blood Culture, Routine- \nnegative\n\nCTA chest (___):\n1. Assessment for pulmonary embolism within the segmental and \nsubsegmental pulmonary arterial branches is limited due to \nsuboptimal bolus timing. No  \nevidence of pulmonary embolism in the main pulmonary arteries.\n2. Moderate-to-severe bibasilar atelectasis, predominately \nwithin the right\nlower lobe. A more consolidative element within the right lower \nlobe along \nwith a new lingular patchy opacity may reflect an infectious \nprocess.   \n3. Paraseptal emphysema. \n4. Unchanged chronic rib cage deformities. \n \nBrief Hospital Course:\n___ y/o woman with PMHx of T1-T2 paraplegia, COPD and recurrent \nPNAs who presents after recent discharge with respiratory \ndistress and somnolence, concern for new RLL infiltrate.\n\n# Respiratory Distress: Mixed hypoxic/hypercarbic resp failure. \nPt with COPD and recurrent PNAs who developped tachypnea, \nincreased O2 requirement, cough and lethargy acutely this \nmorning. She was referred into the ED by her PCP and underwent ___ \nCTA that was negative for PE but revealed RLL consolidation, \nunclear if new or resolving from prior admission. Pt became \nincreasingly somnolent in the ED with pCO2 in ___. In the ED she \ngot steroids, alb/atrov and BIPAP, with improved mental status \nand minimal O2 requirement. Given increased WBC and possible \nconsolidation and recent hospital admission, she was treated for \nHAP with cefepime and vancomycin. A PICC line was placed so that \nshe could complete a 7-day course of antibiotics. There was \nconcern of recurrent aspiration. Patient underwent a speech and \nswallow eval and passed. Her diet was restarted.  Her initial \nPICC placed at the bedside went up the right IJ, so it was \nremoved and replaced by interventional radiology.  ___ she \nhad hypotension and a low-grade fever to 100.7 at 1am.  She was \ngiven fluids and looked well clinically.  Her CXR was unchanged, \nU/A was negative and blood cultures had no growth at the time of \ndischarge. Her vancomycin was originally dosed 1250mg Q24 hours, \nbut a trough level was 3.8, so the dosing was changed to 1000mg \nQ12 hours for the remainder of the course.\n\n# T1-T2 Paraplegia with chronic pain: pt is maintained on \nmultiple sedating drugs for spasms and pain. She presented with \nrespiratory distress and progressive somnolence and hypercarbia. \nSuspect a component of obesity hypoventilation with possible \naspiration PNA. During this admission, her clonazpeam, \npregabalin, and trazodone were initially held. Baclofen was \ndecreased to 5 mg tid. Methadone and oxybutynin were continued \nat outpatient doses.  Her pregabalin and trazodone were added \nback on, but her Baclofen was continued at 5mg TID with some \nminor leg spasticity, but adequate pain control.  She was \nswitched to Ultram for breakthrough pain, but did not find this \neffective, so she was switched back to Oxycodone.  She was \ndischarged, finally, on the same doses of methadone and \noxycodone, a reduced dose of baclofen, and off of Klonopin.  She \nwas given 2 weeks of methadone and oxycodone to last until she \ncan see Dr. ___ she was supposed to get refills the \nday of her admission but ended up being transferred to the ED.\n.\n# Possible UTI: Urine Cx from ___ grew out +enterococcus \n>100,000 and this was not treated, possibly thought to be \ncontaminant. Repeat UAs appeared bland without WBCs and she \nremained asymptomatic, so any possible UTI was probably treated \nwith vanco/cefepime.\n.\n# Access: She originally had a right femoral CVL, which was \npulled once she was stabilized.\n \nMedications on Admission:\n- albuterol nebs q4-6h prn  \n- baclofen 10 mg up to 5 tabs daily  \n- citalopram 40 mg daily  \n- clonazepam 2mg qhs (occaisionally during the day for pain) \n- Combivent 2 puffs tid  \n- levothyroxine 75 mcg qday  \n- lidocaine patch qday  \n- methadone 5 mg tid  \n- omeprazole 20 mg prn\n- oxybutynin 5 mg up to five tabs daily   \n- pregabalin 150 mg tid  \n- sucralfate 1 g qid  \n- trazodone 200 mg qhs  \n- calcium carbonate 500 mg bid  \n- loratadine 10 mg daily prn  \n- nicotine patch 21 mg daily  \n- polyethylene glycol prn \n \nDischarge Medications:\n1. Cefepime 2 gram Recon Soln Sig: Two (2) grams Intravenous \nevery twelve (12) hours for 3 days.\nDisp:*12 grams* Refills:*0*\n2. Vancomycin in D5W 1 gram/200 mL Piggyback Sig: One (1) gram \nIntravenous Q 12H (Every 12 Hours).\nDisp:*6 gram* Refills:*0*\n3. Albuterol Sulfate 2.5 mg /3 mL (0.083 %) Solution for \nNebulization Sig: One (1) treatment Inhalation Q6H (every 6 \nhours) as needed for wheeze.  \n4. Baclofen 10 mg Tablet Sig: 0.5 Tablet PO TID (3 times a day). \n \n5. Citalopram 20 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily). \n \n6. Combivent ___ mcg/Actuation Aerosol Sig: Two (2) puffs \nInhalation three times a day.  \n7. Levothyroxine 75 mcg Tablet Sig: One (1) Tablet PO DAILY \n(Daily).  \n8. Lidocaine 5 %(700 mg/patch) Adhesive Patch, Medicated Sig: \nOne (1) Adhesive Patch, Medicated Topical DAILY (Daily) as \nneeded for pain.  \n9. Methadone 5 mg Tablet Sig: One (1) Tablet PO TID (3 times a \nday).  \n10. Oxybutynin Chloride 5 mg Tablet Sig: One (1) Tablet PO TID \n(3 times a day).  \n11. Pregabalin 150 mg Capsule Sig: One (1) Capsule PO once a \nday.  \n12. Trazodone 100 mg Tablet Sig: Two (2) Tablet PO HS (at \nbedtime).  \n13. Calcium Carbonate 500 mg Tablet, Chewable Sig: One (1) \nTablet, Chewable PO BID (2 times a day).  \n14. Loratadine 10 mg Tablet Sig: One (1) Tablet PO once a day.  \n15. Nicotine 7 mg/24 hr Patch 24 hr Sig: One (1) Patch 24 hr \nTransdermal DAILY (Daily).  \n16. Polyethylene Glycol 3350 17 gram/dose Powder Sig: One (1) \npacket PO DAILY (Daily).  \n17. Ranitidine HCl 150 mg Tablet Sig: One (1) Tablet PO DAILY \n(Daily) as needed for heartburn.  \n18. Colace 100 mg Capsule Sig: One (1) Capsule PO twice a day.  \n19. Percocet ___ mg Tablet Sig: One (1) Tablet PO every six \n(6) hours as needed for pain: For breakthrough pain. Take \nmethadone as prescriped.  \n\n \nDischarge Disposition:\nHome With Service\n \nFacility:\n___\n \nDischarge Diagnosis:\nAspiration pneumonia\nRespiratory failure\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Out of Bed with assistance to chair or \nwheelchair.\n \nDischarge Instructions:\nYou were admitted because you were having difficulty breathing.  \nWe think that you had some contents from your stomach go into \nyour lungs because you were oversedated by your medications.  \nYou went to the intensive care unit overnight, but your \nbreathing has now improved and we think you are safe to go home. \n We cut back on your medications to try to avoid having this \nhappen again.\n.\n- You should get 3 more days of antibiotics.  A visiting nurse \n___ come to give you the antibiotics through your PICC line.\n- Please STOP taking Klonopin for at this time.\n- Please DECREASE your Baclofen dose to 5mg every 8 hours. 5mg \nis half of a 10mg dose.\n- Please continue using methadone for pain control and percocet \nfor breakthrough pain.\n- Please use ranitidine instead of omeprazole as needed for \nheartburn.\n- You can use colace and Miralax for constipation.  You should \ntake them every day unless you are having diarrhea.\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "15573773-RR-162",
+        "charttime": "2171-04-03 15:50:00",
+        "storetime": "2171-04-03 17:44:00",
+        "text": "INDICATION:  Shortness of breath.\n\nComparison radiographs are available from ___ through ___.\n\nUPRIGHT PA AND LATERAL VIEWS OF THE CHEST:  \nPatchy ground glass opacities at the lung bases and the left upper lobe are\nredemonstrated.  In comparison to the prior radiograph from ___,\nthere is no significant change.  In comparison to multiple prior radiographs,\nthese opacities have appeared and resolved at different locations.  Moderate\ncardiomegaly is unchanged.  The hilar mediastinal contours are stable.\nBilateral humeral cortical plates and screws demonstrate no evidence of\nloosening.\n\nIMPRESSION:  Transient pulmonary opacities over the past multiple radiographs\nmay be compatible with several entities, including chronic eosinophilic\npneumonia or aspiration.  Overall, the findings are not significantly changed\nsince ___ however, it is not known whether the underlying\npathology was improved or worse during the interval period as no intervening\nradiograph demonstrating resolution is available. An underlying infectious\nprocess cannot be excluded.  \n"
+      },
+      {
+        "note_id": "15573773-RR-163",
+        "charttime": "2171-04-03 17:06:00",
+        "storetime": "2171-04-03 18:48:00",
+        "text": "INDICATION:  Shortness of breath and hypoxia.\n\nCOMPARISON:  Radiographs available from ___ through ___\nand CTA chest from ___.\n\nTECHNIQUE:  MDCT-acquired axial images of the chest were performed with and\nwithout IV contrast.  Sagittal, coronal, and left and right oblique\nreconstructions were performed for better evaluation of the pulmonary\nvasculature.\n\nCT OF THE CHEST WITH AND WITHOUT IV CONTRAST:  \nThe bolus timing is suboptimal, resulting in decreased opacification of the\nsegmental and subsegmental pulmonary arteries. Within this limitation, there\nis no evidence of pulmonary embolism within the main pulmonary arteries.  The\nmain pulmonary artery appears slightly enlarged, measuring 32 mm in diameter,\ncompared to 27 mm on the prior study from ___, but this apparent\nincrease is likely due to pulsation artifact.\n\nModerate-to-severe bibasilar atelectasis is seen, with significant volume loss\nof the right lower lobe, with some consolidative features.  No effusion is\npresent.  Patchy air-space opacity also present within the lingula and left\nupper lobe, increased compared to prior chest CT examination.  There is a\nmoderate degree of paraseptal emphysema.\nAn azygos lobe is redemonstrated.  There is no pneumothorax. Left calcified\nhilar node is unchanged from prior.\n\nOSSEOUS STRUCTURES:  \nThere is no acute fracture or dislocation.  Multiple bilateral chronic rib\nfractures are seen and unchanged.  \n\nIMPRESSION:\n1.  Assessment for pulmonary embolism within the segmental and subsegmental\npulmonary arterial branches is limited due to suboptimal bolus timing. No \nevidence of pulmonary embolism in the main pulmonary arteries.\n\n2.  Moderate-to-severe bibasilar atelectasis, predominately within the right\nlower lobe. A more consolidative element within the right lower lobe along\nwith a new lingular patchy opacity may reflect an infectious process.\n\n3.  Paraseptal emphysema.\n\n4.  Unchanged chronic rib cage deformities.\n\nFindings discussed with Dr. ___ at 9:35 am, ___.\n"
+      },
+      {
+        "note_id": "15573773-RR-164",
+        "charttime": "2171-04-04 03:51:00",
+        "storetime": "2171-04-04 11:16:00",
+        "text": "INDICATION:  Respiratory distress and possible right lower lobe pneumonia.\n\nComparison is made to the prior CTA of the chest of ___.\n\nFINDINGS:  Right middle lobe consolidation,left upper and lower lobe\nconsolidative changes are unchanged.  Small right pleural effusion is\nunchnaged.  Numerous bilateral rib fractures are unchanged.  The heart size is\nmildly enlarged.  The remainder of the study is unchanged.\n\n\n"
+      },
+      {
+        "note_id": "15573773-RR-165",
+        "charttime": "2171-04-04 13:11:00",
+        "storetime": "2171-04-04 18:52:00",
+        "text": "INDICATION:  Question aspiration.\n\nCOMPARISON:  None available.\n\nSWALLOWING VIDEOFLUOROSCOPY:\n\nSwallowing videofluoroscopy was performed in conjunction with the speech and\nswallow division.  Multiple consistencies of barium were administered.  There\nwas penetration to straw sip thin liquids.  No aspiration was noted.\n\nIMPRESSION:\n\nPenetration to straw-sip thin liquids.\n"
+      },
+      {
+        "note_id": "15573773-RR-166",
+        "charttime": "2171-04-04 17:24:00",
+        "storetime": "2171-04-05 08:45:00",
+        "text": "HISTORY:  PICC placement.\n\nFINDINGS:  The PICC line extends into the right IJ system, out of view\nsuperiorly.  It must be withdrawn at least 11-12 cm to be in the subclavian\nvein.  This information was conveyed to ___, the IV nurse, by the resident\non call.\n"
+      },
+      {
+        "note_id": "15573773-RR-167",
+        "charttime": "2171-04-05 16:08:00",
+        "storetime": "2171-04-05 18:08:00",
+        "text": "PICC LINE EXCHANGE/REPOSITIONING\n\nINDICATION:  Malposition of indwelling PICC line.\n\nThe procedure was explained to the patient.  A timeout was performed.\n\nRADIOLOGIST:  Dr. ___ the procedure.\n\nTECHNIQUE:  Using sterile technique and local anesthesia, a guide wire was\nadvanced through the indwelling right arm PICC line, and subsequently into the\nSVC under fluoroscopic guidance.  The old PICC line was then removed, and a\npeel-away sheath was then placed over the guide wire. A new single lumen PICC\nline measuring 47 cm in length was then placed through the peel-away sheath\nwith its tip positioned in the SVC under fluoroscopic guidance.  Position of\nthe catheter was confirmed by a fluoroscopic spot film of the chest.\n\nThe peel-away sheath and guide wire were then removed.  The catheter was\nsecured to the skin, flushed, and a sterile dressing applied.\n\nThe patient tolerated the procedure well.  There were no immediate\ncomplications.\n\nIMPRESSION:  Uncomplicated fluoroscopically guided PICC line exchange for a\nnew single lumen PICC line.  Final internal length is 47 cm, with the tip\npositioned in the SVC.  The line is ready to use.\n"
+      },
+      {
+        "note_id": "15573773-RR-168",
+        "charttime": "2171-04-06 08:51:00",
+        "storetime": "2171-04-06 10:02:00",
+        "text": "INDICATION:  Fever and hypotension.\n\nComparison is made to the prior study of ___.\n\nFindings: Moderately enlarged cardiac silhouette is unchanged.  There is\nslight worsening of mild right pleural effusion.  Worsening bibasal\nconsolidation is noted.Right PICC has been repositioned in to the mid SVC.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "5070",
+        "icd_version": 9,
+        "long_title": "Pneumonitis due to inhalation of food or vomitus",
+        "normalized_time": "2171-04-07 16:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "51881",
+        "icd_version": 9,
+        "long_title": "Acute respiratory failure",
+        "normalized_time": "2171-04-07 16:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "2762",
+        "icd_version": 9,
+        "long_title": "Acidosis",
+        "normalized_time": "2171-04-07 16:25:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "3441",
+        "icd_version": 9,
+        "long_title": "Paraplegia",
+        "normalized_time": "2171-04-07 16:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "5180",
+        "icd_version": 9,
+        "long_title": "Pulmonary collapse",
+        "normalized_time": "2171-04-07 16:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "49121",
+        "icd_version": 9,
+        "long_title": "Obstructive chronic bronchitis with (acute) exacerbation",
+        "normalized_time": "2171-04-07 16:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "07070",
+        "icd_version": 9,
+        "long_title": "Unspecified viral hepatitis C without hepatic coma",
+        "normalized_time": "2171-04-07 16:45:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "2449",
+        "icd_version": 9,
+        "long_title": "Unspecified acquired hypothyroidism",
+        "normalized_time": "2171-04-07 16:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "30000",
+        "icd_version": 9,
+        "long_title": "Anxiety state, unspecified",
+        "normalized_time": "2171-04-07 16:55:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "V1251",
+        "icd_version": 9,
+        "long_title": "Personal history of venous thrombosis and embolism",
+        "normalized_time": "2171-04-07 17:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "53510",
+        "icd_version": 9,
+        "long_title": "Atrophic gastritis, without mention of hemorrhage",
+        "normalized_time": "2171-04-07 17:05:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "78722",
+        "icd_version": 9,
+        "long_title": "Dysphagia, oropharyngeal phase",
+        "normalized_time": "2171-04-07 17:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "2859",
+        "icd_version": 9,
+        "long_title": "Anemia, unspecified",
+        "normalized_time": "2171-04-07 17:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2171-04-03",
+        "icd_code": "3893",
+        "icd_version": 9,
+        "long_title": "Venous catheterization, not elsewhere classified",
+        "normalized_time": "2171-04-03 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2171-04-04 00:00:00",
+        "charttime": "2171-04-04 05:19:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": ">25 PMNs and >10 epithelial cells/100X field.  Gram stain indicates extensive contamination with upper respiratory secretions. Bacterial culture results are invalid.  PLEASE SUBMIT ANOTHER SPECIMEN.  "
+      },
+      {
+        "chartdate": "2171-04-04 00:00:00",
+        "charttime": "2171-04-04 05:19:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SPUTUM",
+        "test_name": "RESPIRATORY CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "TEST CANCELLED, PATIENT CREDITED.  "
+      },
+      {
+        "chartdate": "2171-04-06 00:00:00",
+        "charttime": "2171-04-06 08:40:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2171-04-06 00:00:00",
+        "charttime": "2171-04-06 08:54:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 12874,
+    "output_tokens": 5284,
+    "total_tokens": 18158
+  },
+  "response_id": "chatcmpl-a31a0142b01ce985",
+  "latency_ms": 93642,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2171-04-03 19:15:00",
+        "speaker": "Doctor",
+        "text": "Hi, I’m Dr. Lee. I’ll be taking care of you tonight. You’re here because you were having trouble breathing and low oxygen. Can you tell me how you’ve been feeling?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2171-04-03 19:16:00",
+        "speaker": "Patient",
+        "text": "I was okay yesterday, but this morning I felt really tired and short of breath. My husband said I was breathing fast and needed more oxygen than usual."
+      },
+      {
+        "turn_number": 3,
+        "time": "2171-04-03 19:17:00",
+        "speaker": "Doctor",
+        "text": "Yes, your oxygen levels were low, and your CO2 was high, which made you sleepy. We put you on BIPAP to help you breathe better. How’s the mask feeling now?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2171-04-03 19:18:00",
+        "speaker": "Patient",
+        "text": "It’s uncomfortable. I don’t like how it feels on my face."
+      },
+      {
+        "turn_number": 5,
+        "time": "2171-04-03 19:19:00",
+        "speaker": "Doctor",
+        "text": "I understand. We’ll keep adjusting it to make it more comfortable. The good news is your breathing has improved since you started using it."
+      },
+      {
+        "turn_number": 6,
+        "time": "2171-04-03 19:20:00",
+        "speaker": "Patient",
+        "text": "I’m glad. But why did this happen again so soon after I just got out of the hospital?"
+      },
+      {
+        "turn_number": 7,
+        "time": "2171-04-03 19:21:00",
+        "speaker": "Doctor",
+        "text": "You have COPD and a history of pneumonia. This time, we’re concerned it might be from aspiration—when stomach contents go into your lungs—especially since you were more sedated than usual."
+      },
+      {
+        "turn_number": 8,
+        "time": "2171-04-03 19:22:00",
+        "speaker": "Patient",
+        "text": "Oh. Could my pain meds have caused that?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2171-04-03 19:23:00",
+        "speaker": "Doctor",
+        "text": "Yes, that’s possible. Medications like clonazepam, baclofen, and trazodone can make you too drowsy, especially together. We’ve held those for now to help you stay alert and breathe better."
+      },
+      {
+        "turn_number": 10,
+        "time": "2171-04-03 19:24:00",
+        "speaker": "Patient",
+        "text": "I’ve been on those for years. Is it safe to stop them suddenly?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2171-04-03 19:25:00",
+        "speaker": "Doctor",
+        "text": "We’re doing it carefully. We lowered your baclofen slowly and stopped clonazepam for now. We’ll restart some meds later at lower doses to avoid this happening again."
+      },
+      {
+        "turn_number": 12,
+        "time": "2171-04-03 19:26:00",
+        "speaker": "Patient",
+        "text": "Okay, that makes sense."
+      },
+      {
+        "turn_number": 13,
+        "time": "2171-04-03 19:27:00",
+        "speaker": "Doctor",
+        "text": "We also started antibiotics because your chest scan showed some new lung changes in the right lower lobe, which could be infection."
+      },
+      {
+        "turn_number": 14,
+        "time": "2171-04-03 19:28:00",
+        "speaker": "Patient",
+        "text": "Is it another pneumonia?"
+      },
+      {
+        "turn_number": 15,
+        "time": "2171-04-03 19:29:00",
+        "speaker": "Doctor",
+        "text": "Possibly. The CT didn’t show a blood clot, but there’s atelectasis—part of your lung is collapsed—and some consolidation, which can be from infection or aspiration."
+      },
+      {
+        "turn_number": 16,
+        "time": "2171-04-03 19:30:00",
+        "speaker": "Patient",
+        "text": "So it’s not clear what it is?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2171-04-03 19:31:00",
+        "speaker": "Doctor",
+        "text": "Not exactly. But because you’ve had pneumonia before and your white blood cell count is high, we’re treating it as a possible hospital-acquired infection with strong antibiotics."
+      },
+      {
+        "turn_number": 18,
+        "time": "2171-04-03 19:32:00",
+        "speaker": "Patient",
+        "text": "Which ones?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2171-04-03 19:33:00",
+        "speaker": "Doctor",
+        "text": "Cefepime and vancomycin. They cover a broad range of bacteria, including MRSA, which you’ve had before."
+      },
+      {
+        "turn_number": 20,
+        "time": "2171-04-03 19:34:00",
+        "speaker": "Patient",
+        "text": "Okay. I had a blood culture, right? Did it grow anything?"
+      },
+      {
+        "turn_number": 21,
+        "time": "2171-04-03 19:35:00",
+        "speaker": "Doctor",
+        "text": "Not yet. We’ll check again, but so far no bacteria have grown. That’s a good sign, but we’ll keep treating until we’re sure."
+      },
+      {
+        "turn_number": 22,
+        "time": "2171-04-04 08:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your breathing is better today. We’re going to do a swallowing test to check if you’re at risk for aspiration."
+      },
+      {
+        "turn_number": 23,
+        "time": "2171-04-04 08:16:00",
+        "speaker": "Patient",
+        "text": "I’ve had trouble swallowing before. Is that why this happened?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2171-04-04 08:17:00",
+        "speaker": "Doctor",
+        "text": "It could be part of it. The test will help us see if liquids are going into your airway. We’ll use a special drink with barium so we can watch on X-ray."
+      },
+      {
+        "turn_number": 25,
+        "time": "2171-04-04 13:30:00",
+        "speaker": "Doctor",
+        "text": "The test is back. You did well—no aspiration was seen. But there was some penetration with thin liquids, so we’ll recommend thicker fluids for now."
+      },
+      {
+        "turn_number": 26,
+        "time": "2171-04-04 13:31:00",
+        "speaker": "Patient",
+        "text": "So I can eat again?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2171-04-04 13:32:00",
+        "speaker": "Doctor",
+        "text": "Yes, we’ll restart your diet with modified textures. That should help reduce your risk of another aspiration episode."
+      },
+      {
+        "turn_number": 28,
+        "time": "2171-04-04 13:33:00",
+        "speaker": "Patient",
+        "text": "That’s a relief. What about the antibiotics? How long will I need them?"
+      },
+      {
+        "turn_number": 29,
+        "time": "2171-04-04 13:34:00",
+        "speaker": "Doctor",
+        "text": "We plan for a 7-day course. Since you’ll be going home soon, we’re placing a PICC line so a nurse can give them at your house."
+      },
+      {
+        "turn_number": 30,
+        "time": "2171-04-04 17:30:00",
+        "speaker": "Doctor",
+        "text": "We noticed the PICC line went into your neck vein instead of the chest. It’s not in the right spot, so we’ll need to fix that."
+      },
+      {
+        "turn_number": 31,
+        "time": "2171-04-04 17:31:00",
+        "speaker": "Patient",
+        "text": "Is that dangerous?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2171-04-04 17:32:00",
+        "speaker": "Doctor",
+        "text": "Not immediately, but it could cause irritation or clotting. Interventional radiology will reposition it tomorrow. It’s a quick procedure."
+      },
+      {
+        "turn_number": 33,
+        "time": "2171-04-05 16:30:00",
+        "speaker": "Doctor",
+        "text": "The PICC line is now in the right place—right in the superior vena cava. You’re all set for your antibiotics at home."
+      },
+      {
+        "turn_number": 34,
+        "time": "2171-04-05 16:31:00",
+        "speaker": "Patient",
+        "text": "Great. I’m feeling much more alert now. Can I start my pain meds again?"
+      },
+      {
+        "turn_number": 35,
+        "time": "2171-04-05 16:32:00",
+        "speaker": "Doctor",
+        "text": "We’ve restarted pregabalin and trazodone at lower doses. Baclofen is at 5 mg three times a day—half your usual. We’re avoiding clonazepam for now."
+      },
+      {
+        "turn_number": 36,
+        "time": "2171-04-05 16:33:00",
+        "speaker": "Patient",
+        "text": "I’ve been using Ultram for breakthrough pain, but it’s not helping."
+      },
+      {
+        "turn_number": 37,
+        "time": "2171-04-05 16:34:00",
+        "speaker": "Doctor",
+        "text": "We’ll switch you back to oxycodone for breakthrough pain. But we’ll keep methadone as your main pain med."
+      },
+      {
+        "turn_number": 38,
+        "time": "2171-04-05 16:35:00",
+        "speaker": "Patient",
+        "text": "Thank you. I trust that one more."
+      },
+      {
+        "turn_number": 39,
+        "time": "2171-04-06 09:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. You had a low-grade fever and your blood pressure dipped a bit last night, but you responded well to fluids."
+      },
+      {
+        "turn_number": 40,
+        "time": "2171-04-06 09:01:00",
+        "speaker": "Patient",
+        "text": "I didn’t even notice. Is everything okay?"
+      },
+      {
+        "turn_number": 41,
+        "time": "2171-04-06 09:02:00",
+        "speaker": "Doctor",
+        "text": "Yes. Your repeat chest X-ray shows slight worsening in the lung bases, but it’s not unexpected. Your blood cultures are still negative, so we think the antibiotics are working."
+      },
+      {
+        "turn_number": 42,
+        "time": "2171-04-06 09:03:00",
+        "speaker": "Patient",
+        "text": "And the urine culture that showed bacteria?"
+      },
+      {
+        "turn_number": 43,
+        "time": "2171-04-06 09:04:00",
+        "speaker": "Doctor",
+        "text": "It grew enterococcus, but you didn’t have symptoms, and the repeat test was clean. Likely a contaminant. The antibiotics probably covered it anyway."
+      },
+      {
+        "turn_number": 44,
+        "time": "2171-04-06 09:05:00",
+        "speaker": "Patient",
+        "text": "Good to know."
+      },
+      {
+        "turn_number": 45,
+        "time": "2171-04-07 08:00:00",
+        "speaker": "Doctor",
+        "text": "You’re doing really well. Your breathing is stable, you’re alert, and you’re eating without trouble. We’re planning to discharge you today."
+      },
+      {
+        "turn_number": 46,
+        "time": "2171-04-07 08:01:00",
+        "speaker": "Patient",
+        "text": "That’s great. What do I need to do at home?"
+      },
+      {
+        "turn_number": 47,
+        "time": "2171-04-07 08:02:00",
+        "speaker": "Doctor",
+        "text": "A nurse will come to give your IV antibiotics for three more days. You’ll continue albuterol, Combivent, and your other usual meds."
+      },
+      {
+        "turn_number": 48,
+        "time": "2171-04-07 08:03:00",
+        "speaker": "Patient",
+        "text": "And my pain meds?"
+      },
+      {
+        "turn_number": 49,
+        "time": "2171-04-07 08:04:00",
+        "speaker": "Doctor",
+        "text": "You’ll stay on methadone and oxycodone as before. Baclofen is now 5 mg three times a day, and you’re off clonazepam. Trazodone and pregabalin are at lower doses."
+      },
+      {
+        "turn_number": 50,
+        "time": "2171-04-07 08:05:00",
+        "speaker": "Patient",
+        "text": "And for heartburn?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2171-04-07 08:06:00",
+        "speaker": "Doctor",
+        "text": "Switch from omeprazole to ranitidine as needed. Also take colace and Miralax daily to help with constipation."
+      },
+      {
+        "turn_number": 52,
+        "time": "2171-04-07 08:07:00",
+        "speaker": "Patient",
+        "text": "What about the nicotine patch?"
+      },
+      {
+        "turn_number": 53,
+        "time": "2171-04-07 08:08:00",
+        "speaker": "Doctor",
+        "text": "We’re lowering it from 21 mg to 7 mg. It’s part of reducing sedation risks. Your husband will help monitor how you feel."
+      },
+      {
+        "turn_number": 54,
+        "time": "2171-04-07 08:09:00",
+        "speaker": "Patient",
+        "text": "I’ll do my best. Any signs I should watch for?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2171-04-07 08:10:00",
+        "speaker": "Doctor",
+        "text": "Yes. If you have trouble breathing, fever, confusion, or chest pain, go to the ER. Otherwise, follow up with your primary doctor in a few days."
+      },
+      {
+        "turn_number": 56,
+        "time": "2171-04-07 08:11:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you for explaining everything."
+      },
+      {
+        "turn_number": 57,
+        "time": "2171-04-07 08:12:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’re glad you’re on the mend. A nurse will help you get ready to go home soon."
+      },
+      {
+        "turn_number": 58,
+        "time": "2171-04-07 10:30:00",
+        "speaker": "Doctor",
+        "text": "Just a quick check before discharge. How are you feeling?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2171-04-07 10:31:00",
+        "speaker": "Patient",
+        "text": "Much better. I’m tired but clear-headed. Ready to go home."
+      },
+      {
+        "turn_number": 60,
+        "time": "2171-04-07 10:32:00",
+        "speaker": "Doctor",
+        "text": "Perfect. Remember: antibiotics via PICC, watch for fever or breathing issues, and take your new med doses exactly as written."
+      },
+      {
+        "turn_number": 61,
+        "time": "2171-04-07 10:33:00",
+        "speaker": "Patient",
+        "text": "I’ll keep the list with me. Thank you again."
+      },
+      {
+        "turn_number": 62,
+        "time": "2171-04-07 10:34:00",
+        "speaker": "Doctor",
+        "text": "You’re doing great. Take care, and we’ll see you in follow-up if needed."
+      },
+      {
+        "turn_number": 63,
+        "time": "2171-04-07 12:00:00",
+        "speaker": "Doctor",
+        "text": "One last thing—your vancomycin dose was adjusted after a low trough level. The new dose is 1 gram every 12 hours. The nurse will confirm this with the home team."
+      },
+      {
+        "turn_number": 64,
+        "time": "2171-04-07 12:01:00",
+        "speaker": "Patient",
+        "text": "Got it. Every 12 hours, not once a day."
+      },
+      {
+        "turn_number": 65,
+        "time": "2171-04-07 12:02:00",
+        "speaker": "Doctor",
+        "text": "Exactly. Safety first. All set for discharge."
+      },
+      {
+        "turn_number": 66,
+        "time": "2171-04-07 14:00:00",
+        "speaker": "Doctor",
+        "text": "The discharge papers are ready. A home health nurse will call to schedule your first antibiotic visit."
+      },
+      {
+        "turn_number": 67,
+        "time": "2171-04-07 14:01:00",
+        "speaker": "Patient",
+        "text": "Thank you. I appreciate all the care."
+      }
+    ],
+    "summary": {
+      "admission_start": "2171-04-03 19:04:00",
+      "admission_end": "2171-04-07 17:15:00",
+      "summary_paragraph": "The patient, a woman with T1-T2 paraplegia, COPD, and a history of recurrent pneumonias, was admitted for hypoxia, respiratory distress, and somnolence following a recent hospital discharge. She presented with tachypnea, increased oxygen needs, and hypercapnia, requiring BIPAP and ICU monitoring. Imaging showed bibasilar atelectasis and right lower lobe consolidation, concerning for aspiration pneumonia. She was treated with cefepime and vancomycin for suspected hospital-acquired pneumonia. A PICC line was placed for outpatient antibiotic completion but required repositioning due to malplacement. Sedating medications including clonazepam were held, and baclofen was reduced to mitigate oversedation and aspiration risk. A swallowing study showed no aspiration, allowing diet advancement. She improved clinically, remained afebrile with negative blood and urine cultures, and was discharged home with services for three additional days of IV antibiotics. Medication adjustments included discontinuation of clonazepam, reduced baclofen, and transition to ranitidine and lower-dose nicotine patch.",
+      "problems": [
+        "Pneumonitis due to inhalation of food or vomitus",
+        "Acute respiratory failure",
+        "Acidosis",
+        "Paraplegia",
+        "Pulmonary collapse",
+        "Obstructive chronic bronchitis with (acute) exacerbation",
+        "Unspecified viral hepatitis C without hepatic coma",
+        "Unspecified acquired hypothyroidism",
+        "Anxiety state, unspecified",
+        "Personal history of venous thrombosis and embolism",
+        "Atrophic gastritis, without mention of hemorrhage",
+        "Dysphagia, oropharyngeal phase",
+        "Anemia, unspecified"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-a31a0142b01ce985",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2171-04-03 19:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I’m Dr. Lee. I’ll be taking care of you tonight. You’re here because you were having trouble breathing and low oxygen. Can you tell me how you’ve been feeling?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2171-04-03 19:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I was okay yesterday, but this morning I felt really tired and short of breath. My husband said I was breathing fast and needed more oxygen than usual.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2171-04-03 19:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your oxygen levels were low, and your CO2 was high, which made you sleepy. We put you on BIPAP to help you breathe better. How’s the mask feeling now?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2171-04-03 19:18:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"It’s uncomfortable. I don’t like how it feels on my face.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2171-04-03 19:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I understand. We’ll keep adjusting it to make it more comfortable. The good news is your breathing has improved since you started using it.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2171-04-03 19:20:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m glad. But why did this happen again so soon after I just got out of the hospital?\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2171-04-03 19:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You have COPD and a history of pneumonia. This time, we’re concerned it might be from aspiration—when stomach contents go into your lungs—especially since you were more sedated than usual.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2171-04-03 19:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh. Could my pain meds have caused that?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2171-04-03 19:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, that’s possible. Medications like clonazepam, baclofen, and trazodone can make you too drowsy, especially together. We’ve held those for now to help you stay alert and breathe better.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2171-04-03 19:24:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been on those for years. Is it safe to stop them suddenly?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2171-04-03 19:25:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re doing it carefully. We lowered your baclofen slowly and stopped clonazepam for now. We’ll restart some meds later at lower doses to avoid this happening again.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2171-04-03 19:26:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, that makes sense.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2171-04-03 19:27:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We also started antibiotics because your chest scan showed some new lung changes in the right lower lobe, which could be infection.\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2171-04-03 19:28:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is it another pneumonia?\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2171-04-03 19:29:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly. The CT didn’t show a blood clot, but there’s atelectasis—part of your lung is collapsed—and some consolidation, which can be from infection or aspiration.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2171-04-03 19:30:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s not clear what it is?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2171-04-03 19:31:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not exactly. But because you’ve had pneumonia before and your white blood cell count is high, we’re treating it as a possible hospital-acquired infection with strong antibiotics.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2171-04-03 19:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Which ones?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2171-04-03 19:33:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Cefepime and vancomycin. They cover a broad range of bacteria, including MRSA, which you’ve had before.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2171-04-03 19:34:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I had a blood culture, right? Did it grow anything?\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2171-04-03 19:35:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not yet. We’ll check again, but so far no bacteria have grown. That’s a good sign, but we’ll keep treating until we’re sure.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2171-04-04 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your breathing is better today. We’re going to do a swallowing test to check if you’re at risk for aspiration.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2171-04-04 08:16:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve had trouble swallowing before. Is that why this happened?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2171-04-04 08:17:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It could be part of it. The test will help us see if liquids are going into your airway. We’ll use a special drink with barium so we can watch on X-ray.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2171-04-04 13:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The test is back. You did well—no aspiration was seen. But there was some penetration with thin liquids, so we’ll recommend thicker fluids for now.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2171-04-04 13:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I can eat again?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2171-04-04 13:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we’ll restart your diet with modified textures. That should help reduce your risk of another aspiration episode.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2171-04-04 13:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s a relief. What about the antibiotics? How long will I need them?\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2171-04-04 13:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We plan for a 7-day course. Since you’ll be going home soon, we’re placing a PICC line so a nurse can give them at your house.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2171-04-04 17:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noticed the PICC line went into your neck vein instead of the chest. It’s not in the right spot, so we’ll need to fix that.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2171-04-04 17:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that dangerous?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2171-04-04 17:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not immediately, but it could cause irritation or clotting. Interventional radiology will reposition it tomorrow. It’s a quick procedure.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2171-04-05 16:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The PICC line is now in the right place—right in the superior vena cava. You’re all set for your antibiotics at home.\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2171-04-05 16:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Great. I’m feeling much more alert now. Can I start my pain meds again?\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2171-04-05 16:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ve restarted pregabalin and trazodone at lower doses. Baclofen is at 5 mg three times a day—half your usual. We’re avoiding clonazepam for now.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2171-04-05 16:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ve been using Ultram for breakthrough pain, but it’s not helping.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2171-04-05 16:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll switch you back to oxycodone for breakthrough pain. But we’ll keep methadone as your main pain med.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2171-04-05 16:35:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I trust that one more.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2171-04-06 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. You had a low-grade fever and your blood pressure dipped a bit last night, but you responded well to fluids.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2171-04-06 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I didn’t even notice. Is everything okay?\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2171-04-06 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. Your repeat chest X-ray shows slight worsening in the lung bases, but it’s not unexpected. Your blood cultures are still negative, so we think the antibiotics are working.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2171-04-06 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the urine culture that showed bacteria?\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2171-04-06 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It grew enterococcus, but you didn’t have symptoms, and the repeat test was clean. Likely a contaminant. The antibiotics probably covered it anyway.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2171-04-06 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good to know.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2171-04-07 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing really well. Your breathing is stable, you’re alert, and you’re eating without trouble. We’re planning to discharge you today.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2171-04-07 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s great. What do I need to do at home?\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2171-04-07 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"A nurse will come to give your IV antibiotics for three more days. You’ll continue albuterol, Combivent, and your other usual meds.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2171-04-07 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my pain meds?\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2171-04-07 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll stay on methadone and oxycodone as before. Baclofen is now 5 mg three times a day, and you’re off clonazepam. Trazodone and pregabalin are at lower doses.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2171-04-07 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And for heartburn?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2171-04-07 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Switch from omeprazole to ranitidine as needed. Also take colace and Miralax daily to help with constipation.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2171-04-07 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about the nicotine patch?\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2171-04-07 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re lowering it from 21 mg to 7 mg. It’s part of reducing sedation risks. Your husband will help monitor how you feel.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2171-04-07 08:09:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll do my best. Any signs I should watch for?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2171-04-07 08:10:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. If you have trouble breathing, fever, confusion, or chest pain, go to the ER. Otherwise, follow up with your primary doctor in a few days.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2171-04-07 08:11:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you for explaining everything.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2171-04-07 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’re glad you’re on the mend. A nurse will help you get ready to go home soon.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2171-04-07 10:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just a quick check before discharge. How are you feeling?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2171-04-07 10:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Much better. I’m tired but clear-headed. Ready to go home.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2171-04-07 10:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. Remember: antibiotics via PICC, watch for fever or breathing issues, and take your new med doses exactly as written.\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2171-04-07 10:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll keep the list with me. Thank you again.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2171-04-07 10:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing great. Take care, and we’ll see you in follow-up if needed.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2171-04-07 12:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—your vancomycin dose was adjusted after a low trough level. The new dose is 1 gram every 12 hours. The nurse will confirm this with the home team.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2171-04-07 12:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. Every 12 hours, not once a day.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2171-04-07 12:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. Safety first. All set for discharge.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2171-04-07 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The discharge papers are ready. A home health nurse will call to schedule your first antibiotic visit.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2171-04-07 14:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I appreciate all the care.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2171-04-03 19:04:00\",\n    \"admission_end\": \"2171-04-07 17:15:00\",\n    \"summary_paragraph\": \"The patient, a woman with T1-T2 paraplegia, COPD, and a history of recurrent pneumonias, was admitted for hypoxia, respiratory distress, and somnolence following a recent hospital discharge. She presented with tachypnea, increased oxygen needs, and hypercapnia, requiring BIPAP and ICU monitoring. Imaging showed bibasilar atelectasis and right lower lobe consolidation, concerning for aspiration pneumonia. She was treated with cefepime and vancomycin for suspected hospital-acquired pneumonia. A PICC line was placed for outpatient antibiotic completion but required repositioning due to malplacement. Sedating medications including clonazepam were held, and baclofen was reduced to mitigate oversedation and aspiration risk. A swallowing study showed no aspiration, allowing diet advancement. She improved clinically, remained afebrile with negative blood and urine cultures, and was discharged home with services for three additional days of IV antibiotics. Medication adjustments included discontinuation of clonazepam, reduced baclofen, and transition to ranitidine and lower-dose nicotine patch.\",\n    \"problems\": [\n      \"Pneumonitis due to inhalation of food or vomitus\",\n      \"Acute respiratory failure\",\n      \"Acidosis\",\n      \"Paraplegia\",\n      \"Pulmonary collapse\",\n      \"Obstructive chronic bronchitis with (acute) exacerbation\",\n      \"Unspecified viral hepatitis C without hepatic coma\",\n      \"Unspecified acquired hypothyroidism\",\n      \"Anxiety state, unspecified\",\n      \"Personal history of venous thrombosis and embolism\",\n      \"Atrophic gastritis, without mention of hemorrhage\",\n      \"Dysphagia, oropharyngeal phase\",\n      \"Anemia, unspecified\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776944183,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5284,
+      "prompt_tokens": 12874,
+      "total_tokens": 18158,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

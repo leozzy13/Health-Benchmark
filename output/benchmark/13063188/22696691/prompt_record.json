@@ -1,0 +1,904 @@
+{
+  "subject_id": "13063188",
+  "hadm_id": "22696691",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-17T15:42:27Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 10 day(s).\n- Recommended turn range: 60-85 turns.\n- Exact admission window: 2183-02-11 01:04:00 to 2183-02-20 16:15:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2181-11-23 22:53:00",
+    "admission_end": "2181-11-25 10:45:00",
+    "summary_paragraph": "A 50-year-old male with a history of atrial fibrillation, systolic heart failure (EF 30%), diabetes, obesity, and recent stroke was admitted for intermittent left-sided chest pain that began the morning of admission. The pain was dull, associated with nausea, worsened by movement and lying down, and partially attributed to muscle strain after heavy lifting and possible GERD from a spicy meal. Initial evaluation showed no acute myocardial infarction on EKG, but troponins trended slightly upward before declining, suggesting demand ischemia. Elevated BNP and chest X-ray findings indicated acute on chronic heart failure exacerbation due to volume overload, likely from dietary indiscretion. He was treated with intravenous and oral diuretics, resulting in significant fluid loss and symptom improvement. Hypokalemia triggered episodes of ventricular tachycardia, which resolved with potassium repletion. His atrial fibrillation remained rate-controlled, and INR was therapeutic. Chest pain resolved with morphine and supportive care. Medications were adjusted at discharge, including increased metoprolol and aspirin, short-term increased Lasix, and potassium supplementation. A sleep clinic follow-up was arranged to address obstructive sleep apnea and pulmonary hypertension.",
+    "problems": [
+      "Sprain of sternum, other",
+      "Acute on chronic systolic heart failure",
+      "Atrial fibrillation",
+      "Obstructive sleep apnea (adult)(pediatric)",
+      "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+      "Hypopotassemia",
+      "Paroxysmal ventricular tachycardia",
+      "Esophageal reflux",
+      "Other chronic pulmonary heart diseases",
+      "Obesity, unspecified"
+    ]
+  },
+  "stay_days": 10,
+  "recommended_turn_range": [
+    60,
+    85
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2183-02-20 00:00:00): Name:  ___                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nNo Known Allergies / Adverse Drug Reactions\n \nAttending: ___.\n \nChief Complaint:\nChest discomfort and shortness of breath\n \nMajor Surgical or Invasive Procedure:\nBedside incision and drainge of right foot infection \n\n \nHistory of Present Illness:\nThis is a ___ y/o man with HTN, HLD, ___ with EF 30%, Afib on \nCoumadin, DM2, obesity who presents with CP and SOB.\n.\nHe was at an auction yesterday and broke into a coughing fit \nwhich lasted 5 minutes, which he attributes to postnasal drip.  \nLater, he described a burning sensation on both sides of his \nchest which lasted for 3 hours, more anteriorly, radiating \nacross entire chest, not associated with exertion, relieved by \ndrinking some club soda.  He has never had chest pain before, \ndenies hx of GERD.  Has few glasses of alcohol prior to the \nevent after not drinking for the past month.  During the episode \nhe had some shortness of breath while ___ but this was at his \nbaseline.  No nausea/vomitting, jaw/arm/back pain, diaphoresis \nor abdominal pain. Pain not pleuritic or exacerbated by \nmovement. No syncope, lightheadedness or palpitations. \n.\nOf note, he has gained ~20lbs since ___, and recently restarted \nhis metoprolol and spironolactone (was not taking because his \nperscription had run out).  He has baseline PND and reports SOB \nwith exertion but says he can walk a football field and climb 2 \nflights of stairs without SOB.  He has been having chronic cough \nover the past month, with coughing fits every day productive of \nthin white sputum, which he attributes to an increase ___ his \ndose of ramipril last month.  He is having leg swelling which is \nchronic for him, no prolonged periods of immobilization, no calf \ntenderness, hx of DVT or malignancy.  Ate ___ soup over \nthe past couple of days, typically tries to keep low salt diet.  \n \n.  \nEndorses some medication noncompliance, says he does not take \nhis ___ dose of Humalog sometimes when he gets busy and has other \nthings to do.  Reports good medication compliance of Lasix and \ncoumadin.  Hx missing appointments at ___ for diabetes f/u.\n.\n___ the ED, initial VS: ___ 100 ___ 95% ra, ambulatory sat \n88%.  Labs notable for WBC 10.7, trop 0.02 (elevated at \nbaseline), lactate 2.3. CXR showed bibasilar opacities, likely \natelectasis. He received 750mg IV levofloxacin and 500cc NS.   \n.  \nROS notable for increased fatigue over the past week, daytime \nsleepiness, snoring.  Occasional headache. No vision changes, \nsore throat. No abdominal pain, nausea, vomiting, diarrhea, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria.  \n\n \nPast Medical History:\n- Hypertension  \n- Hyperlipidemia  \n- Moderate-to-severe dilated CM, EF ___ (tachycardia  \nmediated vs. ETOH vs. viral/mixed)-  \n- Paroxysmal AF/flutter s.p. TEE/DCCV ___. Flutter  \nablation ___. Repeat TEE/DCCV for AF ___. On Coumadin.  \n- Conduction system disease: RBBB/LAFB, first-degree AV delay.  \n- Cardioembolic R parietal stroke ___ ___ (subtherapeutic INR).  \n\n- Obesity  \n- Type II diabetes mellitus, on insulin, A1C per patient has \nbeen ___  \n- Peripheral neuropathy  \n\n \nSocial History:\n___\nFamily History:\nNo history of strokes or MI younger than ___, blood clots, \nfrequent miscarriages ___ family.\n\nBoth parents had CHF and died of MIs at ___ (mom) and ___ (dad). \nMother had DM2 as well.\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM:\nVS - 98.5 124/72 99 20 94%3L FSG 236  \nGENERAL - NAD, comfortable, appropriate  \nHEENT - NC/AT, PERRLA, EOMI, MMM, OP clear  \nNECK - supple, cannot appreciate JVP due to body habitus  \nLUNGS - CTA bilat, no crackles/rh/wh, good air movement  \nHEART - RRR, no MRG, +S3  \nABDOMEN - obese, NABS, soft/NT/ND, no masses or HSM, no \nrebound/guarding  \nEXTREMITIES - WWP, no c/c, 2+ ___ pitting edema with venous \nstasis changes, 2+ peripheral pulses throughout  \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, muscle strength \n___ throughout, sensation grossly intact throughout  \n.\nDISCHARGE PHYSICAL EXAM:\nVS - 98.2 112/65 84 18 97% RA  \nGENERAL - NAD, comfortable, appropriate  \nHEENT - NC/AT, PERRLA, EOMI, MMM, OP clear  \nNECK - supple, cannot appreciate JVP due to body habitus  \nLUNGS - CTA bilat, no crackles/rh/wh, good air movement  \nHEART - RRR, no MRG  \nABDOMEN - obese, NABS, soft/NT/ND, no masses or HSM, no \nrebound/guarding  \nEXTREMITIES - Right ___ web space is s/p I&D, and there is \nresolving erythema on the dorsum of the right foot. Edema ___ \nbilateral lower extremities is trace, much improved from prior \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, muscle strength \n___ throughout, sensation grossly intact throughout  \n\n \nPertinent Results:\nAdmission labs\n___ 06:56AM   GLUCOSE-103* UREA N-22* CREAT-1.0 SODIUM-137 \nPOTASSIUM-4.0 CHLORIDE-99 TOTAL CO2-29 ANION GAP-13\n___ 06:56AM   WBC-11.0 RBC-4.28* HGB-13.8* HCT-42.4 MCV-99* \nMCH-32.3* MCHC-32.6 RDW-12.9\n___ 06:56AM   PLT COUNT-240\n___ 06:56AM   ___\n___ 06:56AM   ALT(SGPT)-18 AST(SGOT)-16 LD(LDH)-288* \nCK(CPK)-144 ALK PHOS-154* TOT BILI-1.8*\n___ 06:56AM   ALBUMIN-3.8 CALCIUM-8.3* PHOSPHATE-4.2 \nMAGNESIUM-2.2\n___ 06:56AM   TSH-2.1\n___ 10:50PM   cTropnT-0.02*\n___ 06:56AM   CK-MB-3 cTropnT-0.03* proBNP-2237*\n___ 04:45PM   CK-MB-3 cTropnT-0.03*\n. \nDischarge labs\n___ 07:05AM BLOOD WBC-8.9 RBC-4.22* Hgb-13.2* Hct-41.2 \nMCV-98 MCH-31.2 MCHC-32.0 RDW-13.0 Plt ___\n___ 07:00AM BLOOD Neuts-67.3 ___ Monos-6.3 Eos-4.0 \nBaso-0.4\n___ 07:05AM BLOOD ___ PTT-49.2* ___\n___ 12:40PM BLOOD ESR-62*\n___ 07:05AM BLOOD Glucose-207* UreaN-18 Creat-1.2 Na-141 \nK-4.8 Cl-101 HCO3-32 AnGap-13\n___ 07:05AM BLOOD Calcium-8.3* Phos-3.5 Mg-2.8*\n\nSTUDIES:\nEKG: Afib @ 100, RBBB and LAFB, no ST/T changes  \n.  \nCXR ___ - FINDINGS: Frontal and lateral views of the chest \ndemonstrate low lung volumes. Moderate cardiomegaly is \nunchanged. Hilar and mediastinal silhouettes are unremarkable. \nAortic arch calcifications are again seen.  Mild pulmonary \nvascular congestion is noted. Bibasilar opacities, likely \nrepresent atelectasis.  \n.\nLENIs ___ - IMPRESSION: No right lower extremity DVT. \n.\nEKG ___ - Atrial fibrillation. Right bundle-branch block. \nLeft anterior fascicular block. Possible prior inferior \nmyocardial infarction. Possible prior lateral myocardial \ninfarction.\n.\nCT Foot ___ - IMPRESSION: \n1. No CT evidence of osteomyelitis, soft tissue abscess or \nradiographic signs of necrotizing fasciitis. \n2. Mild cutaneous and subcutaneous soft tissue edema and \nthickening involving the anterolateral dorsum of foot and ankle \nconsistent with cellulitis and/or nonspecific edema ___ the \nappropriate clinical setting. \n3. Irregular ossific density at the tibiofibular syndesmosis, \nlikely reflecting sequela of prior remote injury. \n4. Mild degenerative changes at the tarsometatarsal joints, \npredominantly at the third tarsometatarsal joint. \n5. Calcified atherosclerotic vascular disease involving the \nposterior tibial artery and dorsalis pedis, which are otherwise \npatent. \n6. Achilles tendinopathy, approximately 4 cm proximal to distal \ncalcaneal attachment. \n.\nCXR ___ - IMPRESSION: 1. No evidence of pneumonia. \n2. Unchanged mild pulmonary vascular congestion. No pulmonary \nedema. \n.\nWound culture from right ___ web space:\nGRAM STAIN (Final ___: \n      Reported to and read back by ___. ___ ON ___ AT \n0115. \n      4+   (>10 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      1+    (<1 per 1000X FIELD):   GRAM POSITIVE COCCI. \n                                    ___ PAIRS. \n      SMEAR REVIEWED; RESULTS CONFIRMED. \n\n   WOUND CULTURE (Final ___: \n      Due to mixed bacterial types (>=3) an abbreviated workup \nis\n      performed; P.aeruginosa, S.aureus and beta strep. are \nreported if\n      present. Susceptibility will be performed on P.aeruginosa \nand\n      S.aureus if sparse growth or greater.. \n      STAPH AUREUS COAG +.    SPARSE GROWTH. \n         Staphylococcus species may develop resistance during \nprolonged\n         therapy with quinolones.   Therefore, isolates that are \ninitially\n         susceptible may become resistant within three to four \ndays after\n         initiation of therapy.  Testing of repeat isolates may \nbe\n         warranted. \n\n                              SENSITIVITIES: MIC expressed ___ \nMCG/ML\n                      \n_________________________________________________________\n                             STAPH AUREUS COAG +\n                             |   \nCLINDAMYCIN-----------<=0.25 S\nERYTHROMYCIN----------<=0.25 S\nGENTAMICIN------------ <=0.5 S\nLEVOFLOXACIN----------<=0.12 S\nOXACILLIN-------------   0.5 S\nTRIMETHOPRIM/SULFA---- <=0.5 S\n\n   ANAEROBIC CULTURE (Final ___:    NO ANAEROBES ISOLATED. \n\n \nBrief Hospital Course:\nASSESSMENT AND PLAN: ___ y/o w/ HTN, HLD, sCHF EF 30%, afib, DM2, \nmorbid obesity, who presents with burning sensation ___ chest and \nshortness of breath.  \n.  \n#) Chest burning sensation - He remained asymptomatic since \npresentation.  Troponins were baseline at .03 and EKG showed no \nST-T changes, ACS was ruled out.  Character of pain was burning \nand nonexertional, not reproducible on exam, so likely GERD ___ \nsetting of alcohol consumption, or musculoskeletal.  \n.\n#) Acute on chronic systolic CHF exacerbation - He has a hx sCHF \nand evidence of hypervolemia on admission exam ___ edema, JVD, \nhepatomegaly). Initial exacerbating factor was likely dietary, \nendorses eating soup which he typically does not. We kept him on \n80 IV Lasix BID with goal 2L negative per day initially, then \nswitched to torsemide 60mg PO BID for increased diuresis as he \nwas not meeting goal. This regimen worked well and he was \ndiuresed from an admission weight of 348 lb to 330lbs on \ndischarge. His dry weight is unclear but is likely somewhere \naround 325-330lbs. His SOB and b/l ___ edema improved remarkably. \nHe was discharged on torsemide 40mg daily instead of lasix, as \nhe had had a good response to it.  Because of some hypotension \nduring this admission, his spironolactone was held for the time \nbeing, and can be restarted ___ the outpatient setting as blood \npressures allow.  \n.\n#) Foot cellulitis - During admission, developed right foot \ncellulitis and a fluid pocket. Wound I&D'ed by surgery and \npodiatry x 2 at bedside with no need for OR at this time.  \nPodiatry contacted and had low suspicion for osteomyelitis, and \ndid not want to do further debridements and did not recommend \ngetting an MRI, recommended outpatient followup. Cultures grew \nMSSA. He was on vancomycin for 1 week, and per ID consultation \nwill get an additional 2 weeks fo dicloxacillin. He will have \npodiatry f/u ___ the outpatient setting. \n.\n#) Afib and Anticoagulation - Subtherapeutic INR at presentation \nwas 1.5 and has had poor INR control chronically. CHADS score of \n5 with previous stroke, had discussion of initiating pradaxa \ngiven fluctuating INRs. Transitioned to Pradaxa during \nadmission.  \n.\n#) Change ___ bowel movements - Reported maroon stools, but \nrectal exam showed brown stools, guaic negative and no gross \nblood.  Suspicion for GI bleed was low, no black stool or BRBPR \non hx, Hct was stable.         \n.  \n#) DM2 - Poorly controlled, recent A1c was 9.4%. He was kept on \nan insulin sliding scale and NPH BID. He currently is on NPH \nBID, but was intermittently mildly hypoglycemic so his home \ndosing was decreased. He will follow-up with ___. As \nhe normally only takes NPH once daily at home (compliance \nissues), he may benefit from glargine instead. \n.\n#) HTN/HLD: continued metoprolol, ramipril, and pravastatin \ncontinued. Spironolactone held ___ issues with hypotension that \nmay have been more related to foot infection than drug effect; \ncan consider restarting spironolactone ___ outpatient setting. \nIsosorbide mononitrate also held for same reason.    \n.\nTRANSITIONAL ISSUES:\n#) ? GI bleed: needs colonoscopy as an outpatient\n#) Spironolactone was held ___ hypotension, should be restarted \nas BP allows ___ outpatient setting \n#) Now on dabigatran instead of warfarin \n#) Will be on 2 weeks of dicloxacillin for foot infection, and \nshould go to Podiatry f/u\n#) NPH was decreased. Blood sugars should be followed, and \nglargine should be considered for better control and compliance \n#) Should follow up with PCP, ___, and ___ clinic\n#) Electrolytes should be checked ___ outpatient setting as he is \non a new diuretic  \n \nMedications on Admission:\nFUROSEMIDE - 80 mg daily  \nMETOPROLOL SUCCINATE - 25 mg daily  \nPOTASSIUM CHLORIDE [KLOR-CON M10] - 10 mEq PRN\nPRAVASTATIN - 40 mg daily  \nRAMIPRIL - 2.5 mg daily  \nSPIRONOLACTONE - 25 mg daily  \nWARFARIN - 5 mg ___ and 7.5mg ___  \nASPIRIN - 325mg daily  \nNPH INSULIN HUMAN RECOMB - 65 BID \n \nDischarge Medications:\n1. Pradaxa 150 mg Capsule Sig: One (1) Capsule PO twice a day.\nDisp:*60 Capsule(s)* Refills:*2*\n2. pravastatin 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n3. ramipril 2.5 mg Capsule Sig: One (1) Capsule PO once a day.  \n4. Aspirin Low Dose 81 mg Tablet, Delayed Release (E.C.) Sig: \nOne (1) Tablet, Delayed Release (E.C.) PO once a day.\nDisp:*30 Tablet, Delayed Release (E.C.)(s)* Refills:*2*\n5. torsemide 20 mg Tablet Sig: Two (2) Tablet PO once a day.\nDisp:*60 Tablet(s)* Refills:*2*\n6. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \nOne (1) Tablet Extended Release 24 hr PO once a day.  \n7. NPH insulin human recomb 100 unit/mL Suspension Sig: Forty \n(40) units Subcutaneous twice a day.\nDisp:*30 days worth* Refills:*2*\n8. Colace 100 mg Capsule Sig: ___ Capsules PO twice a day as \nneeded for constipation.\nDisp:*60 Capsule(s)* Refills:*0*\n9. lactulose 10 gram/15 mL Solution Sig: Thirty (30) mL PO once \na day as needed for constipation.\nDisp:*20 * Refills:*2*\n10. dicloxacillin 500 mg Capsule Sig: One (1) Capsule PO four \ntimes a day for 14 days.\nDisp:*56 Capsule(s)* Refills:*0*\n11. Betadine 10 % Solution Sig: . . Topical twice a day: Apply \nbetadine to infected area between toes twice daily.\nDisp:*500 cc* Refills:*2*\n12. Gauze Pad 3 X 3   Bandage Sig: One (1) pad Topical twice a \nday: between toes.\nDisp:*50 pads* Refills:*2*\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nAcute on chronic systolic CHF exacerbation\nRight foot cellulitis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking care of you during your \nhospitalization.  You were admitted for a burning sensation ___ \nyour chest.  We did an EKG which was unchanged from your prior \nEKGs.  We checked cardiac enzyme levels which were unchanged \nfrom your baseline, so you did not have a heart attack. \n.\nYou have also been having leg swelling which is related to your \nheart failure.  We gave you Lasix and got much of the extra \nfluid off.  Please weigh yourself every morning and call your \ndoctor if weight goes up more than 3 lbs.  We checked for blood \nclots ___ your legs and there were not any.  \n.\nWe found your INR to be low at 1.5 and recommended a change to \nPradaxa which doesn't rely on the INR number. Stop taking \nwarfarin, and start taking Pradaxa. \n.\nYou had an infection ___ your right foot. You were treated for \nthis with IV antibiotics, and incision/drainage. You will \nrequire more antibiotics to help treat this infection. You will \nalso need twice daily dressing changes to your Right foot \nconsisting of FULL strength betadine between the ___ webspace \nand under the big toe as well as gauze between all of your toes \n(changed TWICE a day).\n.\nWe made the following changes to your medications:\n** START Pradaxa twice daily (blood thinner to prevent strokes)\n** START torsemide once daily (water pill)\n** START colace twice daily only as needed for constipation\n** START lactulose once daily only as needed for constipation\n** START dicloxacillin (antibiotic) 4 times a day for 2 weeks. \nPlease complete the full course of antibiotics. \n\n** CHANGE insulin NPH from 65 units twice daily to 40 units \ntwice daily. \n** CHANGE aspirin to 81mg daily (you do not need 325mg dose if \non pradaxa)\n\n** STOP warfarin\n** STOP furosemide \n** STOP isosorbide mononitrate as your blood pressures have been \nlow\n.\nPlease followup with your doctors per your ___ below\n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Acute on chronic systolic heart failure\n- Acute kidney failure, unspecified\n- Acidosis\n- Other primary cardiomyopathies\n- Atrial flutter\n- Polyneuropathy in diabetes\n- Diabetes with other specified manifestations, type II or unspecified type, not stated as uncontrolled\n- Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled\n- Atrial fibrillation\n- Unspecified hereditary and idiopathic peripheral neuropathy\n- Body Mass Index 45.0-49.9, adult\n- Cellulitis and abscess of foot, except toes\n- Pulmonary collapse\n- Morbid obesity\n- Methicillin susceptible Staphylococcus aureus in conditions classified elsewhere and of unspecified site\n- Congestive heart failure, unspecified\n- Other and unspecified hyperlipidemia\n- Unspecified essential hypertension\n- Long-term (current) use of anticoagulants\n- Esophageal reflux\n- Personal history of noncompliance with medical treatment, presenting hazards to health\n- Other iatrogenic hypotension\n- Other chest pain\n- Personal history of transient ischemic attack (TIA), and cerebral infarction without residual deficits\n- Ulcer of other part of foot",
+  "supporting_context_block": "Radiology:\n- 2183-02-11 12:59:00: INDICATION: Recurrent chest pain, shortness of breath, CHF exacerbation with asymmetric lower extremities; assess for right lower extremity DVT. COMPARISONS: None available. FINDINGS: Grayscale and color Doppler sonog...\n- 2183-02-15 17:43:00: CT RIGHT LWOER EXTREMITY WITH CONTRAST, ___. CLINICAL INDICATION: ___ man with CHF exacerbation, right foot cellulitis on antibiotics. New fever and pain shooting up right foot. Assess for necrotizing fasciitis or any...\n- 2183-02-15 18:25:00: INDICATION: CHF exacerbation, right foot cellulitis, on antibiotics, new fever and cough; question of pneumonia. COMPARISON: Chest radiograph on ___. FINDINGS: PA and lateral views of the chest. Better lung volumes co...\n\nProcedures:\n- 2183-02-16 12:00:00: Other incision with drainage of skin and subcutaneous tissue\n- 2183-02-17 12:00:00: Excisional debridement of wound, infection, or burn\n\nMicrobiology:\n- 2183-02-14 20:53:00: URINE (NO GROWTH.)\n- 2183-02-14 21:25:00: BLOOD CULTURE (NO GROWTH.)\n- 2183-02-14 23:53:00: BLOOD CULTURE (NO GROWTH.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB | STAPH AUREUS COAG + (S; Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.)\n- 2183-02-17 00:00:00: SWAB (___)",
+  "formed_packet": {
+    "subject_id": "13063188",
+    "hadm_id": "22696691",
+    "admission_start": "2183-02-11 01:04:00",
+    "admission_end": "2183-02-20 16:15:00",
+    "previous_admission_summary": {
+      "admission_start": "2181-11-23 22:53:00",
+      "admission_end": "2181-11-25 10:45:00",
+      "summary_paragraph": "A 50-year-old male with a history of atrial fibrillation, systolic heart failure (EF 30%), diabetes, obesity, and recent stroke was admitted for intermittent left-sided chest pain that began the morning of admission. The pain was dull, associated with nausea, worsened by movement and lying down, and partially attributed to muscle strain after heavy lifting and possible GERD from a spicy meal. Initial evaluation showed no acute myocardial infarction on EKG, but troponins trended slightly upward before declining, suggesting demand ischemia. Elevated BNP and chest X-ray findings indicated acute on chronic heart failure exacerbation due to volume overload, likely from dietary indiscretion. He was treated with intravenous and oral diuretics, resulting in significant fluid loss and symptom improvement. Hypokalemia triggered episodes of ventricular tachycardia, which resolved with potassium repletion. His atrial fibrillation remained rate-controlled, and INR was therapeutic. Chest pain resolved with morphine and supportive care. Medications were adjusted at discharge, including increased metoprolol and aspirin, short-term increased Lasix, and potassium supplementation. A sleep clinic follow-up was arranged to address obstructive sleep apnea and pulmonary hypertension.",
+      "problems": [
+        "Sprain of sternum, other",
+        "Acute on chronic systolic heart failure",
+        "Atrial fibrillation",
+        "Obstructive sleep apnea (adult)(pediatric)",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Hypopotassemia",
+        "Paroxysmal ventricular tachycardia",
+        "Esophageal reflux",
+        "Other chronic pulmonary heart diseases",
+        "Obesity, unspecified"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "13063188-DS-28",
+        "note_seq": 28,
+        "charttime": "2183-02-20 00:00:00",
+        "storetime": "2183-02-21 17:35:00",
+        "text": " \nName:  ___                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nNo Known Allergies / Adverse Drug Reactions\n \nAttending: ___.\n \nChief Complaint:\nChest discomfort and shortness of breath\n \nMajor Surgical or Invasive Procedure:\nBedside incision and drainge of right foot infection \n\n \nHistory of Present Illness:\nThis is a ___ y/o man with HTN, HLD, ___ with EF 30%, Afib on \nCoumadin, DM2, obesity who presents with CP and SOB.\n.\nHe was at an auction yesterday and broke into a coughing fit \nwhich lasted 5 minutes, which he attributes to postnasal drip.  \nLater, he described a burning sensation on both sides of his \nchest which lasted for 3 hours, more anteriorly, radiating \nacross entire chest, not associated with exertion, relieved by \ndrinking some club soda.  He has never had chest pain before, \ndenies hx of GERD.  Has few glasses of alcohol prior to the \nevent after not drinking for the past month.  During the episode \nhe had some shortness of breath while ___ but this was at his \nbaseline.  No nausea/vomitting, jaw/arm/back pain, diaphoresis \nor abdominal pain. Pain not pleuritic or exacerbated by \nmovement. No syncope, lightheadedness or palpitations. \n.\nOf note, he has gained ~20lbs since ___, and recently restarted \nhis metoprolol and spironolactone (was not taking because his \nperscription had run out).  He has baseline PND and reports SOB \nwith exertion but says he can walk a football field and climb 2 \nflights of stairs without SOB.  He has been having chronic cough \nover the past month, with coughing fits every day productive of \nthin white sputum, which he attributes to an increase ___ his \ndose of ramipril last month.  He is having leg swelling which is \nchronic for him, no prolonged periods of immobilization, no calf \ntenderness, hx of DVT or malignancy.  Ate ___ soup over \nthe past couple of days, typically tries to keep low salt diet.  \n \n.  \nEndorses some medication noncompliance, says he does not take \nhis ___ dose of Humalog sometimes when he gets busy and has other \nthings to do.  Reports good medication compliance of Lasix and \ncoumadin.  Hx missing appointments at ___ for diabetes f/u.\n.\n___ the ED, initial VS: ___ 100 ___ 95% ra, ambulatory sat \n88%.  Labs notable for WBC 10.7, trop 0.02 (elevated at \nbaseline), lactate 2.3. CXR showed bibasilar opacities, likely \natelectasis. He received 750mg IV levofloxacin and 500cc NS.   \n.  \nROS notable for increased fatigue over the past week, daytime \nsleepiness, snoring.  Occasional headache. No vision changes, \nsore throat. No abdominal pain, nausea, vomiting, diarrhea, \nconstipation, BRBPR, melena, hematochezia, dysuria, hematuria.  \n\n \nPast Medical History:\n- Hypertension  \n- Hyperlipidemia  \n- Moderate-to-severe dilated CM, EF ___ (tachycardia  \nmediated vs. ETOH vs. viral/mixed)-  \n- Paroxysmal AF/flutter s.p. TEE/DCCV ___. Flutter  \nablation ___. Repeat TEE/DCCV for AF ___. On Coumadin.  \n- Conduction system disease: RBBB/LAFB, first-degree AV delay.  \n- Cardioembolic R parietal stroke ___ ___ (subtherapeutic INR).  \n\n- Obesity  \n- Type II diabetes mellitus, on insulin, A1C per patient has \nbeen ___  \n- Peripheral neuropathy  \n\n \nSocial History:\n___\nFamily History:\nNo history of strokes or MI younger than ___, blood clots, \nfrequent miscarriages ___ family.\n\nBoth parents had CHF and died of MIs at ___ (mom) and ___ (dad). \nMother had DM2 as well.\n \nPhysical Exam:\nADMISSION PHYSICAL EXAM:\nVS - 98.5 124/72 99 20 94%3L FSG 236  \nGENERAL - NAD, comfortable, appropriate  \nHEENT - NC/AT, PERRLA, EOMI, MMM, OP clear  \nNECK - supple, cannot appreciate JVP due to body habitus  \nLUNGS - CTA bilat, no crackles/rh/wh, good air movement  \nHEART - RRR, no MRG, +S3  \nABDOMEN - obese, NABS, soft/NT/ND, no masses or HSM, no \nrebound/guarding  \nEXTREMITIES - WWP, no c/c, 2+ ___ pitting edema with venous \nstasis changes, 2+ peripheral pulses throughout  \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, muscle strength \n___ throughout, sensation grossly intact throughout  \n.\nDISCHARGE PHYSICAL EXAM:\nVS - 98.2 112/65 84 18 97% RA  \nGENERAL - NAD, comfortable, appropriate  \nHEENT - NC/AT, PERRLA, EOMI, MMM, OP clear  \nNECK - supple, cannot appreciate JVP due to body habitus  \nLUNGS - CTA bilat, no crackles/rh/wh, good air movement  \nHEART - RRR, no MRG  \nABDOMEN - obese, NABS, soft/NT/ND, no masses or HSM, no \nrebound/guarding  \nEXTREMITIES - Right ___ web space is s/p I&D, and there is \nresolving erythema on the dorsum of the right foot. Edema ___ \nbilateral lower extremities is trace, much improved from prior \nNEURO - awake, A&Ox3, CNs II-XII grossly intact, muscle strength \n___ throughout, sensation grossly intact throughout  \n\n \nPertinent Results:\nAdmission labs\n___ 06:56AM   GLUCOSE-103* UREA N-22* CREAT-1.0 SODIUM-137 \nPOTASSIUM-4.0 CHLORIDE-99 TOTAL CO2-29 ANION GAP-13\n___ 06:56AM   WBC-11.0 RBC-4.28* HGB-13.8* HCT-42.4 MCV-99* \nMCH-32.3* MCHC-32.6 RDW-12.9\n___ 06:56AM   PLT COUNT-240\n___ 06:56AM   ___\n___ 06:56AM   ALT(SGPT)-18 AST(SGOT)-16 LD(LDH)-288* \nCK(CPK)-144 ALK PHOS-154* TOT BILI-1.8*\n___ 06:56AM   ALBUMIN-3.8 CALCIUM-8.3* PHOSPHATE-4.2 \nMAGNESIUM-2.2\n___ 06:56AM   TSH-2.1\n___ 10:50PM   cTropnT-0.02*\n___ 06:56AM   CK-MB-3 cTropnT-0.03* proBNP-2237*\n___ 04:45PM   CK-MB-3 cTropnT-0.03*\n. \nDischarge labs\n___ 07:05AM BLOOD WBC-8.9 RBC-4.22* Hgb-13.2* Hct-41.2 \nMCV-98 MCH-31.2 MCHC-32.0 RDW-13.0 Plt ___\n___ 07:00AM BLOOD Neuts-67.3 ___ Monos-6.3 Eos-4.0 \nBaso-0.4\n___ 07:05AM BLOOD ___ PTT-49.2* ___\n___ 12:40PM BLOOD ESR-62*\n___ 07:05AM BLOOD Glucose-207* UreaN-18 Creat-1.2 Na-141 \nK-4.8 Cl-101 HCO3-32 AnGap-13\n___ 07:05AM BLOOD Calcium-8.3* Phos-3.5 Mg-2.8*\n\nSTUDIES:\nEKG: Afib @ 100, RBBB and LAFB, no ST/T changes  \n.  \nCXR ___ - FINDINGS: Frontal and lateral views of the chest \ndemonstrate low lung volumes. Moderate cardiomegaly is \nunchanged. Hilar and mediastinal silhouettes are unremarkable. \nAortic arch calcifications are again seen.  Mild pulmonary \nvascular congestion is noted. Bibasilar opacities, likely \nrepresent atelectasis.  \n.\nLENIs ___ - IMPRESSION: No right lower extremity DVT. \n.\nEKG ___ - Atrial fibrillation. Right bundle-branch block. \nLeft anterior fascicular block. Possible prior inferior \nmyocardial infarction. Possible prior lateral myocardial \ninfarction.\n.\nCT Foot ___ - IMPRESSION: \n1. No CT evidence of osteomyelitis, soft tissue abscess or \nradiographic signs of necrotizing fasciitis. \n2. Mild cutaneous and subcutaneous soft tissue edema and \nthickening involving the anterolateral dorsum of foot and ankle \nconsistent with cellulitis and/or nonspecific edema ___ the \nappropriate clinical setting. \n3. Irregular ossific density at the tibiofibular syndesmosis, \nlikely reflecting sequela of prior remote injury. \n4. Mild degenerative changes at the tarsometatarsal joints, \npredominantly at the third tarsometatarsal joint. \n5. Calcified atherosclerotic vascular disease involving the \nposterior tibial artery and dorsalis pedis, which are otherwise \npatent. \n6. Achilles tendinopathy, approximately 4 cm proximal to distal \ncalcaneal attachment. \n.\nCXR ___ - IMPRESSION: 1. No evidence of pneumonia. \n2. Unchanged mild pulmonary vascular congestion. No pulmonary \nedema. \n.\nWound culture from right ___ web space:\nGRAM STAIN (Final ___: \n      Reported to and read back by ___. ___ ON ___ AT \n0115. \n      4+   (>10 per 1000X FIELD):   POLYMORPHONUCLEAR \nLEUKOCYTES. \n      1+    (<1 per 1000X FIELD):   GRAM POSITIVE COCCI. \n                                    ___ PAIRS. \n      SMEAR REVIEWED; RESULTS CONFIRMED. \n\n   WOUND CULTURE (Final ___: \n      Due to mixed bacterial types (>=3) an abbreviated workup \nis\n      performed; P.aeruginosa, S.aureus and beta strep. are \nreported if\n      present. Susceptibility will be performed on P.aeruginosa \nand\n      S.aureus if sparse growth or greater.. \n      STAPH AUREUS COAG +.    SPARSE GROWTH. \n         Staphylococcus species may develop resistance during \nprolonged\n         therapy with quinolones.   Therefore, isolates that are \ninitially\n         susceptible may become resistant within three to four \ndays after\n         initiation of therapy.  Testing of repeat isolates may \nbe\n         warranted. \n\n                              SENSITIVITIES: MIC expressed ___ \nMCG/ML\n                      \n_________________________________________________________\n                             STAPH AUREUS COAG +\n                             |   \nCLINDAMYCIN-----------<=0.25 S\nERYTHROMYCIN----------<=0.25 S\nGENTAMICIN------------ <=0.5 S\nLEVOFLOXACIN----------<=0.12 S\nOXACILLIN-------------   0.5 S\nTRIMETHOPRIM/SULFA---- <=0.5 S\n\n   ANAEROBIC CULTURE (Final ___:    NO ANAEROBES ISOLATED. \n\n \nBrief Hospital Course:\nASSESSMENT AND PLAN: ___ y/o w/ HTN, HLD, sCHF EF 30%, afib, DM2, \nmorbid obesity, who presents with burning sensation ___ chest and \nshortness of breath.  \n.  \n#) Chest burning sensation - He remained asymptomatic since \npresentation.  Troponins were baseline at .03 and EKG showed no \nST-T changes, ACS was ruled out.  Character of pain was burning \nand nonexertional, not reproducible on exam, so likely GERD ___ \nsetting of alcohol consumption, or musculoskeletal.  \n.\n#) Acute on chronic systolic CHF exacerbation - He has a hx sCHF \nand evidence of hypervolemia on admission exam ___ edema, JVD, \nhepatomegaly). Initial exacerbating factor was likely dietary, \nendorses eating soup which he typically does not. We kept him on \n80 IV Lasix BID with goal 2L negative per day initially, then \nswitched to torsemide 60mg PO BID for increased diuresis as he \nwas not meeting goal. This regimen worked well and he was \ndiuresed from an admission weight of 348 lb to 330lbs on \ndischarge. His dry weight is unclear but is likely somewhere \naround 325-330lbs. His SOB and b/l ___ edema improved remarkably. \nHe was discharged on torsemide 40mg daily instead of lasix, as \nhe had had a good response to it.  Because of some hypotension \nduring this admission, his spironolactone was held for the time \nbeing, and can be restarted ___ the outpatient setting as blood \npressures allow.  \n.\n#) Foot cellulitis - During admission, developed right foot \ncellulitis and a fluid pocket. Wound I&D'ed by surgery and \npodiatry x 2 at bedside with no need for OR at this time.  \nPodiatry contacted and had low suspicion for osteomyelitis, and \ndid not want to do further debridements and did not recommend \ngetting an MRI, recommended outpatient followup. Cultures grew \nMSSA. He was on vancomycin for 1 week, and per ID consultation \nwill get an additional 2 weeks fo dicloxacillin. He will have \npodiatry f/u ___ the outpatient setting. \n.\n#) Afib and Anticoagulation - Subtherapeutic INR at presentation \nwas 1.5 and has had poor INR control chronically. CHADS score of \n5 with previous stroke, had discussion of initiating pradaxa \ngiven fluctuating INRs. Transitioned to Pradaxa during \nadmission.  \n.\n#) Change ___ bowel movements - Reported maroon stools, but \nrectal exam showed brown stools, guaic negative and no gross \nblood.  Suspicion for GI bleed was low, no black stool or BRBPR \non hx, Hct was stable.         \n.  \n#) DM2 - Poorly controlled, recent A1c was 9.4%. He was kept on \nan insulin sliding scale and NPH BID. He currently is on NPH \nBID, but was intermittently mildly hypoglycemic so his home \ndosing was decreased. He will follow-up with ___. As \nhe normally only takes NPH once daily at home (compliance \nissues), he may benefit from glargine instead. \n.\n#) HTN/HLD: continued metoprolol, ramipril, and pravastatin \ncontinued. Spironolactone held ___ issues with hypotension that \nmay have been more related to foot infection than drug effect; \ncan consider restarting spironolactone ___ outpatient setting. \nIsosorbide mononitrate also held for same reason.    \n.\nTRANSITIONAL ISSUES:\n#) ? GI bleed: needs colonoscopy as an outpatient\n#) Spironolactone was held ___ hypotension, should be restarted \nas BP allows ___ outpatient setting \n#) Now on dabigatran instead of warfarin \n#) Will be on 2 weeks of dicloxacillin for foot infection, and \nshould go to Podiatry f/u\n#) NPH was decreased. Blood sugars should be followed, and \nglargine should be considered for better control and compliance \n#) Should follow up with PCP, ___, and ___ clinic\n#) Electrolytes should be checked ___ outpatient setting as he is \non a new diuretic  \n \nMedications on Admission:\nFUROSEMIDE - 80 mg daily  \nMETOPROLOL SUCCINATE - 25 mg daily  \nPOTASSIUM CHLORIDE [KLOR-CON M10] - 10 mEq PRN\nPRAVASTATIN - 40 mg daily  \nRAMIPRIL - 2.5 mg daily  \nSPIRONOLACTONE - 25 mg daily  \nWARFARIN - 5 mg ___ and 7.5mg ___  \nASPIRIN - 325mg daily  \nNPH INSULIN HUMAN RECOMB - 65 BID \n \nDischarge Medications:\n1. Pradaxa 150 mg Capsule Sig: One (1) Capsule PO twice a day.\nDisp:*60 Capsule(s)* Refills:*2*\n2. pravastatin 40 mg Tablet Sig: One (1) Tablet PO once a day.  \n3. ramipril 2.5 mg Capsule Sig: One (1) Capsule PO once a day.  \n4. Aspirin Low Dose 81 mg Tablet, Delayed Release (E.C.) Sig: \nOne (1) Tablet, Delayed Release (E.C.) PO once a day.\nDisp:*30 Tablet, Delayed Release (E.C.)(s)* Refills:*2*\n5. torsemide 20 mg Tablet Sig: Two (2) Tablet PO once a day.\nDisp:*60 Tablet(s)* Refills:*2*\n6. metoprolol succinate 25 mg Tablet Extended Release 24 hr Sig: \nOne (1) Tablet Extended Release 24 hr PO once a day.  \n7. NPH insulin human recomb 100 unit/mL Suspension Sig: Forty \n(40) units Subcutaneous twice a day.\nDisp:*30 days worth* Refills:*2*\n8. Colace 100 mg Capsule Sig: ___ Capsules PO twice a day as \nneeded for constipation.\nDisp:*60 Capsule(s)* Refills:*0*\n9. lactulose 10 gram/15 mL Solution Sig: Thirty (30) mL PO once \na day as needed for constipation.\nDisp:*20 * Refills:*2*\n10. dicloxacillin 500 mg Capsule Sig: One (1) Capsule PO four \ntimes a day for 14 days.\nDisp:*56 Capsule(s)* Refills:*0*\n11. Betadine 10 % Solution Sig: . . Topical twice a day: Apply \nbetadine to infected area between toes twice daily.\nDisp:*500 cc* Refills:*2*\n12. Gauze Pad 3 X 3   Bandage Sig: One (1) pad Topical twice a \nday: between toes.\nDisp:*50 pads* Refills:*2*\n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nAcute on chronic systolic CHF exacerbation\nRight foot cellulitis\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Mr. ___,\n\nIt was a pleasure taking care of you during your \nhospitalization.  You were admitted for a burning sensation ___ \nyour chest.  We did an EKG which was unchanged from your prior \nEKGs.  We checked cardiac enzyme levels which were unchanged \nfrom your baseline, so you did not have a heart attack. \n.\nYou have also been having leg swelling which is related to your \nheart failure.  We gave you Lasix and got much of the extra \nfluid off.  Please weigh yourself every morning and call your \ndoctor if weight goes up more than 3 lbs.  We checked for blood \nclots ___ your legs and there were not any.  \n.\nWe found your INR to be low at 1.5 and recommended a change to \nPradaxa which doesn't rely on the INR number. Stop taking \nwarfarin, and start taking Pradaxa. \n.\nYou had an infection ___ your right foot. You were treated for \nthis with IV antibiotics, and incision/drainage. You will \nrequire more antibiotics to help treat this infection. You will \nalso need twice daily dressing changes to your Right foot \nconsisting of FULL strength betadine between the ___ webspace \nand under the big toe as well as gauze between all of your toes \n(changed TWICE a day).\n.\nWe made the following changes to your medications:\n** START Pradaxa twice daily (blood thinner to prevent strokes)\n** START torsemide once daily (water pill)\n** START colace twice daily only as needed for constipation\n** START lactulose once daily only as needed for constipation\n** START dicloxacillin (antibiotic) 4 times a day for 2 weeks. \nPlease complete the full course of antibiotics. \n\n** CHANGE insulin NPH from 65 units twice daily to 40 units \ntwice daily. \n** CHANGE aspirin to 81mg daily (you do not need 325mg dose if \non pradaxa)\n\n** STOP warfarin\n** STOP furosemide \n** STOP isosorbide mononitrate as your blood pressures have been \nlow\n.\nPlease followup with your doctors per your ___ below\n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "13063188-RR-18",
+        "charttime": "2183-02-11 12:59:00",
+        "storetime": "2183-02-11 13:56:00",
+        "text": "INDICATION:  Recurrent chest pain, shortness of breath, CHF exacerbation with\nasymmetric lower extremities; assess for right lower extremity DVT.\n\nCOMPARISONS:  None available.\n\nFINDINGS:  Grayscale and color Doppler sonography was performed of the right\nlower extremity.  Normal compressibility and flow was seen in the right common\nfemoral, superficial femoral, popliteal, peroneal, and posterior tibial veins\nwithout evidence of DVT.\n\nIMPRESSION:  No right lower extremity DVT.\n"
+      },
+      {
+        "note_id": "13063188-RR-20",
+        "charttime": "2183-02-15 17:43:00",
+        "storetime": "2183-02-16 11:51:00",
+        "text": "CT RIGHT LWOER EXTREMITY WITH CONTRAST, ___.\n\nCLINICAL INDICATION:   ___ man with CHF exacerbation, right foot\ncellulitis on antibiotics.  New fever and pain shooting up right foot.  Assess\nfor necrotizing fasciitis or any clear signs of infection in the right lower\nextremity.\n\nCOMPARISON:  None available.\n\nTECHNIQUE:  Right lower extremity CT after the uneventful intravenous\nadministration of 100 mL Omnipaque contrast material with multiple contiguous\naxial MDCT images on soft tissue and bone algorithms through the right foot\nand ankle with coronal and sagittal reformations provided for interpretation.\n\nFINDINGS:\n\nThere is a mild amount of subcutaneous soft tissue edema and skin thickening\nat the anterolateral dorsum of foot posteriorly and in the right ankle,\ncutaneous and subcutaneous soft tissues, incompletely seen.  There are no soft\ntissue foci of gas or rim-enhancing fluid collections identified.  No definite\nosseous erosions or periostitis or skin defects extending to bone.\n\nMild tarsometatarsal degenerative changes are seen, most prevalent at the\nthird tarsometatarsal joint, with subjacent subchondral cystic changes. \nSubchondral cystic changes are noted also at the cuboid articulation with the\nfourth and fifth metatarsals.\n\nThere is a regular ossific density projecting at the level of the tibiofibular\nsyndesmosis, incompletely seen, and likely reflecting the sequela of prior\ntrauma or injury.  Incidental note is made of a prominent os trigonum, type 2\nos naviculare and bipartite medial sesamoid.\n\nThe plantar fascia, medial flexor tendons, peroneus brevis and longus and\nanterior tibialis and extensor tendons appear grossly maintained on soft\ntissue windows.  There is mild thickening of the Achilles tendon (3:28),\napproximately 4 cm proximal to distal attachment upon the posterior calcaneus.\n\nThere is calcified atherosclerotic vascular disease involving the posterior\ntibial artery and dorsalis pedis. The arterial vasculature appears patent\notherwise with contrast material extending into the posterior tibial artery\nand dorsalis pedis artery.\n\nIMPRESSION:\n\n1.  No CT evidence of osteomyelitis, soft tissue abscess or radiographic signs\nof necrotizing fasciitis.\n\n2.  Mild cutaneous and subcutaneous soft tissue edema and thickening involving\nthe anterolateral dorsum of foot and ankle consistent with cellulitis and/or\nnonspecific edema in the appropriate clinical setting.\n\n3.  Irregular ossific density at the tibiofibular syndesmosis, likely\nreflecting sequela of prior remote injury.\n\n4.  Mild degenerative changes at the tarsometatarsal joints, predominantly at\nthe third tarsometatarsal joint.\n\n5.  Calcified atherosclerotic vascular disease involving the posterior tibial\nartery and dorsalis pedis, which are otherwise patent.\n\n6.  Achilles tendinopathy, approximately 4 cm proximal to distal calcaneal\nattachment.\n\nImportant findings were discussed directly with Dr. ___ at\napproximately 10:55 a.m. on ___ by musculoskeletal radiology fellow,\nDr. ___, via phone.\n"
+      },
+      {
+        "note_id": "13063188-RR-19",
+        "charttime": "2183-02-15 18:25:00",
+        "storetime": "2183-02-16 12:16:00",
+        "text": "INDICATION:  CHF exacerbation, right foot cellulitis, on antibiotics, new\nfever and cough; question of pneumonia.\n\nCOMPARISON:  Chest radiograph on ___.\n\nFINDINGS:  PA and lateral views of the chest.  Better lung volumes compared to\nmost recent study.  Moderate cardiomegaly is stable.  Unchanged mild pulmonary\nvascular congestion, no pulmonary edema.  The mediastinal and hilar contours\nand pleural surfaces are normal.  Mild linear atelectasis in the left mid\nlung.  \n\nIMPRESSION:\n1.  No evidence of pneumonia.\n2.  Unchanged mild pulmonary vascular congestion.  No pulmonary edema.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "42823",
+        "icd_version": 9,
+        "long_title": "Acute on chronic systolic heart failure",
+        "normalized_time": "2183-02-20 15:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "5849",
+        "icd_version": 9,
+        "long_title": "Acute kidney failure, unspecified",
+        "normalized_time": "2183-02-20 15:17:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "2762",
+        "icd_version": 9,
+        "long_title": "Acidosis",
+        "normalized_time": "2183-02-20 15:20:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "4254",
+        "icd_version": 9,
+        "long_title": "Other primary cardiomyopathies",
+        "normalized_time": "2183-02-20 15:22:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "42732",
+        "icd_version": 9,
+        "long_title": "Atrial flutter",
+        "normalized_time": "2183-02-20 15:25:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "3572",
+        "icd_version": 9,
+        "long_title": "Polyneuropathy in diabetes",
+        "normalized_time": "2183-02-20 15:27:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "25080",
+        "icd_version": 9,
+        "long_title": "Diabetes with other specified manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2183-02-20 15:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "25060",
+        "icd_version": 9,
+        "long_title": "Diabetes with neurological manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2183-02-20 15:32:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "42731",
+        "icd_version": 9,
+        "long_title": "Atrial fibrillation",
+        "normalized_time": "2183-02-20 15:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "3569",
+        "icd_version": 9,
+        "long_title": "Unspecified hereditary and idiopathic peripheral neuropathy",
+        "normalized_time": "2183-02-20 15:37:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "V8542",
+        "icd_version": 9,
+        "long_title": "Body Mass Index 45.0-49.9, adult",
+        "normalized_time": "2183-02-20 15:40:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "6827",
+        "icd_version": 9,
+        "long_title": "Cellulitis and abscess of foot, except toes",
+        "normalized_time": "2183-02-20 15:42:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "5180",
+        "icd_version": 9,
+        "long_title": "Pulmonary collapse",
+        "normalized_time": "2183-02-20 15:45:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "27801",
+        "icd_version": 9,
+        "long_title": "Morbid obesity",
+        "normalized_time": "2183-02-20 15:47:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "04111",
+        "icd_version": 9,
+        "long_title": "Methicillin susceptible Staphylococcus aureus in conditions classified elsewhere and of unspecified site",
+        "normalized_time": "2183-02-20 15:50:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "4280",
+        "icd_version": 9,
+        "long_title": "Congestive heart failure, unspecified",
+        "normalized_time": "2183-02-20 15:52:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2183-02-20 15:55:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "4019",
+        "icd_version": 9,
+        "long_title": "Unspecified essential hypertension",
+        "normalized_time": "2183-02-20 15:57:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "V5861",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of anticoagulants",
+        "normalized_time": "2183-02-20 16:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2183-02-20 16:02:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "V1581",
+        "icd_version": 9,
+        "long_title": "Personal history of noncompliance with medical treatment, presenting hazards to health",
+        "normalized_time": "2183-02-20 16:05:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "45829",
+        "icd_version": 9,
+        "long_title": "Other iatrogenic hypotension",
+        "normalized_time": "2183-02-20 16:07:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "78659",
+        "icd_version": 9,
+        "long_title": "Other chest pain",
+        "normalized_time": "2183-02-20 16:10:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "V1254",
+        "icd_version": 9,
+        "long_title": "Personal history of transient ischemic attack (TIA), and cerebral infarction without residual deficits",
+        "normalized_time": "2183-02-20 16:12:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "70715",
+        "icd_version": 9,
+        "long_title": "Ulcer of other part of foot",
+        "normalized_time": "2183-02-20 16:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 2,
+        "chartdate": "2183-02-16",
+        "icd_code": "8604",
+        "icd_version": 9,
+        "long_title": "Other incision with drainage of skin and subcutaneous tissue",
+        "normalized_time": "2183-02-16 12:00:00",
+        "time_provenance": "date_only_normalized"
+      },
+      {
+        "seq_num": 1,
+        "chartdate": "2183-02-17",
+        "icd_code": "8622",
+        "icd_version": 9,
+        "long_title": "Excisional debridement of wound, infection, or burn",
+        "normalized_time": "2183-02-17 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2183-02-14 00:00:00",
+        "charttime": "2183-02-14 20:53:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2183-02-14 00:00:00",
+        "charttime": "2183-02-14 21:25:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2183-02-14 00:00:00",
+        "charttime": "2183-02-14 23:53:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "ERYTHROMYCIN",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "CLINDAMYCIN",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "TRIMETHOPRIM/SULFA",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "GENTAMICIN",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "OXACILLIN",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "WOUND CULTURE",
+        "org_name": "STAPH AUREUS COAG +",
+        "ab_name": "LEVOFLOXACIN",
+        "interpretation": "S",
+        "comments": "Due to mixed bacterial types (>=3) an abbreviated workup is performed; P.aeruginosa, S.aureus and beta strep. are reported if present. Susceptibility will be performed on P.aeruginosa and S.aureus if sparse growth or greater.  "
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "GRAM STAIN",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "___"
+      },
+      {
+        "chartdate": "2183-02-17 00:00:00",
+        "charttime": "2183-02-17 00:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "SWAB",
+        "test_name": "ANAEROBIC CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO ANAEROBES ISOLATED.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 18083,
+    "output_tokens": 5107,
+    "total_tokens": 23190
+  },
+  "response_id": "chatcmpl-a2fa98ee487541ea",
+  "latency_ms": 93077,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2183-02-11 01:15:00",
+        "speaker": "Doctor",
+        "text": "Good evening. I’m Dr. Lee, one of the hospitalists. I understand you came in with chest discomfort and shortness of breath?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2183-02-11 01:17:00",
+        "speaker": "Patient",
+        "text": "Yes, that’s right. I was at an auction yesterday and had a bad coughing fit. Then later, I got this burning feeling across my chest. It lasted a few hours."
+      },
+      {
+        "turn_number": 3,
+        "time": "2183-02-11 01:19:00",
+        "speaker": "Doctor",
+        "text": "Was it worse with movement or breathing? Did it go down your arm or jaw?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2183-02-11 01:21:00",
+        "speaker": "Patient",
+        "text": "No, not really. It wasn’t sharp, just a constant burn. I drank some club soda and it helped a little. I’ve never had chest pain like this before."
+      },
+      {
+        "turn_number": 5,
+        "time": "2183-02-11 01:23:00",
+        "speaker": "Doctor",
+        "text": "Okay. You mentioned shortness of breath—was that new or part of your usual baseline?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2183-02-11 01:25:00",
+        "speaker": "Patient",
+        "text": "It’s about the same as usual. I can still walk a football field or climb two flights, but I do get winded easier than I used to."
+      },
+      {
+        "turn_number": 7,
+        "time": "2183-02-11 01:27:00",
+        "speaker": "Doctor",
+        "text": "I see. And you’ve had some leg swelling for a while?"
+      },
+      {
+        "turn_number": 8,
+        "time": "2183-02-11 01:28:00",
+        "speaker": "Patient",
+        "text": "Yeah, it’s chronic. But I’ve gained about 20 pounds since last year, so it’s been worse lately."
+      },
+      {
+        "turn_number": 9,
+        "time": "2183-02-11 01:30:00",
+        "speaker": "Doctor",
+        "text": "That could be related to your heart. We’ll check your heart function and fluid status. Did you have any alcohol recently?"
+      },
+      {
+        "turn_number": 10,
+        "time": "2183-02-11 01:32:00",
+        "speaker": "Patient",
+        "text": "A few glasses—first time in a month. I thought maybe that triggered the chest burn."
+      },
+      {
+        "turn_number": 11,
+        "time": "2183-02-11 01:34:00",
+        "speaker": "Doctor",
+        "text": "That’s possible. Sometimes alcohol can cause reflux-like symptoms. We’ll run some tests to make sure it’s not your heart."
+      },
+      {
+        "turn_number": 12,
+        "time": "2183-02-11 06:45:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your EKG shows atrial fibrillation, which you already have, but no signs of a heart attack. Your troponin levels are slightly elevated, but they’re consistent with your baseline."
+      },
+      {
+        "turn_number": 13,
+        "time": "2183-02-11 06:47:00",
+        "speaker": "Patient",
+        "text": "So it’s not a heart attack?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2183-02-11 06:49:00",
+        "speaker": "Doctor",
+        "text": "No, we don’t think so. The pattern and your symptoms suggest it’s more likely related to acid reflux or musculoskeletal discomfort, especially since it improved with club soda."
+      },
+      {
+        "turn_number": 15,
+        "time": "2183-02-11 06:51:00",
+        "speaker": "Patient",
+        "text": "That makes sense. But I’ve never had reflux before."
+      },
+      {
+        "turn_number": 16,
+        "time": "2183-02-11 06:53:00",
+        "speaker": "Doctor",
+        "text": "It can start later, especially with weight gain or certain medications. We’ll treat it cautiously while focusing on your heart failure."
+      },
+      {
+        "turn_number": 17,
+        "time": "2183-02-11 06:55:00",
+        "speaker": "Patient",
+        "text": "Heart failure? I knew I had weak heart function, but is it worse now?"
+      },
+      {
+        "turn_number": 18,
+        "time": "2183-02-11 06:57:00",
+        "speaker": "Doctor",
+        "text": "Yes, your BNP is high, and your exam shows fluid overload—swelling, and an S3 heart sound. We believe this is an acute exacerbation, likely from eating salty soup and being off your meds for a bit."
+      },
+      {
+        "turn_number": 19,
+        "time": "2183-02-11 06:59:00",
+        "speaker": "Patient",
+        "text": "I did eat soup the other day. And I ran out of spironolactone and metoprolol for a week."
+      },
+      {
+        "turn_number": 20,
+        "time": "2183-02-11 07:01:00",
+        "speaker": "Doctor",
+        "text": "That could definitely contribute. We’re starting IV Lasix twice daily to help remove the extra fluid. Goal is to lose about two liters a day."
+      },
+      {
+        "turn_number": 21,
+        "time": "2183-02-11 07:03:00",
+        "speaker": "Patient",
+        "text": "Okay. I’ve been on Lasix before. How long will I need it?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2183-02-11 07:05:00",
+        "speaker": "Doctor",
+        "text": "We’ll reassess in a few days. We may switch you to an oral diuretic like torsemide if you’re not losing enough fluid."
+      },
+      {
+        "turn_number": 23,
+        "time": "2183-02-12 08:00:00",
+        "speaker": "Doctor",
+        "text": "Your weight is down by five pounds since yesterday. That’s a good start. How’s your breathing?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2183-02-12 08:02:00",
+        "speaker": "Patient",
+        "text": "Better. I feel less tight in my chest and legs."
+      },
+      {
+        "turn_number": 25,
+        "time": "2183-02-12 08:04:00",
+        "speaker": "Doctor",
+        "text": "Great. We’ll keep pushing diuresis. Also, your INR was low—1.5—so your blood thinner wasn’t fully protective against stroke."
+      },
+      {
+        "turn_number": 26,
+        "time": "2183-02-12 08:06:00",
+        "speaker": "Patient",
+        "text": "I know my levels have been all over the place. Is that dangerous?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2183-02-12 08:08:00",
+        "speaker": "Doctor",
+        "text": "Yes, especially with your history of stroke. We’re discussing switching you to Pradaxa, which doesn’t require regular blood tests and may be more reliable."
+      },
+      {
+        "turn_number": 28,
+        "time": "2183-02-12 08:10:00",
+        "speaker": "Patient",
+        "text": "That sounds easier. I hate the frequent blood draws."
+      },
+      {
+        "turn_number": 29,
+        "time": "2183-02-13 09:15:00",
+        "speaker": "Doctor",
+        "text": "We noticed redness and swelling between your right toes this morning. Any pain there?"
+      },
+      {
+        "turn_number": 30,
+        "time": "2183-02-13 09:17:00",
+        "speaker": "Patient",
+        "text": "Now that you mention it, it’s been a little tender. I didn’t think much of it."
+      },
+      {
+        "turn_number": 31,
+        "time": "2183-02-13 09:19:00",
+        "speaker": "Doctor",
+        "text": "It looks like cellulitis. We’ll start IV antibiotics—levofloxacin—and consult surgery and podiatry."
+      },
+      {
+        "turn_number": 32,
+        "time": "2183-02-14 10:00:00",
+        "speaker": "Doctor",
+        "text": "The ultrasound showed no blood clot in your leg, which is good. But your foot infection is progressing. There’s a fluid pocket."
+      },
+      {
+        "turn_number": 33,
+        "time": "2183-02-14 10:02:00",
+        "speaker": "Patient",
+        "text": "Is it serious?"
+      },
+      {
+        "turn_number": 34,
+        "time": "2183-02-14 10:04:00",
+        "speaker": "Doctor",
+        "text": "It’s treatable. Surgery will do a bedside incision and drainage today to remove the fluid and help the antibiotics work better."
+      },
+      {
+        "turn_number": 35,
+        "time": "2183-02-15 08:30:00",
+        "speaker": "Doctor",
+        "text": "The CT scan of your foot shows no osteomyelitis or abscess. The infection is in the skin and soft tissue, which is good news."
+      },
+      {
+        "turn_number": 36,
+        "time": "2183-02-15 08:32:00",
+        "speaker": "Patient",
+        "text": "So no bone infection?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2183-02-15 08:34:00",
+        "speaker": "Doctor",
+        "text": "No. Podiatry doesn’t recommend further surgery. You’ll finish IV vancomycin and then switch to oral dicloxacillin for two more weeks."
+      },
+      {
+        "turn_number": 38,
+        "time": "2183-02-15 08:36:00",
+        "speaker": "Patient",
+        "text": "Okay, I can do that."
+      },
+      {
+        "turn_number": 39,
+        "time": "2183-02-16 13:00:00",
+        "speaker": "Doctor",
+        "text": "The wound culture came back: it’s methicillin-sensitive Staph aureus—MSSA. That’s good. It’s responding to the antibiotics we’re using."
+      },
+      {
+        "turn_number": 40,
+        "time": "2183-02-16 13:02:00",
+        "speaker": "Patient",
+        "text": "Is that contagious?"
+      },
+      {
+        "turn_number": 41,
+        "time": "2183-02-16 13:04:00",
+        "speaker": "Doctor",
+        "text": "It can be, so we’ll keep the area cleaned and covered. You’ll need to do Betadine soaks and gauze changes twice daily at home."
+      },
+      {
+        "turn_number": 42,
+        "time": "2183-02-16 13:06:00",
+        "speaker": "Patient",
+        "text": "I can manage that."
+      },
+      {
+        "turn_number": 43,
+        "time": "2183-02-17 09:00:00",
+        "speaker": "Doctor",
+        "text": "We did another debridement this morning to clean out any remaining infected tissue. The wound is looking better."
+      },
+      {
+        "turn_number": 44,
+        "time": "2183-02-17 09:02:00",
+        "speaker": "Patient",
+        "text": "It feels less tender today."
+      },
+      {
+        "turn_number": 45,
+        "time": "2183-02-17 09:04:00",
+        "speaker": "Doctor",
+        "text": "Good. Your blood sugars have been high—over 200. You’re on NPH insulin twice daily, but we reduced the dose because you had a low of 68."
+      },
+      {
+        "turn_number": 46,
+        "time": "2183-02-17 09:06:00",
+        "speaker": "Patient",
+        "text": "I sometimes skip my insulin when I’m busy. I know I shouldn’t."
+      },
+      {
+        "turn_number": 47,
+        "time": "2183-02-17 09:08:00",
+        "speaker": "Doctor",
+        "text": "We understand. But consistency is key. We’re lowering your dose to 40 units twice daily. Long-term, glargine might be easier—once daily and more stable."
+      },
+      {
+        "turn_number": 48,
+        "time": "2183-02-17 09:10:00",
+        "speaker": "Patient",
+        "text": "I’d prefer that. Less hassle."
+      },
+      {
+        "turn_number": 49,
+        "time": "2183-02-18 10:00:00",
+        "speaker": "Doctor",
+        "text": "You’ve lost 18 pounds since admission—down to 330. Your breathing and swelling are much improved."
+      },
+      {
+        "turn_number": 50,
+        "time": "2183-02-18 10:02:00",
+        "speaker": "Patient",
+        "text": "I feel lighter. My clothes are looser!"
+      },
+      {
+        "turn_number": 51,
+        "time": "2183-02-18 10:04:00",
+        "speaker": "Doctor",
+        "text": "We’re switching you to oral torsemide 60mg twice daily. It’s stronger than Lasix. We’ll send you home on 40mg once daily."
+      },
+      {
+        "turn_number": 52,
+        "time": "2183-02-18 10:06:00",
+        "speaker": "Patient",
+        "text": "And the spironolactone?"
+      },
+      {
+        "turn_number": 53,
+        "time": "2183-02-18 10:08:00",
+        "speaker": "Doctor",
+        "text": "We held it because your blood pressure dropped a bit—probably due to the infection and fluid loss. You can restart it outpatient when your BP is stable."
+      },
+      {
+        "turn_number": 54,
+        "time": "2183-02-18 10:10:00",
+        "speaker": "Patient",
+        "text": "Makes sense."
+      },
+      {
+        "turn_number": 55,
+        "time": "2183-02-19 09:30:00",
+        "speaker": "Doctor",
+        "text": "Your labs are improving. White count is down, kidney function stable. We’re planning to discharge tomorrow."
+      },
+      {
+        "turn_number": 56,
+        "time": "2183-02-19 09:32:00",
+        "speaker": "Patient",
+        "text": "Great. What do I need to do at home?"
+      },
+      {
+        "turn_number": 57,
+        "time": "2183-02-19 09:34:00",
+        "speaker": "Doctor",
+        "text": "Take Pradaxa twice daily—stop warfarin. Take torsemide daily, finish the dicloxacillin, and do wound care twice a day."
+      },
+      {
+        "turn_number": 58,
+        "time": "2183-02-19 09:36:00",
+        "speaker": "Patient",
+        "text": "And my insulin?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2183-02-19 09:38:00",
+        "speaker": "Doctor",
+        "text": "Continue 40 units NPH twice daily. Check sugars regularly. Your PCP will discuss switching to glargine."
+      },
+      {
+        "turn_number": 60,
+        "time": "2183-02-19 09:40:00",
+        "speaker": "Patient",
+        "text": "I’ll follow up with them. Any other tests?"
+      },
+      {
+        "turn_number": 61,
+        "time": "2183-02-19 09:42:00",
+        "speaker": "Doctor",
+        "text": "Yes—colonoscopy for the maroon stools you mentioned. And check your electrolytes and kidney function in a week."
+      },
+      {
+        "turn_number": 62,
+        "time": "2183-02-20 08:00:00",
+        "speaker": "Doctor",
+        "text": "You’re cleared to go home. You look much better—alert, breathing well, walking independently."
+      },
+      {
+        "turn_number": 63,
+        "time": "2183-02-20 08:02:00",
+        "speaker": "Patient",
+        "text": "Thank you. I feel a lot better."
+      },
+      {
+        "turn_number": 64,
+        "time": "2183-02-20 08:04:00",
+        "speaker": "Doctor",
+        "text": "Remember: weigh yourself daily. If you gain more than three pounds, call your doctor. And keep all your follow-ups."
+      },
+      {
+        "turn_number": 65,
+        "time": "2183-02-20 08:06:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks for everything."
+      }
+    ],
+    "summary": {
+      "admission_start": "2183-02-11 01:04:00",
+      "admission_end": "2183-02-20 16:15:00",
+      "summary_paragraph": "A 50-year-old male with a history of systolic heart failure (EF 30%), atrial fibrillation, diabetes, and obesity was admitted for chest discomfort and shortness of breath. The chest pain was burning, non-exertional, and resolved with club soda, with stable troponins and no EKG changes, ruling out acute coronary syndrome. The symptoms were attributed to GERD or musculoskeletal causes, possibly triggered by alcohol. He had acute on chronic systolic heart failure exacerbation due to fluid overload, likely from dietary indiscretion and medication noncompliance. He was treated with IV Lasix, then transitioned to oral torsemide, resulting in an 18-pound weight loss and symptom improvement. During admission, he developed right foot cellulitis with a fluid collection, which was drained at bedside twice; wound culture grew MSSA, and he completed a course of vancomycin with a planned two-week course of oral dicloxacillin. Due to chronically unstable INR and a CHADS score of 5, he was transitioned from warfarin to Pradaxa. His insulin dose was reduced due to hypoglycemia, and plans were made to consider switching to glargine. He was discharged home in stable condition with follow-up arranged for podiatry, primary care, and colonoscopy for reported maroon stools.",
+      "problems": [
+        "Acute on chronic systolic heart failure",
+        "Right foot cellulitis",
+        "Atrial fibrillation",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Morbid obesity",
+        "Methicillin susceptible Staphylococcus aureus in conditions classified elsewhere and of unspecified site",
+        "Personal history of noncompliance with medical treatment, presenting hazards to health"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-a2fa98ee487541ea",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2183-02-11 01:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good evening. I’m Dr. Lee, one of the hospitalists. I understand you came in with chest discomfort and shortness of breath?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2183-02-11 01:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, that’s right. I was at an auction yesterday and had a bad coughing fit. Then later, I got this burning feeling across my chest. It lasted a few hours.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2183-02-11 01:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Was it worse with movement or breathing? Did it go down your arm or jaw?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2183-02-11 01:21:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, not really. It wasn’t sharp, just a constant burn. I drank some club soda and it helped a little. I’ve never had chest pain like this before.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2183-02-11 01:23:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. You mentioned shortness of breath—was that new or part of your usual baseline?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2183-02-11 01:25:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"It’s about the same as usual. I can still walk a football field or climb two flights, but I do get winded easier than I used to.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2183-02-11 01:27:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And you’ve had some leg swelling for a while?\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2183-02-11 01:28:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yeah, it’s chronic. But I’ve gained about 20 pounds since last year, so it’s been worse lately.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2183-02-11 01:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That could be related to your heart. We’ll check your heart function and fluid status. Did you have any alcohol recently?\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2183-02-11 01:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"A few glasses—first time in a month. I thought maybe that triggered the chest burn.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2183-02-11 01:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That’s possible. Sometimes alcohol can cause reflux-like symptoms. We’ll run some tests to make sure it’s not your heart.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2183-02-11 06:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your EKG shows atrial fibrillation, which you already have, but no signs of a heart attack. Your troponin levels are slightly elevated, but they’re consistent with your baseline.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2183-02-11 06:47:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it’s not a heart attack?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2183-02-11 06:49:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No, we don’t think so. The pattern and your symptoms suggest it’s more likely related to acid reflux or musculoskeletal discomfort, especially since it improved with club soda.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2183-02-11 06:51:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That makes sense. But I’ve never had reflux before.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2183-02-11 06:53:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can start later, especially with weight gain or certain medications. We’ll treat it cautiously while focusing on your heart failure.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2183-02-11 06:55:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Heart failure? I knew I had weak heart function, but is it worse now?\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2183-02-11 06:57:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, your BNP is high, and your exam shows fluid overload—swelling, and an S3 heart sound. We believe this is an acute exacerbation, likely from eating salty soup and being off your meds for a bit.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2183-02-11 06:59:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I did eat soup the other day. And I ran out of spironolactone and metoprolol for a week.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2183-02-11 07:01:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That could definitely contribute. We’re starting IV Lasix twice daily to help remove the extra fluid. Goal is to lose about two liters a day.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2183-02-11 07:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I’ve been on Lasix before. How long will I need it?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2183-02-11 07:05:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll reassess in a few days. We may switch you to an oral diuretic like torsemide if you’re not losing enough fluid.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2183-02-12 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your weight is down by five pounds since yesterday. That’s a good start. How’s your breathing?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2183-02-12 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Better. I feel less tight in my chest and legs.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2183-02-12 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Great. We’ll keep pushing diuresis. Also, your INR was low—1.5—so your blood thinner wasn’t fully protective against stroke.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2183-02-12 08:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I know my levels have been all over the place. Is that dangerous?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2183-02-12 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, especially with your history of stroke. We’re discussing switching you to Pradaxa, which doesn’t require regular blood tests and may be more reliable.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2183-02-12 08:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That sounds easier. I hate the frequent blood draws.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2183-02-13 09:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noticed redness and swelling between your right toes this morning. Any pain there?\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2183-02-13 09:17:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Now that you mention it, it’s been a little tender. I didn’t think much of it.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2183-02-13 09:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It looks like cellulitis. We’ll start IV antibiotics—levofloxacin—and consult surgery and podiatry.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2183-02-14 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The ultrasound showed no blood clot in your leg, which is good. But your foot infection is progressing. There’s a fluid pocket.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2183-02-14 10:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is it serious?\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2183-02-14 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It’s treatable. Surgery will do a bedside incision and drainage today to remove the fluid and help the antibiotics work better.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2183-02-15 08:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The CT scan of your foot shows no osteomyelitis or abscess. The infection is in the skin and soft tissue, which is good news.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2183-02-15 08:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So no bone infection?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2183-02-15 08:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No. Podiatry doesn’t recommend further surgery. You’ll finish IV vancomycin and then switch to oral dicloxacillin for two more weeks.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2183-02-15 08:36:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I can do that.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2183-02-16 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The wound culture came back: it’s methicillin-sensitive Staph aureus—MSSA. That’s good. It’s responding to the antibiotics we’re using.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2183-02-16 13:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Is that contagious?\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2183-02-16 13:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It can be, so we’ll keep the area cleaned and covered. You’ll need to do Betadine soaks and gauze changes twice daily at home.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2183-02-16 13:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I can manage that.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2183-02-17 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did another debridement this morning to clean out any remaining infected tissue. The wound is looking better.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2183-02-17 09:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"It feels less tender today.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2183-02-17 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. Your blood sugars have been high—over 200. You’re on NPH insulin twice daily, but we reduced the dose because you had a low of 68.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2183-02-17 09:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I sometimes skip my insulin when I’m busy. I know I shouldn’t.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2183-02-17 09:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We understand. But consistency is key. We’re lowering your dose to 40 units twice daily. Long-term, glargine might be easier—once daily and more stable.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2183-02-17 09:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’d prefer that. Less hassle.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2183-02-18 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ve lost 18 pounds since admission—down to 330. Your breathing and swelling are much improved.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2183-02-18 10:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I feel lighter. My clothes are looser!\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2183-02-18 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re switching you to oral torsemide 60mg twice daily. It’s stronger than Lasix. We’ll send you home on 40mg once daily.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2183-02-18 10:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the spironolactone?\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2183-02-18 10:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We held it because your blood pressure dropped a bit—probably due to the infection and fluid loss. You can restart it outpatient when your BP is stable.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2183-02-18 10:10:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Makes sense.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2183-02-19 09:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your labs are improving. White count is down, kidney function stable. We’re planning to discharge tomorrow.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2183-02-19 09:32:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Great. What do I need to do at home?\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2183-02-19 09:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take Pradaxa twice daily—stop warfarin. Take torsemide daily, finish the dicloxacillin, and do wound care twice a day.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2183-02-19 09:36:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my insulin?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2183-02-19 09:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Continue 40 units NPH twice daily. Check sugars regularly. Your PCP will discuss switching to glargine.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2183-02-19 09:40:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’ll follow up with them. Any other tests?\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2183-02-19 09:42:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes—colonoscopy for the maroon stools you mentioned. And check your electrolytes and kidney function in a week.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2183-02-20 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re cleared to go home. You look much better—alert, breathing well, walking independently.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2183-02-20 08:02:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I feel a lot better.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2183-02-20 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Remember: weigh yourself daily. If you gain more than three pounds, call your doctor. And keep all your follow-ups.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2183-02-20 08:06:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks for everything.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2183-02-11 01:04:00\",\n    \"admission_end\": \"2183-02-20 16:15:00\",\n    \"summary_paragraph\": \"A 50-year-old male with a history of systolic heart failure (EF 30%), atrial fibrillation, diabetes, and obesity was admitted for chest discomfort and shortness of breath. The chest pain was burning, non-exertional, and resolved with club soda, with stable troponins and no EKG changes, ruling out acute coronary syndrome. The symptoms were attributed to GERD or musculoskeletal causes, possibly triggered by alcohol. He had acute on chronic systolic heart failure exacerbation due to fluid overload, likely from dietary indiscretion and medication noncompliance. He was treated with IV Lasix, then transitioned to oral torsemide, resulting in an 18-pound weight loss and symptom improvement. During admission, he developed right foot cellulitis with a fluid collection, which was drained at bedside twice; wound culture grew MSSA, and he completed a course of vancomycin with a planned two-week course of oral dicloxacillin. Due to chronically unstable INR and a CHADS score of 5, he was transitioned from warfarin to Pradaxa. His insulin dose was reduced due to hypoglycemia, and plans were made to consider switching to glargine. He was discharged home in stable condition with follow-up arranged for podiatry, primary care, and colonoscopy for reported maroon stools.\",\n    \"problems\": [\n      \"Acute on chronic systolic heart failure\",\n      \"Right foot cellulitis\",\n      \"Atrial fibrillation\",\n      \"Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled\",\n      \"Morbid obesity\",\n      \"Methicillin susceptible Staphylococcus aureus in conditions classified elsewhere and of unspecified site\",\n      \"Personal history of noncompliance with medical treatment, presenting hazards to health\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776440547,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5107,
+      "prompt_tokens": 18083,
+      "total_tokens": 23190,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

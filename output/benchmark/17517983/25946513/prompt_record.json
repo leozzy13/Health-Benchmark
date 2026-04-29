@@ -1,0 +1,991 @@
+{
+  "subject_id": "17517983",
+  "hadm_id": "25946513",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-19T15:50:41Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 9 day(s).\n- Recommended turn range: 60-85 turns.\n- Exact admission window: 2124-11-27 15:19:00 to 2124-12-06 14:30:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2124-11-25 18:13:00",
+    "admission_end": "2124-11-26 18:15:00",
+    "summary_paragraph": "A woman with type 1 diabetes, chronic back pain, and a history of H. pylori gastritis was readmitted for persistent nausea, vomiting, and worsening back pain after an incomplete recovery from a recent hospitalization. She presented with elevated glucose of 444, which resolved with IV fluids and her home insulin regimen without evidence of ketoacidosis. A gastric biopsy revealed active gastritis with findings suggestive of H. pylori, explaining her gastrointestinal symptoms, while a gastric emptying study was normal, ruling out gastroparesis. She was treated with IV Zofran, continued on metoclopramide and omeprazole, and her pain was initially managed with Dilaudid before transitioning to acetaminophen, ibuprofen, and cyclobenzaprine. Her nausea resolved, she tolerated a regular diet, and her vitals stabilized. Sertraline was increased to 150mg daily for depression, and close primary care follow-up was arranged. She was discharged home in stable condition with updated medications and instructions for ongoing symptom management.",
+    "problems": [
+      "Nausea with vomiting",
+      "Other chronic pain",
+      "Lumbago",
+      "Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled",
+      "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+      "Abdominal pain, unspecified site",
+      "Depressive disorder, not elsewhere classified",
+      "Anxiety state, unspecified"
+    ]
+  },
+  "stay_days": 9,
+  "recommended_turn_range": [
+    60,
+    85
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2124-12-06 00:00:00): Name:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Prochlorperazine\n \nAttending: ___.\n \nChief Complaint:\nnausea, vomiting\n \nMajor Surgical or Invasive Procedure:\nnone\n\n \nHistory of Present Illness:\n___ y/o F with T1DM, ?gastroparesis, recent EGD that was H.pylori \npositive, recently d/c'ed yesterday as well as ___ for \nsimilar symptoms. Pt was initially was doing better, woke up \nwith back pain (chronic), took Tylenol, and then developed \nintractable NV. When EMS arrived vitals were BP 240/110 and HR \n110-120 in the setting of ongoing wretching/vomiting. ___ 144 by \nEMS.\n\nOn arrival to the ED BP 187/120, HR 130, continually dry heaving \n(OP secretions, nbnb). She was reported to have retched until \nshe got IV pain meds. No abdominal tenderness on exam in ED. KUB \nshows no acute process, no free air, and no obstruction. Basic \nlabs unremarkable.\n\nIn the ED, initially got got 1 mg Ativan, 4 mg Zofran, and 0.5mg \nDilaudid at 11:30AM. Dilaudid 0.5mg x1 again at 1:30PM. Got an \nadditional 0.5mg Diluaid and Zofran 4mg IV at approximately 4PM.\n\nVS upon transfer: T 98.3F. HR 100, BP 169/115, RR 16, O2 sat \n100% on RA\n\nVomited x 2 upon arrival to the floor per nursing. Mostly \nbringing up clear fluid, sometimes yellow. C/o of nausea and \ndiffuse, crampy abdominal pain.\n\nROS: Endorses cough and sinus congestion. Diffuse abdominal \npain. Diarrhea yesterday. Last able to eat food last night. No \nedema. No headache. ROS limited by patient discomfort. \n \nPast Medical History:\n- Diabetes Type I: diagnosed age ___ in ___ after her first \npregnancy. Most recent Hgb A1C 10.9 % (___)\n- Previous admissions for nausea/vomiting with h/o esophagitis\nand with concern for diabetic gastroparesis on metoclopramide\n- Esophagitis / H. Pylori ___\n- Stage I diabetic nephropathy\n- Anxiety/panic attacks\n- Depression\n- Hyperlipidemia\n- S/P MVA ___ and ___- lower back pain since then. Per \npatient, received oxycodone from her primary provider.\n- Goiter\n- G2P1Ab1, s/p miscarriage in ___ trimester, s/p C-section\nin ___\n- Genital Herpes\n\n \nSocial History:\n___\nFamily History:\nHer grandmother had type ___ diabetes.  No family history of \ninflammatory bowel disease.\n \nPhysical Exam:\n(limited by patient discomfort)\nVS - Temp 97.8F, BP 154/81, HR 88, R 18, O2-sat 100% RA\nGENERAL - thin, uncomfortable-appearing young female, speaks \nvery softly, began burping during examination\nHEENT - sclerae anicteric, MMM\nLUNGS - CTA bilat\nHEART - tachycardic but regular, no MRG, nl S1-S2\nABDOMEN - hypoactive BS, soft/NT/ND, no rebound/guarding\nEXTREMITIES - WWP, no c/c/e\nSKIN - scar noted on right chest\nNEURO - awake, CNs ___ grossly intact, no focal deficit \n \nPertinent Results:\nAdmission Labs:\n___ 08:10AM BLOOD WBC-5.5 RBC-3.82* Hgb-11.1* Hct-33.8* \nMCV-89 MCH-28.9 MCHC-32.7 RDW-13.8 Plt ___\n___ 08:10AM BLOOD Glucose-143* UreaN-9 Creat-0.8 Na-136 \nK-3.7 Cl-101 HCO3-28 AnGap-11\n___ 08:10AM BLOOD ALT-13 AST-15 LD(LDH)-140 AlkPhos-64 \nTotBili-0.3\n___ 08:10AM BLOOD Albumin-4.1 Calcium-9.1 Phos-4.2 Mg-1.7\n___ 08:10AM BLOOD ASA-NEG Ethanol-NEG Acetmnp-NEG \nBnzodzp-NEG Barbitr-NEG Tricycl-NEG\n\nImaging:\nCXR ___ No acute cardiopulmonary abnormality.\nKUB ___ No evidence of bowel obstruction or free \nintraperitoneal air.\nKUB ___ No evidence of obstruction. Moderate retained fecal \nmaterial\nwithin the colon.\nRUQ US ___ Normal right upper quadrant ultrasound with no \nfindings to\nsuggest the cause of the patient's nausea and vomiting.\nUGI serius ___: Barium passes freely to the stomach. No \ntertiary\ncontractions are seen. No hiatal hernia is seen. However, there \nwas free\nreflux to the upper esophagus during the exam. Limited views of \nthe stomach\nappear normal. The duodenum demonstrates a normal course with \nspontaneous\npassage of barium into the proximal jejunum. Delayed spot film \ndemonstrates\npassage of contrast into the small bowel in the left lower \nquadrant. The\npatient subsequently vomited barium and requested to terminate \nthe study;\ntherefore, a full small bowel follow-through was not performed. \nIMPRESSION:\n1. Gastroesophageal reflux.\n2. Passage of contrast through the esophagus, stomach and \nproximal small\nbowel.\n\nOther Studies:\n___ Urine PBG NEGATIVE\n\nMicro:\nUCx ___ URINE CULTURE (Final ___: \n      MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT \nWITH SKIN\n      AND/OR GENITAL CONTAMINATION.\nBlood Cx ___ - Coag negative staph in ___ bottles\nBlood Cx ___ no growth\nStool C diff negative ___\nStool cultures pending at the time of discharge. \n\nDischarge Labs:\n___ 06:58AM BLOOD WBC-4.5 RBC-3.90* Hgb-11.1* Hct-33.9* \nMCV-87 MCH-28.5 MCHC-32.8 RDW-13.5 Plt ___\n___ 06:58AM BLOOD Glucose-150* UreaN-9 Creat-0.8 Na-133 \nK-4.1 Cl-99 HCO3-26 AnGap-12\n___ 06:58AM BLOOD Calcium-9.4 Phos-4.1 Mg-1.___ F presented to ED with nausea and vomiting with recent \nadmission on ___ and ___ with similar complaints. \n \n# N/V: The patient had been started on triple therapy for H. \npylori the day before admission. This was held during admission \nand the patient was initially started on an IV PPI. Her home \nReglan was also initially given IV. Zofran 4mg IV q 4 hours PRN \nuntil vomiting improved. Given vomiting and tachcardia, gave IVF \nuntil patient able to tolerate at least clears po. Urine culture \nwas negative. Diet was advanced as tolerated and medications \nwere switched to po. Nutrition saw and discussed food choices \nwith the patient. Patient had initially improved, but after \nbeing advanced to a full diet, began to start vomiting again. \nKUB showed stool, but no signs of obstruction. GI was consulted. \nThey recommended stool cultures that were still pending at the \ntime of discharge, as well as some imaging. UGI series showed \nreflux and otherwise normal gut motility, but the small bowel \nfollow through was not entirely completed as the patient began \nto vomit during the study. LFTs were normal, and RUQ US did not \nshow any biliary tract disease. CT AP with contrast was ordered, \nbut patient was unable to tolerate the barium. The patient \nstated she having more of her low back pain than abdominal pain. \nHer bowel regimen was increased and narcotic pain medications \nwere held. The patient's nausea improved after having a bowel \nmovement. On the day of discharge, patient was tolerating a \nregular diet and had not vomited for 24 hours. She was \ndischarged on a PPI but without further H pylori treatment. Abx \nwill be discussed when she goes for her GI follow up \nappointment. Stool studies can be followed up by GI and/or PCP.  \n           \n\n# Type 1 DM: Labs not indicative of acidosis. Nightime Lantus \ndose was adjusted throughout admission based on the amount of po \ntaken and FSG readings throughout the day. She will be \ndischarged home with 20 units of Lantus and instructions to keep \ntrack of her sugars at home so this dose can potentially be \nadjusted at PCP follow up.  \n \n \nMedications on Admission:\n1. Sertraline 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).\n2. Camphor-Menthol 0.5-0.5 % Lotion Sig: One (1) Appl Topical \nQID (4 times a day) as needed for itching.  \n3. Lorazepam 1 mg Tablet Sig: One (1) Tablet PO every eight (8) \nhours as needed for anxiety.  \n4. Metoclopramide 10 mg Tablet Sig: 0.5 Tablet PO QIDACHS (4 \ntimes a day (before meals and at bedtime)).  \n5. insulin - please continue your home insulin regime\n6. Omeprazole 40 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO twice a day.\nDisp:*60 Capsule, Delayed Release(E.C.)(s)* Refills:*2*\n7. Dilaudid 2 mg Tablet Sig: ___ Tablets PO every six (6) hours \nfor 5 doses.\nDisp:*6 Tablet(s)* Refills:*0*\n \nDischarge Medications:\n1. sertraline 50 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n2. ondansetron 4 mg Tablet, Rapid Dissolve Sig: One (1) Tablet, \nRapid Dissolve PO Q8H (every 8 hours) as needed for nausea.\nDisp:*30 Tablet, Rapid Dissolve(s)* Refills:*1*\n3. metoclopramide 10 mg Tablet Sig: One (1) Tablet PO QIDACHS (4 \ntimes a day (before meals and at bedtime)).\nDisp:*120 Tablet(s)* Refills:*2*\n4. lorazepam 1 mg Tablet Sig: One (1) Tablet PO Q8H (every 8 \nhours) as needed for anxiety.  \n5. Lantus 100 unit/mL Solution Sig: Twenty (20) units \nSubcutaneous at bedtime.\nDisp:*10 vials* Refills:*2*\n6. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID (2 \ntimes a day): Stop this medication for a few days if you begin \nto have loose stools or more than 2 bowel movements per day.\nDisp:*60 Capsule(s)* Refills:*2*\n7. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a \nday): Stop this medication for a few days if you begin to have \nloose stools or more than 2 bowel movements per day.\nDisp:*60 Tablet(s)* Refills:*2*\n8. bisacodyl 5 mg Tablet, Delayed Release (E.C.) Sig: Two (2) \nTablet, Delayed Release (E.C.) PO DAILY (Daily) as needed for \nconstipation: Only take this medication if you have not had a \nbowel movement for 2 days.\nDisp:*15 Tablet, Delayed Release (E.C.)(s)* Refills:*2*\n9. acetaminophen 500 mg Tablet Sig: Two (2) Tablet PO Q6H (every \n6 hours) as needed for pain.\nDisp:*120 Tablet(s)* Refills:*2*\n10. camphor-menthol 0.5-0.5 % Lotion Sig: One (1) application \nTopical every six (6) hours as needed for itching.  \n11. omeprazole 40 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO once a day.  \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary:\nGastritis\nH pylori infection\nConstipation\n\nSecondary:\nType 1 diabetes\nanxiety\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nThank you for coming to ___ for your medical care. You were \nadmitted to the hospital for nausea and vomiting. We gave you IV \nfluids as well as medicines for pain and nausea. We gave you \nfood to eat slowly. Your nausea and pain improved. We asked the \n___ doctors to ___ you. You had some tests that did not show \nany problems with your liver or gallbladder or any obstruction \nin your digestive tract. You have an appointment to follow up \nwith the GI doctors, and at that visit how to treat the H. \npylori infection in your stomach can be discussed.    \n\nWe made the following changes to your medication:\n- Please START taking Zofran (ondansetron) 4mg by mouth every 8 \nhours as needed for nausea. \n- Please START taking Senna 1 tablet and docusate 100mg twice a \nday. Please stop taking these medicines if you have loose \nstools. \n- Please START taking bisacodyl 10mg daily if you have not had a \nbowel movement in 2 days. \n- CHANGE your metoclopramide (Reglan) to 10 mg with meals and at \nbedtime.\n- Please DECREASE your Lantus to 20 units each night. You should \ncheck your blood sugars when you wake up in the morning and 2 \nhours after you eat. Keep a record of these sugars and bring \nthem when you see your primary care doctor so your insulin can \nbe adjusted if need be. \n- Please STOP taking the amoxacillin and clarithromycin that \nwere prescribed for the H. pylori infection for now. The GI \ndoctors ___ these medicines or change them when you see \nthem. \n \n \nFollowup Instructions:\n___",
+  "problem_prompt_block": "- Atrophic gastritis, without mention of hemorrhage\n- Helicobacter pylori [H. pylori]\n- Diabetes with neurological manifestations, type I [juvenile type], uncontrolled\n- Gastroparesis\n- Diabetes with other specified manifestations, type I [juvenile type], uncontrolled\n- Diabetes with renal manifestations, type I [juvenile type], uncontrolled\n- Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere\n- Constipation, unspecified\n- Long-term (current) use of insulin\n- Esophageal reflux\n- Lumbago\n- Abdominal pain, right lower quadrant\n- Other chronic pain\n- Dysthymic disorder\n- Goiter, unspecified\n- Genital herpes, unspecified\n- Other and unspecified hyperlipidemia",
+  "supporting_context_block": "Radiology:\n- 2124-11-27 12:09:00: HISTORY: Patient with nausea, vomiting, chest pain in the upright. COMPARISON: ___ chest radiograph. CHEST RADIOGRAPH (PORTABLE AP VIEW ONLY): The lungs are clear. No pneumothorax or pleural effusion is noted. The car...\n- 2124-11-27 14:57:00: INDICATION: Nausea and vomiting. COMPARISON: ___. SUPINE AP AND LEFT LATERAL DECUBITUS VIEWS OF THE ABDOMEN: A non-obstructive bowel gas pattern is demonstrated with a moderate amount of fecal material demonstrated wi...\n- 2124-12-03 10:13:00: INDICATION: ___ female with type 1 diabetes, now with a sudden onset of nausea and vomiting. Evaluate for evidence of obstruction. COMPARISON: ___. FINDINGS: Supine and upright views of the abdomen are submitted for r...\n- 2124-12-03 14:36:00: INDICATION: A ___ female with recurrent nausea and vomiting. COMPARISON: Abdomen CT ___ and abdomen ultrasound, ___. FINDINGS: The liver shows no focal or textural abnormality. No biliary dilatation is seen and the co...\n- 2124-12-03 15:25:00: CLINICAL INDICATION: ___ female with type 1 diabetes mellitus and recurrent nausea and vomiting. Evaluate for dysmotility or proximal bowel obstruction. COMPARISON: None available. DOUBLE CONTRAST UPPER GI: Barium pas...\n\nProcedures:\n- None recorded.\n\nMicrobiology:\n- 2124-11-28 19:40:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-11-28 21:00:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-11-29 06:15:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-11-29 09:15:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-11-30 06:20:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-11-30 09:50:00: BLOOD CULTURE (NO GROWTH.)\n- 2124-12-06 01:55:00: STOOL (NO ENTERIC GRAM NEGATIVE RODS FOUND.  NO SALMONELLA OR SHIGELLA FOUND.)\n- 2124-12-06 01:55:00: STOOL (NO CAMPYLOBACTER FOUND.)\n- 2124-12-06 01:55:00: STOOL (NO OVA AND PARASITES SEEN.  This test does not reliably detect Cryptosporidium, Cyclospora or Microsporidium. While most cases of Giardia are detected by routine O+P, the Giardia antigen test may enhance detection when organisms are rare.)\n- 2124-12-06 01:55:00: STOOL (NO VIBRIO FOUND.)",
+  "formed_packet": {
+    "subject_id": "17517983",
+    "hadm_id": "25946513",
+    "admission_start": "2124-11-27 15:19:00",
+    "admission_end": "2124-12-06 14:30:00",
+    "previous_admission_summary": {
+      "admission_start": "2124-11-25 18:13:00",
+      "admission_end": "2124-11-26 18:15:00",
+      "summary_paragraph": "A woman with type 1 diabetes, chronic back pain, and a history of H. pylori gastritis was readmitted for persistent nausea, vomiting, and worsening back pain after an incomplete recovery from a recent hospitalization. She presented with elevated glucose of 444, which resolved with IV fluids and her home insulin regimen without evidence of ketoacidosis. A gastric biopsy revealed active gastritis with findings suggestive of H. pylori, explaining her gastrointestinal symptoms, while a gastric emptying study was normal, ruling out gastroparesis. She was treated with IV Zofran, continued on metoclopramide and omeprazole, and her pain was initially managed with Dilaudid before transitioning to acetaminophen, ibuprofen, and cyclobenzaprine. Her nausea resolved, she tolerated a regular diet, and her vitals stabilized. Sertraline was increased to 150mg daily for depression, and close primary care follow-up was arranged. She was discharged home in stable condition with updated medications and instructions for ongoing symptom management.",
+      "problems": [
+        "Nausea with vomiting",
+        "Other chronic pain",
+        "Lumbago",
+        "Diabetes with renal manifestations, type I [juvenile type], not stated as uncontrolled",
+        "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+        "Abdominal pain, unspecified site",
+        "Depressive disorder, not elsewhere classified",
+        "Anxiety state, unspecified"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "17517983-DS-44",
+        "note_seq": 44,
+        "charttime": "2124-12-06 00:00:00",
+        "storetime": "2124-12-07 10:09:00",
+        "text": " \nName:  ___                Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   F\n \nService: MEDICINE\n \nAllergies: \nMorphine / Prochlorperazine\n \nAttending: ___.\n \nChief Complaint:\nnausea, vomiting\n \nMajor Surgical or Invasive Procedure:\nnone\n\n \nHistory of Present Illness:\n___ y/o F with T1DM, ?gastroparesis, recent EGD that was H.pylori \npositive, recently d/c'ed yesterday as well as ___ for \nsimilar symptoms. Pt was initially was doing better, woke up \nwith back pain (chronic), took Tylenol, and then developed \nintractable NV. When EMS arrived vitals were BP 240/110 and HR \n110-120 in the setting of ongoing wretching/vomiting. ___ 144 by \nEMS.\n\nOn arrival to the ED BP 187/120, HR 130, continually dry heaving \n(OP secretions, nbnb). She was reported to have retched until \nshe got IV pain meds. No abdominal tenderness on exam in ED. KUB \nshows no acute process, no free air, and no obstruction. Basic \nlabs unremarkable.\n\nIn the ED, initially got got 1 mg Ativan, 4 mg Zofran, and 0.5mg \nDilaudid at 11:30AM. Dilaudid 0.5mg x1 again at 1:30PM. Got an \nadditional 0.5mg Diluaid and Zofran 4mg IV at approximately 4PM.\n\nVS upon transfer: T 98.3F. HR 100, BP 169/115, RR 16, O2 sat \n100% on RA\n\nVomited x 2 upon arrival to the floor per nursing. Mostly \nbringing up clear fluid, sometimes yellow. C/o of nausea and \ndiffuse, crampy abdominal pain.\n\nROS: Endorses cough and sinus congestion. Diffuse abdominal \npain. Diarrhea yesterday. Last able to eat food last night. No \nedema. No headache. ROS limited by patient discomfort. \n \nPast Medical History:\n- Diabetes Type I: diagnosed age ___ in ___ after her first \npregnancy. Most recent Hgb A1C 10.9 % (___)\n- Previous admissions for nausea/vomiting with h/o esophagitis\nand with concern for diabetic gastroparesis on metoclopramide\n- Esophagitis / H. Pylori ___\n- Stage I diabetic nephropathy\n- Anxiety/panic attacks\n- Depression\n- Hyperlipidemia\n- S/P MVA ___ and ___- lower back pain since then. Per \npatient, received oxycodone from her primary provider.\n- Goiter\n- G2P1Ab1, s/p miscarriage in ___ trimester, s/p C-section\nin ___\n- Genital Herpes\n\n \nSocial History:\n___\nFamily History:\nHer grandmother had type ___ diabetes.  No family history of \ninflammatory bowel disease.\n \nPhysical Exam:\n(limited by patient discomfort)\nVS - Temp 97.8F, BP 154/81, HR 88, R 18, O2-sat 100% RA\nGENERAL - thin, uncomfortable-appearing young female, speaks \nvery softly, began burping during examination\nHEENT - sclerae anicteric, MMM\nLUNGS - CTA bilat\nHEART - tachycardic but regular, no MRG, nl S1-S2\nABDOMEN - hypoactive BS, soft/NT/ND, no rebound/guarding\nEXTREMITIES - WWP, no c/c/e\nSKIN - scar noted on right chest\nNEURO - awake, CNs ___ grossly intact, no focal deficit \n \nPertinent Results:\nAdmission Labs:\n___ 08:10AM BLOOD WBC-5.5 RBC-3.82* Hgb-11.1* Hct-33.8* \nMCV-89 MCH-28.9 MCHC-32.7 RDW-13.8 Plt ___\n___ 08:10AM BLOOD Glucose-143* UreaN-9 Creat-0.8 Na-136 \nK-3.7 Cl-101 HCO3-28 AnGap-11\n___ 08:10AM BLOOD ALT-13 AST-15 LD(LDH)-140 AlkPhos-64 \nTotBili-0.3\n___ 08:10AM BLOOD Albumin-4.1 Calcium-9.1 Phos-4.2 Mg-1.7\n___ 08:10AM BLOOD ASA-NEG Ethanol-NEG Acetmnp-NEG \nBnzodzp-NEG Barbitr-NEG Tricycl-NEG\n\nImaging:\nCXR ___ No acute cardiopulmonary abnormality.\nKUB ___ No evidence of bowel obstruction or free \nintraperitoneal air.\nKUB ___ No evidence of obstruction. Moderate retained fecal \nmaterial\nwithin the colon.\nRUQ US ___ Normal right upper quadrant ultrasound with no \nfindings to\nsuggest the cause of the patient's nausea and vomiting.\nUGI serius ___: Barium passes freely to the stomach. No \ntertiary\ncontractions are seen. No hiatal hernia is seen. However, there \nwas free\nreflux to the upper esophagus during the exam. Limited views of \nthe stomach\nappear normal. The duodenum demonstrates a normal course with \nspontaneous\npassage of barium into the proximal jejunum. Delayed spot film \ndemonstrates\npassage of contrast into the small bowel in the left lower \nquadrant. The\npatient subsequently vomited barium and requested to terminate \nthe study;\ntherefore, a full small bowel follow-through was not performed. \nIMPRESSION:\n1. Gastroesophageal reflux.\n2. Passage of contrast through the esophagus, stomach and \nproximal small\nbowel.\n\nOther Studies:\n___ Urine PBG NEGATIVE\n\nMicro:\nUCx ___ URINE CULTURE (Final ___: \n      MIXED BACTERIAL FLORA ( >= 3 COLONY TYPES), CONSISTENT \nWITH SKIN\n      AND/OR GENITAL CONTAMINATION.\nBlood Cx ___ - Coag negative staph in ___ bottles\nBlood Cx ___ no growth\nStool C diff negative ___\nStool cultures pending at the time of discharge. \n\nDischarge Labs:\n___ 06:58AM BLOOD WBC-4.5 RBC-3.90* Hgb-11.1* Hct-33.9* \nMCV-87 MCH-28.5 MCHC-32.8 RDW-13.5 Plt ___\n___ 06:58AM BLOOD Glucose-150* UreaN-9 Creat-0.8 Na-133 \nK-4.1 Cl-99 HCO3-26 AnGap-12\n___ 06:58AM BLOOD Calcium-9.4 Phos-4.1 Mg-1.___ F presented to ED with nausea and vomiting with recent \nadmission on ___ and ___ with similar complaints. \n \n# N/V: The patient had been started on triple therapy for H. \npylori the day before admission. This was held during admission \nand the patient was initially started on an IV PPI. Her home \nReglan was also initially given IV. Zofran 4mg IV q 4 hours PRN \nuntil vomiting improved. Given vomiting and tachcardia, gave IVF \nuntil patient able to tolerate at least clears po. Urine culture \nwas negative. Diet was advanced as tolerated and medications \nwere switched to po. Nutrition saw and discussed food choices \nwith the patient. Patient had initially improved, but after \nbeing advanced to a full diet, began to start vomiting again. \nKUB showed stool, but no signs of obstruction. GI was consulted. \nThey recommended stool cultures that were still pending at the \ntime of discharge, as well as some imaging. UGI series showed \nreflux and otherwise normal gut motility, but the small bowel \nfollow through was not entirely completed as the patient began \nto vomit during the study. LFTs were normal, and RUQ US did not \nshow any biliary tract disease. CT AP with contrast was ordered, \nbut patient was unable to tolerate the barium. The patient \nstated she having more of her low back pain than abdominal pain. \nHer bowel regimen was increased and narcotic pain medications \nwere held. The patient's nausea improved after having a bowel \nmovement. On the day of discharge, patient was tolerating a \nregular diet and had not vomited for 24 hours. She was \ndischarged on a PPI but without further H pylori treatment. Abx \nwill be discussed when she goes for her GI follow up \nappointment. Stool studies can be followed up by GI and/or PCP.  \n           \n\n# Type 1 DM: Labs not indicative of acidosis. Nightime Lantus \ndose was adjusted throughout admission based on the amount of po \ntaken and FSG readings throughout the day. She will be \ndischarged home with 20 units of Lantus and instructions to keep \ntrack of her sugars at home so this dose can potentially be \nadjusted at PCP follow up.  \n \n \nMedications on Admission:\n1. Sertraline 50 mg Tablet Sig: Two (2) Tablet PO DAILY (Daily).\n2. Camphor-Menthol 0.5-0.5 % Lotion Sig: One (1) Appl Topical \nQID (4 times a day) as needed for itching.  \n3. Lorazepam 1 mg Tablet Sig: One (1) Tablet PO every eight (8) \nhours as needed for anxiety.  \n4. Metoclopramide 10 mg Tablet Sig: 0.5 Tablet PO QIDACHS (4 \ntimes a day (before meals and at bedtime)).  \n5. insulin - please continue your home insulin regime\n6. Omeprazole 40 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO twice a day.\nDisp:*60 Capsule, Delayed Release(E.C.)(s)* Refills:*2*\n7. Dilaudid 2 mg Tablet Sig: ___ Tablets PO every six (6) hours \nfor 5 doses.\nDisp:*6 Tablet(s)* Refills:*0*\n \nDischarge Medications:\n1. sertraline 50 mg Tablet Sig: One (1) Tablet PO DAILY (Daily). \n \n2. ondansetron 4 mg Tablet, Rapid Dissolve Sig: One (1) Tablet, \nRapid Dissolve PO Q8H (every 8 hours) as needed for nausea.\nDisp:*30 Tablet, Rapid Dissolve(s)* Refills:*1*\n3. metoclopramide 10 mg Tablet Sig: One (1) Tablet PO QIDACHS (4 \ntimes a day (before meals and at bedtime)).\nDisp:*120 Tablet(s)* Refills:*2*\n4. lorazepam 1 mg Tablet Sig: One (1) Tablet PO Q8H (every 8 \nhours) as needed for anxiety.  \n5. Lantus 100 unit/mL Solution Sig: Twenty (20) units \nSubcutaneous at bedtime.\nDisp:*10 vials* Refills:*2*\n6. docusate sodium 100 mg Capsule Sig: One (1) Capsule PO BID (2 \ntimes a day): Stop this medication for a few days if you begin \nto have loose stools or more than 2 bowel movements per day.\nDisp:*60 Capsule(s)* Refills:*2*\n7. senna 8.6 mg Tablet Sig: One (1) Tablet PO BID (2 times a \nday): Stop this medication for a few days if you begin to have \nloose stools or more than 2 bowel movements per day.\nDisp:*60 Tablet(s)* Refills:*2*\n8. bisacodyl 5 mg Tablet, Delayed Release (E.C.) Sig: Two (2) \nTablet, Delayed Release (E.C.) PO DAILY (Daily) as needed for \nconstipation: Only take this medication if you have not had a \nbowel movement for 2 days.\nDisp:*15 Tablet, Delayed Release (E.C.)(s)* Refills:*2*\n9. acetaminophen 500 mg Tablet Sig: Two (2) Tablet PO Q6H (every \n6 hours) as needed for pain.\nDisp:*120 Tablet(s)* Refills:*2*\n10. camphor-menthol 0.5-0.5 % Lotion Sig: One (1) application \nTopical every six (6) hours as needed for itching.  \n11. omeprazole 40 mg Capsule, Delayed Release(E.C.) Sig: One (1) \nCapsule, Delayed Release(E.C.) PO once a day.  \n\n \nDischarge Disposition:\nHome\n \nDischarge Diagnosis:\nPrimary:\nGastritis\nH pylori infection\nConstipation\n\nSecondary:\nType 1 diabetes\nanxiety\n\n \nDischarge Condition:\nMental Status: Clear and coherent.\nLevel of Consciousness: Alert and interactive.\nActivity Status: Ambulatory - Independent.\n\n \nDischarge Instructions:\nDear Ms. ___,\n\nThank you for coming to ___ for your medical care. You were \nadmitted to the hospital for nausea and vomiting. We gave you IV \nfluids as well as medicines for pain and nausea. We gave you \nfood to eat slowly. Your nausea and pain improved. We asked the \n___ doctors to ___ you. You had some tests that did not show \nany problems with your liver or gallbladder or any obstruction \nin your digestive tract. You have an appointment to follow up \nwith the GI doctors, and at that visit how to treat the H. \npylori infection in your stomach can be discussed.    \n\nWe made the following changes to your medication:\n- Please START taking Zofran (ondansetron) 4mg by mouth every 8 \nhours as needed for nausea. \n- Please START taking Senna 1 tablet and docusate 100mg twice a \nday. Please stop taking these medicines if you have loose \nstools. \n- Please START taking bisacodyl 10mg daily if you have not had a \nbowel movement in 2 days. \n- CHANGE your metoclopramide (Reglan) to 10 mg with meals and at \nbedtime.\n- Please DECREASE your Lantus to 20 units each night. You should \ncheck your blood sugars when you wake up in the morning and 2 \nhours after you eat. Keep a record of these sugars and bring \nthem when you see your primary care doctor so your insulin can \nbe adjusted if need be. \n- Please STOP taking the amoxacillin and clarithromycin that \nwere prescribed for the H. pylori infection for now. The GI \ndoctors ___ these medicines or change them when you see \nthem. \n \n \nFollowup Instructions:\n___\n"
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "17517983-RR-75",
+        "charttime": "2124-11-27 12:09:00",
+        "storetime": "2124-11-27 14:28:00",
+        "text": "HISTORY:  Patient with nausea, vomiting, chest pain in the upright.\n\nCOMPARISON:  ___ chest radiograph.\n\nCHEST RADIOGRAPH (PORTABLE AP VIEW ONLY):  The lungs are clear.  No\npneumothorax or pleural effusion is noted.  The cardiac silhouette is\nunremarkable.  The hilar contours are normal.  The mediastinal contour is\nstable from ___. No free air under the diaphragms.\n\nIMPRESSION:  No acute cardiopulmonary abnormality.\n"
+      },
+      {
+        "note_id": "17517983-RR-76",
+        "charttime": "2124-11-27 14:57:00",
+        "storetime": "2124-11-27 16:34:00",
+        "text": "INDICATION:  Nausea and vomiting.\n\nCOMPARISON:  ___.\n\nSUPINE AP AND LEFT LATERAL DECUBITUS VIEWS OF THE ABDOMEN:  A non-obstructive\nbowel gas pattern is demonstrated with a moderate amount of fecal material\ndemonstrated within the right colon.  No air-fluid levels or dilated loops of\nsmall bowel are seen.  No free intraperitoneal air is visualized.  No soft\ntissue calcifications are present.  The osseous structures demonstrate no\nacute abnormalities.\n\nIMPRESSION:  No evidence of bowel obstruction or free intraperitoneal air.\n"
+      },
+      {
+        "note_id": "17517983-RR-77",
+        "charttime": "2124-12-03 10:13:00",
+        "storetime": "2124-12-03 14:43:00",
+        "text": "INDICATION:  ___ female with type 1 diabetes, now with a sudden onset\nof nausea and vomiting.  Evaluate for evidence of obstruction.\n\nCOMPARISON:  ___.\n\nFINDINGS:  Supine and upright views of the abdomen are submitted for review. \nThere are no dilated bowel loops identified, with air and stool seen extending\nto the rectum.  Moderate amount of retained colonic fecal material is present.\nThere is no pneumatosis, bowel wall thickening, or evidence of free air.  No\nabnormal tissue calcifications or soft tissue masses are identified. \nVisualized osseous structures are normal.  The lung bases are clear.\n\nIMPRESSION:  No evidence of obstruction.  Moderate retained fecal material\nwithin the colon.\n"
+      },
+      {
+        "note_id": "17517983-RR-78",
+        "charttime": "2124-12-03 14:36:00",
+        "storetime": "2124-12-03 15:37:00",
+        "text": "INDICATION:  A ___ female with recurrent nausea and vomiting.\n\nCOMPARISON:  Abdomen CT ___ and abdomen ultrasound, ___.\n\nFINDINGS:  The liver shows no focal or textural abnormality.  No biliary\ndilatation is seen and the common duct measures 0.2 cm.  The gallbladder is\nnormal with no gallstones identified.  No gallbladder wall edema or\npericholecystic fluid is seen.  The portal vein is patent with hepatopetal\nflow.  The pancreas is unremarkable.  No ascites is seen in the right upper\nquadrant.\n\nIMPRESSION:  Normal right upper quadrant ultrasound with no findings to\nsuggest the cause of the patient's nausea and vomiting.\n"
+      },
+      {
+        "note_id": "17517983-RR-79",
+        "charttime": "2124-12-03 15:25:00",
+        "storetime": "2124-12-03 17:47:00",
+        "text": "CLINICAL INDICATION:  ___ female with type 1 diabetes mellitus and\nrecurrent nausea and vomiting.  Evaluate for dysmotility or proximal bowel\nobstruction.\n\nCOMPARISON:  None available.\n\nDOUBLE CONTRAST UPPER GI:  Barium passes freely to the stomach.  No tertiary\ncontractions are seen.  No hiatal hernia is seen.  However, there was free\nreflux to the upper esophagus during the exam.  Limited views of the stomach\nappear normal.  The duodenum demonstrates a normal course with spontaneous\npassage of barium into the proximal jejunum.  Delayed spot film demonstrates\npassage of contrast into the small bowel in the left lower quadrant.  The\npatient subsequently vomited barium and requested to terminate the study;\ntherefore, a full small bowel follow-through was not performed.  This was\ndiscussed with Dr. ___ at 4:30 p.m. on ___ who agreed with\nthe plan to terminate the study.\n\nIMPRESSION:\n1.  Gastroesophageal reflux.\n2.  Passage of contrast through the esophagus, stomach and proximal small\nbowel.\n\nThese results were communicated by telephone to Dr. ___ at 4:30\np.m. on ___. \n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "53510",
+        "icd_version": 9,
+        "long_title": "Atrophic gastritis, without mention of hemorrhage",
+        "normalized_time": "2124-12-06 13:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "04186",
+        "icd_version": 9,
+        "long_title": "Helicobacter pylori [H. pylori]",
+        "normalized_time": "2124-12-06 13:33:45",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "25063",
+        "icd_version": 9,
+        "long_title": "Diabetes with neurological manifestations, type I [juvenile type], uncontrolled",
+        "normalized_time": "2124-12-06 13:37:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "5363",
+        "icd_version": 9,
+        "long_title": "Gastroparesis",
+        "normalized_time": "2124-12-06 13:41:15",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "25083",
+        "icd_version": 9,
+        "long_title": "Diabetes with other specified manifestations, type I [juvenile type], uncontrolled",
+        "normalized_time": "2124-12-06 13:45:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "25043",
+        "icd_version": 9,
+        "long_title": "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+        "normalized_time": "2124-12-06 13:48:45",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "58381",
+        "icd_version": 9,
+        "long_title": "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+        "normalized_time": "2124-12-06 13:52:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "56400",
+        "icd_version": 9,
+        "long_title": "Constipation, unspecified",
+        "normalized_time": "2124-12-06 13:56:15",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2124-12-06 14:00:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "53081",
+        "icd_version": 9,
+        "long_title": "Esophageal reflux",
+        "normalized_time": "2124-12-06 14:03:45",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "7242",
+        "icd_version": 9,
+        "long_title": "Lumbago",
+        "normalized_time": "2124-12-06 14:07:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "78903",
+        "icd_version": 9,
+        "long_title": "Abdominal pain, right lower quadrant",
+        "normalized_time": "2124-12-06 14:11:15",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "33829",
+        "icd_version": 9,
+        "long_title": "Other chronic pain",
+        "normalized_time": "2124-12-06 14:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "3004",
+        "icd_version": 9,
+        "long_title": "Dysthymic disorder",
+        "normalized_time": "2124-12-06 14:18:45",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "2409",
+        "icd_version": 9,
+        "long_title": "Goiter, unspecified",
+        "normalized_time": "2124-12-06 14:22:30",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "05410",
+        "icd_version": 9,
+        "long_title": "Genital herpes, unspecified",
+        "normalized_time": "2124-12-06 14:26:15",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "2724",
+        "icd_version": 9,
+        "long_title": "Other and unspecified hyperlipidemia",
+        "normalized_time": "2124-12-06 14:30:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [],
+    "microbiology": [
+      {
+        "chartdate": "2124-11-28 00:00:00",
+        "charttime": "2124-11-28 19:40:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-11-28 00:00:00",
+        "charttime": "2124-11-28 21:00:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-11-29 00:00:00",
+        "charttime": "2124-11-29 06:15:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-11-29 00:00:00",
+        "charttime": "2124-11-29 09:15:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-11-30 00:00:00",
+        "charttime": "2124-11-30 06:20:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-11-30 00:00:00",
+        "charttime": "2124-11-30 09:50:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "FECAL CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO ENTERIC GRAM NEGATIVE RODS FOUND.  NO SALMONELLA OR SHIGELLA FOUND.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "CAMPYLOBACTER CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO CAMPYLOBACTER FOUND.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "OVA + PARASITES",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO OVA AND PARASITES SEEN.  This test does not reliably detect Cryptosporidium, Cyclospora or Microsporidium. While most cases of Giardia are detected by routine O+P, the Giardia antigen test may enhance detection when organisms are rare.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "FECAL CULTURE - R/O VIBRIO",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO VIBRIO FOUND.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "FECAL CULTURE - R/O YERSINIA",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO YERSINIA FOUND.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "FECAL CULTURE - R/O E.COLI 0157:H7",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO E.COLI 0157:H7 FOUND.  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "CLOSTRIDIUM DIFFICILE TOXIN A & B TEST",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Feces negative for C. difficile toxin A & B by EIA.            (Reference Range-Negative).  "
+      },
+      {
+        "chartdate": "2124-12-06 00:00:00",
+        "charttime": "2124-12-06 01:55:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "STOOL",
+        "test_name": "VIRAL CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO VIRUS ISOLATED.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 13566,
+    "output_tokens": 6392,
+    "total_tokens": 19958
+  },
+  "response_id": "chatcmpl-9e5c4b40552c2ca1",
+  "latency_ms": 111890,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2124-11-27 15:19:00",
+        "speaker": "Doctor",
+        "text": "Hi, I'm Dr. Lee. I'll be taking care of you during this hospital stay. Can you tell me what brought you in today?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2124-11-27 15:20:15",
+        "speaker": "Patient",
+        "text": "Hi… I’ve been vomiting nonstop since this morning. I was just discharged yesterday, but it started again after I took Tylenol for my back pain."
+      },
+      {
+        "turn_number": 3,
+        "time": "2124-11-27 15:21:30",
+        "speaker": "Doctor",
+        "text": "I see. And how’s your back pain now?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2124-11-27 15:22:00",
+        "speaker": "Patient",
+        "text": "Still there, but the nausea is worse. I’m mostly bringing up clear fluid, sometimes yellow. My stomach feels crampy."
+      },
+      {
+        "turn_number": 5,
+        "time": "2124-11-27 15:23:15",
+        "speaker": "Doctor",
+        "text": "Okay. Your blood pressure was very high when EMS arrived—240 over 110—but it’s come down. We’ll keep an eye on that. You also have type 1 diabetes, correct?"
+      },
+      {
+        "turn_number": 6,
+        "time": "2124-11-27 15:24:00",
+        "speaker": "Patient",
+        "text": "Yes, and my last A1C was 10.9. I’ve been struggling to control it."
+      },
+      {
+        "turn_number": 7,
+        "time": "2124-11-27 15:25:15",
+        "speaker": "Doctor",
+        "text": "We’ll monitor your sugars closely. Right now, your glucose is 143, which is okay, and no signs of ketoacidosis. We’re starting IV fluids and giving you Zofran for nausea and Dilaudid for pain."
+      },
+      {
+        "turn_number": 8,
+        "time": "2124-11-27 15:26:30",
+        "speaker": "Patient",
+        "text": "Thank you. I was just started on antibiotics for H. pylori yesterday. Should I keep taking them?"
+      },
+      {
+        "turn_number": 9,
+        "time": "2124-11-27 15:27:45",
+        "speaker": "Doctor",
+        "text": "We’re holding those for now since you can’t keep anything down. We’ve switched you to IV omeprazole to protect your stomach while we figure things out."
+      },
+      {
+        "turn_number": 10,
+        "time": "2124-11-27 15:29:00",
+        "speaker": "Patient",
+        "text": "Okay. I also have some cough and congestion. Is that related?"
+      },
+      {
+        "turn_number": 11,
+        "time": "2124-11-27 15:30:15",
+        "speaker": "Doctor",
+        "text": "Possibly just a mild cold. Your chest X-ray is clear, so nothing serious there. We’ll focus on the nausea first."
+      },
+      {
+        "turn_number": 12,
+        "time": "2124-11-27 18:00:00",
+        "speaker": "Doctor",
+        "text": "We got results from your abdominal X-ray. No blockage or free air, but there’s a moderate amount of stool in your colon. Could be contributing to the nausea."
+      },
+      {
+        "turn_number": 13,
+        "time": "2124-11-27 18:01:30",
+        "speaker": "Patient",
+        "text": "I haven’t had a good bowel movement in a few days. Could that really make me vomit this much?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2124-11-27 18:03:00",
+        "speaker": "Doctor",
+        "text": "Yes, especially with your history of gastroparesis. When the bowels are backed up, it can trigger nausea and vomiting. We’re going to increase your bowel regimen."
+      },
+      {
+        "turn_number": 15,
+        "time": "2124-11-28 09:15:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your blood cultures came back negative—no infection in the bloodstream. That’s reassuring."
+      },
+      {
+        "turn_number": 16,
+        "time": "2124-11-28 09:16:30",
+        "speaker": "Patient",
+        "text": "That’s good. I was worried about that. How’s my stomach looking?"
+      },
+      {
+        "turn_number": 17,
+        "time": "2124-11-28 09:18:00",
+        "speaker": "Doctor",
+        "text": "We haven’t scoped it this time, but your labs are stable. We’re going to try advancing your diet to clear liquids today if you’re up for it."
+      },
+      {
+        "turn_number": 18,
+        "time": "2124-11-28 09:19:30",
+        "speaker": "Patient",
+        "text": "I’d like to try. I hate being on IV fluids."
+      },
+      {
+        "turn_number": 19,
+        "time": "2124-11-29 10:00:00",
+        "speaker": "Doctor",
+        "text": "You did well on clear liquids yesterday. Today, we’re moving you to a soft diet. How’s the nausea?"
+      },
+      {
+        "turn_number": 20,
+        "time": "2124-11-29 10:01:15",
+        "speaker": "Patient",
+        "text": "Better, but I started feeling queasy again after breakfast."
+      },
+      {
+        "turn_number": 21,
+        "time": "2124-11-29 10:02:30",
+        "speaker": "Doctor",
+        "text": "We noticed. You vomited once this morning. We’re holding off on solid food for now and will consult GI for next steps."
+      },
+      {
+        "turn_number": 22,
+        "time": "2124-11-30 14:00:00",
+        "speaker": "Doctor",
+        "text": "The GI team wants to do an upper GI series to check your stomach motility. It uses barium—you’ll drink it, and we’ll watch it move through your system."
+      },
+      {
+        "turn_number": 23,
+        "time": "2124-11-30 14:01:30",
+        "speaker": "Patient",
+        "text": "Will it make me nauseous?"
+      },
+      {
+        "turn_number": 24,
+        "time": "2124-11-30 14:03:00",
+        "speaker": "Doctor",
+        "text": "Possibly, but it’s important to see if there’s a blockage or slow emptying. We’ll have anti-nausea meds ready."
+      },
+      {
+        "turn_number": 25,
+        "time": "2124-12-01 11:00:00",
+        "speaker": "Doctor",
+        "text": "The upper GI showed gastroesophageal reflux—stomach contents are coming back up into your esophagus. But no obstruction, and the barium moved into your small bowel."
+      },
+      {
+        "turn_number": 26,
+        "time": "2124-12-01 11:01:30",
+        "speaker": "Patient",
+        "text": "So that’s why I feel like I’m burping and regurgitating?"
+      },
+      {
+        "turn_number": 27,
+        "time": "2124-12-01 11:02:45",
+        "speaker": "Doctor",
+        "text": "Exactly. The reflux could be aggravating your nausea. We’ll keep you on the PPI and Reglan to help with stomach emptying."
+      },
+      {
+        "turn_number": 28,
+        "time": "2124-12-01 11:04:00",
+        "speaker": "Patient",
+        "text": "But I still feel backed up. My stomach feels full."
+      },
+      {
+        "turn_number": 29,
+        "time": "2124-12-01 11:05:15",
+        "speaker": "Doctor",
+        "text": "We’re increasing your stool softeners—docusate and senna twice daily. And bisacodyl if you don’t have a bowel movement in two days."
+      },
+      {
+        "turn_number": 30,
+        "time": "2124-12-02 09:30:00",
+        "speaker": "Doctor",
+        "text": "You had a bowel movement yesterday—great. And you haven’t vomited since. We’re going to try a regular diet today."
+      },
+      {
+        "turn_number": 31,
+        "time": "2124-12-02 09:31:30",
+        "speaker": "Patient",
+        "text": "Really? That’s good news. I’m actually hungry."
+      },
+      {
+        "turn_number": 32,
+        "time": "2124-12-02 09:33:00",
+        "speaker": "Doctor",
+        "text": "Yes, and your blood sugar has been stable. We’ve adjusted your Lantus insulin down to 20 units at bedtime based on your intake."
+      },
+      {
+        "turn_number": 33,
+        "time": "2124-12-02 09:34:30",
+        "speaker": "Patient",
+        "text": "Should I keep checking my sugars at home?"
+      },
+      {
+        "turn_number": 34,
+        "time": "2124-12-02 09:36:00",
+        "speaker": "Doctor",
+        "text": "Yes, especially fasting and two hours after meals. Bring the log to your PCP—they may adjust your dose further."
+      },
+      {
+        "turn_number": 35,
+        "time": "2124-12-03 10:15:00",
+        "speaker": "Doctor",
+        "text": "We did another abdominal X-ray today. Still no obstruction, but the stool burden is improving. Your urine culture was negative, and stool test for C. diff was negative too."
+      },
+      {
+        "turn_number": 36,
+        "time": "2124-12-03 10:16:30",
+        "speaker": "Patient",
+        "text": "What about the H. pylori? Shouldn’t I be treating that?"
+      },
+      {
+        "turn_number": 37,
+        "time": "2124-12-03 10:18:00",
+        "speaker": "Doctor",
+        "text": "GI recommends holding the antibiotics for now. You’ll discuss restarting or changing the treatment at your follow-up appointment."
+      },
+      {
+        "turn_number": 38,
+        "time": "2124-12-03 10:19:30",
+        "speaker": "Patient",
+        "text": "Okay. I was worried it would get worse."
+      },
+      {
+        "turn_number": 39,
+        "time": "2124-12-03 10:21:00",
+        "speaker": "Doctor",
+        "text": "Unlikely, since we’re keeping you on omeprazole. The gastritis should stay under control."
+      },
+      {
+        "turn_number": 40,
+        "time": "2124-12-04 08:45:00",
+        "speaker": "Doctor",
+        "text": "You’ve had two full days without vomiting and are tolerating a regular diet. This is great progress."
+      },
+      {
+        "turn_number": 41,
+        "time": "2124-12-04 08:46:30",
+        "speaker": "Patient",
+        "text": "I feel so much better. When can I go home?"
+      },
+      {
+        "turn_number": 42,
+        "time": "2124-12-04 08:48:00",
+        "speaker": "Doctor",
+        "text": "Possibly by the end of the week. We’re waiting on your stool cultures, but they’re just for completeness—no signs of infection."
+      },
+      {
+        "turn_number": 43,
+        "time": "2124-12-04 08:49:30",
+        "speaker": "Patient",
+        "text": "And my back pain? It’s still there, but not as bad."
+      },
+      {
+        "turn_number": 44,
+        "time": "2124-12-04 08:51:00",
+        "speaker": "Doctor",
+        "text": "We’ve held narcotics to avoid constipation. You’re on acetaminophen for now. Keep using your topical lotion as needed."
+      },
+      {
+        "turn_number": 45,
+        "time": "2124-12-05 09:00:00",
+        "speaker": "Doctor",
+        "text": "All your labs are stable. Your white count is normal, kidney function is good, and liver tests are fine."
+      },
+      {
+        "turn_number": 46,
+        "time": "2124-12-05 09:01:30",
+        "speaker": "Patient",
+        "text": "And the nausea medicine? I’ve been on IV Zofran."
+      },
+      {
+        "turn_number": 47,
+        "time": "2124-12-05 09:03:00",
+        "speaker": "Doctor",
+        "text": "You’ll go home with ondansetron tablets—4 mg every 8 hours as needed. Take it only if nausea returns."
+      },
+      {
+        "turn_number": 48,
+        "time": "2124-12-05 09:04:30",
+        "speaker": "Patient",
+        "text": "And my Reglan? I was only taking half a tablet before."
+      },
+      {
+        "turn_number": 49,
+        "time": "2124-12-05 09:06:00",
+        "speaker": "Doctor",
+        "text": "We’re increasing it to one full tablet four times a day—before meals and at bedtime. It helps with stomach emptying."
+      },
+      {
+        "turn_number": 50,
+        "time": "2124-12-05 09:07:30",
+        "speaker": "Patient",
+        "text": "Got it. And the omeprazole?"
+      },
+      {
+        "turn_number": 51,
+        "time": "2124-12-05 09:09:00",
+        "speaker": "Doctor",
+        "text": "One 40 mg capsule daily now, down from twice a day. We’ll keep it going for your gastritis and reflux."
+      },
+      {
+        "turn_number": 52,
+        "time": "2124-12-05 14:00:00",
+        "speaker": "Doctor",
+        "text": "Your stool cultures came back negative for Salmonella, Shigella, and other infections. No parasites either. That’s good news."
+      },
+      {
+        "turn_number": 53,
+        "time": "2124-12-05 14:01:30",
+        "speaker": "Patient",
+        "text": "So it was really just the constipation and reflux?"
+      },
+      {
+        "turn_number": 54,
+        "time": "2124-12-05 14:03:00",
+        "speaker": "Doctor",
+        "text": "Mostly. The backed-up bowels likely triggered the vomiting, and the reflux made it worse. With better bowel control and meds, you’ve turned the corner."
+      },
+      {
+        "turn_number": 55,
+        "time": "2124-12-06 08:00:00",
+        "speaker": "Doctor",
+        "text": "You’ve had no nausea for over 24 hours and ate breakfast without issue. We’re clearing you for discharge."
+      },
+      {
+        "turn_number": 56,
+        "time": "2124-12-06 08:01:30",
+        "speaker": "Patient",
+        "text": "That’s wonderful. What do I need to do at home?"
+      },
+      {
+        "turn_number": 57,
+        "time": "2124-12-06 08:03:00",
+        "speaker": "Doctor",
+        "text": "Take the ondansetron only if nausea returns. Stay on the senna and docusate twice daily—stop if you have loose stools."
+      },
+      {
+        "turn_number": 58,
+        "time": "2124-12-06 08:04:30",
+        "speaker": "Patient",
+        "text": "And the bisacodyl?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2124-12-06 08:06:00",
+        "speaker": "Doctor",
+        "text": "Only if you haven’t had a bowel movement in two days. And keep taking Reglan with meals and at bedtime."
+      },
+      {
+        "turn_number": 60,
+        "time": "2124-12-06 08:07:30",
+        "speaker": "Patient",
+        "text": "And insulin?"
+      },
+      {
+        "turn_number": 61,
+        "time": "2124-12-06 08:09:00",
+        "speaker": "Doctor",
+        "text": "Twenty units of Lantus at bedtime. Check your sugars daily and bring the log to your doctor."
+      },
+      {
+        "turn_number": 62,
+        "time": "2124-12-06 08:10:30",
+        "speaker": "Patient",
+        "text": "And the H. pylori antibiotics?"
+      },
+      {
+        "turn_number": 63,
+        "time": "2124-12-06 08:12:00",
+        "speaker": "Doctor",
+        "text": "Don’t restart them. Your GI doctor will decide whether to continue or change the treatment at your follow-up."
+      },
+      {
+        "turn_number": 64,
+        "time": "2124-12-06 08:13:30",
+        "speaker": "Patient",
+        "text": "Thank you. I feel so much better already."
+      },
+      {
+        "turn_number": 65,
+        "time": "2124-12-06 08:15:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Keep your primary care and GI appointments. Call if nausea returns or you can’t keep fluids down."
+      },
+      {
+        "turn_number": 66,
+        "time": "2124-12-06 08:16:30",
+        "speaker": "Patient",
+        "text": "I will. Thanks for everything."
+      },
+      {
+        "turn_number": 67,
+        "time": "2124-12-06 08:18:00",
+        "speaker": "Doctor",
+        "text": "You’re doing great. We’ll get your discharge papers ready."
+      },
+      {
+        "turn_number": 68,
+        "time": "2124-12-06 09:00:00",
+        "speaker": "Doctor",
+        "text": "Just a quick check before you leave—any pain, nausea, or dizziness?"
+      },
+      {
+        "turn_number": 69,
+        "time": "2124-12-06 09:01:00",
+        "speaker": "Patient",
+        "text": "No, I feel fine. Just ready to go home."
+      },
+      {
+        "turn_number": 70,
+        "time": "2124-12-06 09:02:00",
+        "speaker": "Doctor",
+        "text": "Perfect. You’re cleared to go. Take care."
+      },
+      {
+        "turn_number": 71,
+        "time": "2124-12-06 10:00:00",
+        "speaker": "Doctor",
+        "text": "One last thing—we updated your sertraline to once daily. How’s your mood been?"
+      },
+      {
+        "turn_number": 72,
+        "time": "2124-12-06 10:01:00",
+        "speaker": "Patient",
+        "text": "Better. Less anxious since I’m not vomiting."
+      },
+      {
+        "turn_number": 73,
+        "time": "2124-12-06 10:02:00",
+        "speaker": "Doctor",
+        "text": "That makes sense. Keep using lorazepam as needed for anxiety, but try the sertraline daily for ongoing support."
+      },
+      {
+        "turn_number": 74,
+        "time": "2124-12-06 10:03:00",
+        "speaker": "Patient",
+        "text": "I will. Thanks for checking in."
+      },
+      {
+        "turn_number": 75,
+        "time": "2124-12-06 10:04:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. All set—feel better soon."
+      },
+      {
+        "turn_number": 76,
+        "time": "2124-12-06 11:00:00",
+        "speaker": "Doctor",
+        "text": "Just confirming—you understand when to take each medication?"
+      },
+      {
+        "turn_number": 77,
+        "time": "2124-12-06 11:01:00",
+        "speaker": "Patient",
+        "text": "Yes: Zofran if nauseous, Reglan with meals, stool meds twice daily, and Lantus at night."
+      },
+      {
+        "turn_number": 78,
+        "time": "2124-12-06 11:02:00",
+        "speaker": "Doctor",
+        "text": "Perfect. And call if anything changes."
+      },
+      {
+        "turn_number": 79,
+        "time": "2124-12-06 11:03:00",
+        "speaker": "Patient",
+        "text": "I will. Thank you again."
+      },
+      {
+        "turn_number": 80,
+        "time": "2124-12-06 11:04:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. Take care of yourself."
+      },
+      {
+        "turn_number": 81,
+        "time": "2124-12-06 12:00:00",
+        "speaker": "Doctor",
+        "text": "Final check—any questions before discharge?"
+      },
+      {
+        "turn_number": 82,
+        "time": "2124-12-06 12:01:00",
+        "speaker": "Patient",
+        "text": "No, I think I’ve got it all. Thanks for your help."
+      },
+      {
+        "turn_number": 83,
+        "time": "2124-12-06 12:02:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’re glad you’re feeling better."
+      },
+      {
+        "turn_number": 84,
+        "time": "2124-12-06 13:00:00",
+        "speaker": "Doctor",
+        "text": "Discharge orders are signed. You can leave anytime."
+      },
+      {
+        "turn_number": 85,
+        "time": "2124-12-06 13:01:00",
+        "speaker": "Patient",
+        "text": "Thank you, Doctor. I really appreciate it."
+      }
+    ],
+    "summary": {
+      "admission_start": "2124-11-27 15:19:00",
+      "admission_end": "2124-12-06 14:30:00",
+      "summary_paragraph": "A woman with type 1 diabetes, chronic back pain, and recent H. pylori-positive gastritis was readmitted for intractable nausea and vomiting shortly after discharge. She presented with severe retching, elevated blood pressure, and tachycardia, but stable glucose and no signs of ketoacidosis. Initial management included IV fluids, antiemetics, and holding her H. pylori antibiotics. Imaging showed gastroesophageal reflux and moderate fecal retention without obstruction. Despite initial improvement, vomiting recurred with diet advancement. Increased bowel regimen led to a bowel movement and resolution of nausea. She tolerated a regular diet for 24 hours, with stable labs and no further vomiting. She was discharged home with adjusted medications, including ondansetron for breakthrough nausea, increased metoclopramide, a bowel regimen, and reduced Lantus insulin, with follow-up planned for H. pylori treatment.",
+      "problems": [
+        "Atrophic gastritis, without mention of hemorrhage",
+        "Helicobacter pylori [H. pylori]",
+        "Diabetes with neurological manifestations, type I [juvenile type], uncontrolled",
+        "Gastroparesis",
+        "Diabetes with other specified manifestations, type I [juvenile type], uncontrolled",
+        "Diabetes with renal manifestations, type I [juvenile type], uncontrolled",
+        "Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere",
+        "Constipation, unspecified",
+        "Long-term (current) use of insulin",
+        "Esophageal reflux",
+        "Lumbago",
+        "Other chronic pain",
+        "Dysthymic disorder"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-9e5c4b40552c2ca1",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2124-11-27 15:19:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, I'm Dr. Lee. I'll be taking care of you during this hospital stay. Can you tell me what brought you in today?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2124-11-27 15:20:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Hi… I’ve been vomiting nonstop since this morning. I was just discharged yesterday, but it started again after I took Tylenol for my back pain.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2124-11-27 15:21:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"I see. And how’s your back pain now?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2124-11-27 15:22:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Still there, but the nausea is worse. I’m mostly bringing up clear fluid, sometimes yellow. My stomach feels crampy.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2124-11-27 15:23:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Okay. Your blood pressure was very high when EMS arrived—240 over 110—but it’s come down. We’ll keep an eye on that. You also have type 1 diabetes, correct?\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2124-11-27 15:24:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, and my last A1C was 10.9. I’ve been struggling to control it.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2124-11-27 15:25:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll monitor your sugars closely. Right now, your glucose is 143, which is okay, and no signs of ketoacidosis. We’re starting IV fluids and giving you Zofran for nausea and Dilaudid for pain.\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2124-11-27 15:26:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I was just started on antibiotics for H. pylori yesterday. Should I keep taking them?\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2124-11-27 15:27:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re holding those for now since you can’t keep anything down. We’ve switched you to IV omeprazole to protect your stomach while we figure things out.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2124-11-27 15:29:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I also have some cough and congestion. Is that related?\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2124-11-27 15:30:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly just a mild cold. Your chest X-ray is clear, so nothing serious there. We’ll focus on the nausea first.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2124-11-27 18:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We got results from your abdominal X-ray. No blockage or free air, but there’s a moderate amount of stool in your colon. Could be contributing to the nausea.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2124-11-27 18:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I haven’t had a good bowel movement in a few days. Could that really make me vomit this much?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2124-11-27 18:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, especially with your history of gastroparesis. When the bowels are backed up, it can trigger nausea and vomiting. We’re going to increase your bowel regimen.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2124-11-28 09:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your blood cultures came back negative—no infection in the bloodstream. That’s reassuring.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2124-11-28 09:16:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s good. I was worried about that. How’s my stomach looking?\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2124-11-28 09:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We haven’t scoped it this time, but your labs are stable. We’re going to try advancing your diet to clear liquids today if you’re up for it.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2124-11-28 09:19:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’d like to try. I hate being on IV fluids.\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2124-11-29 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You did well on clear liquids yesterday. Today, we’re moving you to a soft diet. How’s the nausea?\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2124-11-29 10:01:15\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Better, but I started feeling queasy again after breakfast.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2124-11-29 10:02:30\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We noticed. You vomited once this morning. We’re holding off on solid food for now and will consult GI for next steps.\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2124-11-30 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The GI team wants to do an upper GI series to check your stomach motility. It uses barium—you’ll drink it, and we’ll watch it move through your system.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2124-11-30 14:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will it make me nauseous?\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2124-11-30 14:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly, but it’s important to see if there’s a blockage or slow emptying. We’ll have anti-nausea meds ready.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2124-12-01 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"The upper GI showed gastroesophageal reflux—stomach contents are coming back up into your esophagus. But no obstruction, and the barium moved into your small bowel.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2124-12-01 11:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So that’s why I feel like I’m burping and regurgitating?\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2124-12-01 11:02:45\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Exactly. The reflux could be aggravating your nausea. We’ll keep you on the PPI and Reglan to help with stomach emptying.\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2124-12-01 11:04:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"But I still feel backed up. My stomach feels full.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2124-12-01 11:05:15\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re increasing your stool softeners—docusate and senna twice daily. And bisacodyl if you don’t have a bowel movement in two days.\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2124-12-02 09:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You had a bowel movement yesterday—great. And you haven’t vomited since. We’re going to try a regular diet today.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2124-12-02 09:31:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Really? That’s good news. I’m actually hungry.\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2124-12-02 09:33:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, and your blood sugar has been stable. We’ve adjusted your Lantus insulin down to 20 units at bedtime based on your intake.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2124-12-02 09:34:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Should I keep checking my sugars at home?\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2124-12-02 09:36:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, especially fasting and two hours after meals. Bring the log to your PCP—they may adjust your dose further.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2124-12-03 10:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did another abdominal X-ray today. Still no obstruction, but the stool burden is improving. Your urine culture was negative, and stool test for C. diff was negative too.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2124-12-03 10:16:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about the H. pylori? Shouldn’t I be treating that?\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2124-12-03 10:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"GI recommends holding the antibiotics for now. You’ll discuss restarting or changing the treatment at your follow-up appointment.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2124-12-03 10:19:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay. I was worried it would get worse.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2124-12-03 10:21:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Unlikely, since we’re keeping you on omeprazole. The gastritis should stay under control.\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2124-12-04 08:45:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ve had two full days without vomiting and are tolerating a regular diet. This is great progress.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2124-12-04 08:46:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I feel so much better. When can I go home?\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2124-12-04 08:48:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Possibly by the end of the week. We’re waiting on your stool cultures, but they’re just for completeness—no signs of infection.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2124-12-04 08:49:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my back pain? It’s still there, but not as bad.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2124-12-04 08:51:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ve held narcotics to avoid constipation. You’re on acetaminophen for now. Keep using your topical lotion as needed.\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2124-12-05 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"All your labs are stable. Your white count is normal, kidney function is good, and liver tests are fine.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2124-12-05 09:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the nausea medicine? I’ve been on IV Zofran.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2124-12-05 09:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ll go home with ondansetron tablets—4 mg every 8 hours as needed. Take it only if nausea returns.\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2124-12-05 09:04:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my Reglan? I was only taking half a tablet before.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2124-12-05 09:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re increasing it to one full tablet four times a day—before meals and at bedtime. It helps with stomach emptying.\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2124-12-05 09:07:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. And the omeprazole?\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2124-12-05 09:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One 40 mg capsule daily now, down from twice a day. We’ll keep it going for your gastritis and reflux.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2124-12-05 14:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your stool cultures came back negative for Salmonella, Shigella, and other infections. No parasites either. That’s good news.\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2124-12-05 14:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So it was really just the constipation and reflux?\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2124-12-05 14:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Mostly. The backed-up bowels likely triggered the vomiting, and the reflux made it worse. With better bowel control and meds, you’ve turned the corner.\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2124-12-06 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’ve had no nausea for over 24 hours and ate breakfast without issue. We’re clearing you for discharge.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2124-12-06 08:01:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"That’s wonderful. What do I need to do at home?\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2124-12-06 08:03:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take the ondansetron only if nausea returns. Stay on the senna and docusate twice daily—stop if you have loose stools.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2124-12-06 08:04:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the bisacodyl?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2124-12-06 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Only if you haven’t had a bowel movement in two days. And keep taking Reglan with meals and at bedtime.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2124-12-06 08:07:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And insulin?\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2124-12-06 08:09:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Twenty units of Lantus at bedtime. Check your sugars daily and bring the log to your doctor.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2124-12-06 08:10:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the H. pylori antibiotics?\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2124-12-06 08:12:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Don’t restart them. Your GI doctor will decide whether to continue or change the treatment at your follow-up.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2124-12-06 08:13:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you. I feel so much better already.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2124-12-06 08:15:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Keep your primary care and GI appointments. Call if nausea returns or you can’t keep fluids down.\"\n    },\n    {\n      \"turn_number\": 66,\n      \"time\": \"2124-12-06 08:16:30\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks for everything.\"\n    },\n    {\n      \"turn_number\": 67,\n      \"time\": \"2124-12-06 08:18:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing great. We’ll get your discharge papers ready.\"\n    },\n    {\n      \"turn_number\": 68,\n      \"time\": \"2124-12-06 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just a quick check before you leave—any pain, nausea, or dizziness?\"\n    },\n    {\n      \"turn_number\": 69,\n      \"time\": \"2124-12-06 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, I feel fine. Just ready to go home.\"\n    },\n    {\n      \"turn_number\": 70,\n      \"time\": \"2124-12-06 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. You’re cleared to go. Take care.\"\n    },\n    {\n      \"turn_number\": 71,\n      \"time\": \"2124-12-06 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"One last thing—we updated your sertraline to once daily. How’s your mood been?\"\n    },\n    {\n      \"turn_number\": 72,\n      \"time\": \"2124-12-06 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Better. Less anxious since I’m not vomiting.\"\n    },\n    {\n      \"turn_number\": 73,\n      \"time\": \"2124-12-06 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That makes sense. Keep using lorazepam as needed for anxiety, but try the sertraline daily for ongoing support.\"\n    },\n    {\n      \"turn_number\": 74,\n      \"time\": \"2124-12-06 10:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thanks for checking in.\"\n    },\n    {\n      \"turn_number\": 75,\n      \"time\": \"2124-12-06 10:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. All set—feel better soon.\"\n    },\n    {\n      \"turn_number\": 76,\n      \"time\": \"2124-12-06 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Just confirming—you understand when to take each medication?\"\n    },\n    {\n      \"turn_number\": 77,\n      \"time\": \"2124-12-06 11:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes: Zofran if nauseous, Reglan with meals, stool meds twice daily, and Lantus at night.\"\n    },\n    {\n      \"turn_number\": 78,\n      \"time\": \"2124-12-06 11:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Perfect. And call if anything changes.\"\n    },\n    {\n      \"turn_number\": 79,\n      \"time\": \"2124-12-06 11:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I will. Thank you again.\"\n    },\n    {\n      \"turn_number\": 80,\n      \"time\": \"2124-12-06 11:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. Take care of yourself.\"\n    },\n    {\n      \"turn_number\": 81,\n      \"time\": \"2124-12-06 12:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Final check—any questions before discharge?\"\n    },\n    {\n      \"turn_number\": 82,\n      \"time\": \"2124-12-06 12:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"No, I think I’ve got it all. Thanks for your help.\"\n    },\n    {\n      \"turn_number\": 83,\n      \"time\": \"2124-12-06 12:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’re glad you’re feeling better.\"\n    },\n    {\n      \"turn_number\": 84,\n      \"time\": \"2124-12-06 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Discharge orders are signed. You can leave anytime.\"\n    },\n    {\n      \"turn_number\": 85,\n      \"time\": \"2124-12-06 13:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thank you, Doctor. I really appreciate it.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2124-11-27 15:19:00\",\n    \"admission_end\": \"2124-12-06 14:30:00\",\n    \"summary_paragraph\": \"A woman with type 1 diabetes, chronic back pain, and recent H. pylori-positive gastritis was readmitted for intractable nausea and vomiting shortly after discharge. She presented with severe retching, elevated blood pressure, and tachycardia, but stable glucose and no signs of ketoacidosis. Initial management included IV fluids, antiemetics, and holding her H. pylori antibiotics. Imaging showed gastroesophageal reflux and moderate fecal retention without obstruction. Despite initial improvement, vomiting recurred with diet advancement. Increased bowel regimen led to a bowel movement and resolution of nausea. She tolerated a regular diet for 24 hours, with stable labs and no further vomiting. She was discharged home with adjusted medications, including ondansetron for breakthrough nausea, increased metoclopramide, a bowel regimen, and reduced Lantus insulin, with follow-up planned for H. pylori treatment.\",\n    \"problems\": [\n      \"Atrophic gastritis, without mention of hemorrhage\",\n      \"Helicobacter pylori [H. pylori]\",\n      \"Diabetes with neurological manifestations, type I [juvenile type], uncontrolled\",\n      \"Gastroparesis\",\n      \"Diabetes with other specified manifestations, type I [juvenile type], uncontrolled\",\n      \"Diabetes with renal manifestations, type I [juvenile type], uncontrolled\",\n      \"Nephritis and nephropathy, not specified as acute or chronic, in diseases classified elsewhere\",\n      \"Constipation, unspecified\",\n      \"Long-term (current) use of insulin\",\n      \"Esophageal reflux\",\n      \"Lumbago\",\n      \"Other chronic pain\",\n      \"Dysthymic disorder\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776613841,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 6392,
+      "prompt_tokens": 13566,
+      "total_tokens": 19958,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}

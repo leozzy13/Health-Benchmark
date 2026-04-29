@@ -1,0 +1,921 @@
+{
+  "subject_id": "19509694",
+  "hadm_id": "28950235",
+  "provider": "vllm",
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+  "temperature": 0.2,
+  "base_url": "http://127.0.0.1:8000/v1",
+  "request_timestamp": "2026-04-23T15:53:34Z",
+  "system_message": "You are generating a synthetic but clinically grounded\nconversation for exactly one hospital admission.\n\nRules:\n1. Use only facts supported by the provided admission context.\n2. The discharge notes are the backbone of the hospital-course\n   narrative. Use them first.\n3. The ordered problem list should shape the main clinical focus.\n4. Radiology, procedures, microbiology, and the previous-admission\n   summary are supporting context, not a checklist.\n5. Not every packet item needs to appear in the conversation.\n6. Speakers must be exactly: Doctor and Patient.\n7. Every conversation line must contain:\n   - turn number\n   - exact timestamp\n   - speaker\n   - text\n8. Timestamps must be monotonically increasing and stay within the\n   admission start and admission end times.\n9. Keep the conversation medically plausible and understandable to\n   a patient.\n10. Use short natural exchanges, patient questions, clarifications,\n    explanations, reassurance, and follow-up discussion.\n11. Do not invent unsupported diagnoses, procedures, test findings,\n    or outcomes.\n12. Do not mention the dataset, packet, note types, or that the\n    conversation is synthetic.\n13. Generate the conversation first, then write the summary strictly from the generated conversation_lines.\n14. Every claim in summary.summary_paragraph and every item in summary.problems must be explicitly supported by the conversation_lines.\n15. Return output that exactly matches the required JSON schema. ",
+  "task_message": "Generate one rich patient-doctor conversation for this admission and one admission summary.\n\nGeneration guidance:\n- Approximate stay length: 9 day(s).\n- Recommended turn range: 60-85 turns.\n- Exact admission window: 2174-05-04 23:21:00 to 2174-05-13 17:15:00.\n- Focus first on the discharge-note storyline and the core admission problems.\n- Use radiology, procedures, and microbiology only as supporting detail when they help the story.\n- Do not try to mention every packet item.\n- Let the conversation unfold across admission, mid-course updates, and discharge planning.\n- Prefer many short natural exchanges over a few long summary turns.\n- The patient should ask questions, express concerns, seek clarification, and respond to updates throughout the stay.\n- The doctor should explain results, treatment changes, progress, and follow-up in multiple conversational beats over time.\n- You may paraphrase and add natural conversational glue, but do not invent unsupported diagnoses, procedures, findings, or outcomes.\n- Generate the conversation first, then derive the final summary only from the conversation_lines you wrote.\n- The final summary must contain admission start time, admission end time, one paragraph summary, and a list of problems.\n- Final self-check before returning JSON: turn_number contiguous from 1; conversation_lines.time nondecreasing and inside the exact admission window; summary.admission_start and summary.admission_end copied exactly from the packet; no conversation line has empty text.",
+  "previous_admission_summary_used": {
+    "admission_start": "2174-04-24 22:07:00",
+    "admission_end": "2174-04-29 17:51:00",
+    "summary_paragraph": "A man with a history of ischemic cardiomyopathy, COPD, chronic kidney disease, and polysubstance abuse was admitted for nausea, vomiting, diarrhea, worsening dyspnea, and a syncopal episode. His heart failure exacerbation was attributed to poor medication absorption due to gastrointestinal symptoms, leading to fluid overload. He was treated with intravenous diuresis and transitioned back to oral torsemide, with improvement in respiratory status. A small deep vein thrombosis in the right lower extremity was identified, and anticoagulation was initiated with enoxaparin and warfarin. His viral gastroenteritis resolved with supportive care, and renal function stabilized. He was discharged home in stable condition with instructions on medication management, weight monitoring, and follow-up for anticoagulation control.",
+    "problems": [
+      "Acute on chronic systolic heart failure",
+      "Acute kidney failure, unspecified",
+      "Postinflammatory pulmonary fibrosis",
+      "Acute venous embolism and thrombosis of deep vessels of distal lower extremity",
+      "Congestive heart failure, unspecified",
+      "Intestinal infection due to other organism, not elsewhere classified",
+      "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+      "Chronic kidney disease, unspecified",
+      "Other chest pain",
+      "Chronic airway obstruction, not elsewhere classified",
+      "Syncope and collapse",
+      "Other specified forms of chronic ischemic heart disease",
+      "Cocaine abuse, unspecified",
+      "Cannabis abuse, unspecified",
+      "Alcohol abuse, unspecified",
+      "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+      "Long-term (current) use of insulin",
+      "Other and unspecified hyperlipidemia",
+      "Tobacco use disorder",
+      "Anxiety state, unspecified",
+      "Other acquired deformities of ankle and foot",
+      "Hepatitis C carrier",
+      "Other nonspecific abnormal serum enzyme levels"
+    ]
+  },
+  "stay_days": 9,
+  "recommended_turn_range": [
+    60,
+    85
+  ],
+  "storyline_prompt_block": "Discharge note 1 (2174-05-13 00:00:00): Name:  ___.                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nNo Known Allergies / Adverse Drug Reactions\n \nAttending: ___.\n \nChief Complaint:\nHematuria\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\nMr. ___ is a ___ M with a history of heart failure \n(likely due to prior cocaine abuse, LVEF 25% ___, CKD III, \nrestrictive lung disease (likely due to crack lung), hepatitis \nC, schizophrenia, DM2, recent diagnosis of RLE DVT who presents \nwith a fall and a single episode of gross hematuria.\nMr. ___ was recently admitted to ___ ___ with a DVT \nin his RLE and was discharged on enoxaparin and warfarin. He was \ndoing well at home and reports being adherent to his enoxaparin \nand warfarin but this morning noticed he had \"\"dark red blood\"\" in \nhis urine. He also endorses dysuria over the last several days, \nbut denies urgency, frequency, fevers, chills, flank pain. He \nnotes one new sexual contact recently, and he did not use \nbarrier protection.\nOf note, yesterday Mr. ___ fell after trying to get out of bed \nand stumbled against his night stand. He denies LOC, headstrike, \nor trauma to his abdomen. He further denies bowel/bladder \nincontinence, syncope, dizziness, palpitations.\nBecause of his hematuria and knowing that he was taking \nanticoagulants, Mr. ___ called ___. Per EMS documentation, \ninitial vitas were: HR 120 BP 102/62 RR 24 SaO2 88% on RA.\n.\nIn the ED intial vitals were: 97.7 112 104/68 24 96% 4L Nasal \nCannula.\n- In the ED, Mr. ___ voided straw colored urine. It was \ndiscussed about assessing for PE given his known DVT, \nsubtherapeutic INR, and new O2 requirement, but because of his \nCKD a CTA was relatively contraindicated, and a V/Q scan would \nbe of little utility given his parenchymal lung disease.\n- The ED housestaff strongly recommended a foley catheter for \nbladder irrigation, but Mr. ___ refused.\n- Labs were significant for INR 1.6, Cr 1.7 (baseline 1.5-1.7), \nurinalysis with 67 RBCs, 44 RBCs, 2 epithelial cells, +leuk \nesterace, no bacteria. FOBT negative.\n- Patient was given 1g IV ceftriaxone, and started on a heparin \ngtt\nVitals prior to transfer were: 0 97.4 ___ 25 98% Nasal \nCannula\nOn the floor Mr ___ reports feeling well, and denies dyspnea. \nHe denies any further episodes of gross hematuria outside of the \nepisode this morning.\n \nPast Medical History:\n1. CARDIAC RISK FACTORS: (+)Diabetes, (+)Dyslipidemia, \n(+)Hypertension\n2. CARDIAC HISTORY:\n- ischemic cardiomyopathy (EF ___ as of ___, likely \ncocaine-related, with last hospitalization for acute \ndecompensated CHF from ___ to ___.\n3. OTHER PAST MEDICAL HISTORY:  \n- Insulin-dependent diabetes\n- Hyperlipidemia\n- HTN\n- hepatitis C antibody positive\n- h/o MRSA pneumonia (requiring trach)\n- COPD\n- Schizophrenia (functioning well on no medications)\n- Substance abuse (cocaine, alcohol, weed)\n- Tobacco abuse\n- Anxiety\n- cocaine induced pneumonitis\n- restrictive lung disease\n- pulmonary hypertension\n \nSocial History:\n___\nFamily History:\nFather: ___, ___, deceased.  Mother with breast CA.  No \nfamily history of pulmonary disease. \n\n \nPhysical Exam:\nINITIAL PHYSICAL EXAM\nVitals- T 97.5 BP 117/75 HR 108 RR 20 SaO2 95% on 4L  \nGeneral- Chronically-ill appearing man in no apparent distress.  \n\nHEENT- EOMI. Poor dentition.  \nNeck- Unable to assess JVP due to presents of external jugular \nIV in R EJ.  \nLungs- Coarse breath sounds with mild crackles at bases, but \nbreathing comfortably, and moving air well.  \nCV- RRR,  no rubs, or gallops  \nAbdomen- Soft, nontender, nondistended. bowel sounds present  \nGU- No foley  \nExt- No ___ pitting edema \nNeuro- A&Ox3. Moving all four extremities spontaneously. Follows \ncommands.\n.\nDISCHARGE PHYSICAL EXAM\nVitals- 98.3 113/77 92 18 95/2L  \nGeneral- well appearing, NAD, upright in bed  \nHEENT- EOMI. Nearly adentulous, very minimal gingival oozing  \nNeck- supple  \nLungs- Generally CTAB, few crackles at bases  \nCV- RRR, no rubs, or gallops  \nAbdomen- Soft, nontender, nondistended.  \nGU- No foley  \nExt- improved 1+ pitting edema to knees bilaterally, L>R.  \nNeuro- AOx3, ambulating without assistance, non-focal\n \nPertinent Results:\nINITIAL LAB RESULTS\n___ 09:00PM BLOOD WBC-8.1 RBC-4.65 Hgb-10.8* Hct-36.1* \nMCV-78* MCH-23.2* MCHC-29.8* RDW-18.6* Plt ___\n___ 09:00PM BLOOD Neuts-73* Bands-0 ___ Monos-5 Eos-2 \nBaso-0 ___ Myelos-0\n___ 09:00PM BLOOD Hypochr-2+ Anisocy-2+ Poiklo-1+ \nMacrocy-NORMAL Microcy-1+ Polychr-NORMAL Ovalocy-1+ Target-1+ \nSchisto-OCCASIONAL\n___ 09:00PM BLOOD Plt Smr-NORMAL Plt ___\n___ 09:00PM BLOOD Glucose-212* UreaN-36* Creat-1.7* Na-137 \nK-5.1 Cl-100 HCO3-22 AnGap-20\n___ 06:00AM BLOOD CK(CPK)-457*\n___ 06:00AM BLOOD CK-MB-10 MB Indx-2.2 cTropnT-0.09*\n___ 07:00AM BLOOD Calcium-8.4 Phos-3.3 Mg-2.1\n___ 06:30AM BLOOD HIV Ab-NEGATIVE\n___ 07:00AM BLOOD Digoxin-0.5*\n___ 06:45AM BLOOD Type-ART pO2-62* pCO2-30* pH-7.47* \ncalTCO2-22 Base XS-0\n___ 06:45AM BLOOD Glucose-123* Lactate-1.5 Na-137 K-4.1 \nCl-104\n___ 11:20AM BLOOD O2 Sat-98\n___ 10:00PM URINE Color-Yellow Appear-Clear Sp ___\n___ 10:00PM URINE Blood-MOD Nitrite-NEG Protein-30 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-6.0 Leuks-MOD\n___ 10:00PM URINE RBC-67* WBC-44* Bacteri-NONE Yeast-NONE \nEpi-2\n___ 10:00PM URINE CastHy-4*\n___ 10:00PM URINE Mucous-RARE\n___ 10:00PM URINE cocaine-NEG\n.\nMICRO DATA\n.\n___ 10:00 pm URINE     Site: NOT SPECIFIED\n.\n                            **FINAL REPORT ___\n.\n   URINE CULTURE (Final ___: \n      GRAM POSITIVE BACTERIA.    10,000-100,000 ORGANISMS/ML.. \n         Alpha hemolytic colonies consistent with alpha \nstreptococcus or\n         Lactobacillus sp. \n.\n___ 10:00 pm URINE\n      OLD S#S ___, 8312B ___ ADDED ___. \n.\n                            **FINAL REPORT ___\n.\n   Legionella Urinary Antigen  (Final ___: \n      NEGATIVE FOR LEGIONELLA SEROGROUP 1 ANTIGEN. \n           (Reference Range-Negative). \n.\n.\n___ 10:37 am URINE      Source: Unknown. \n.\n                            **FINAL REPORT ___\n.\n   URINE CULTURE (Final ___:    NO GROWTH. \n.\nIMAGING\n.\n___ CT HEAD\nIMPRESSION: No acute intracranial process.\n .\n___ CXR\nIMPRESSION:  Scattered areas of increased parenchymal opacity \nare likely\nchronic and unchanged since ___ without suggestion of \nsuperimposed process.\n .\n___ Renal Ultrasound\nIMPRESSION:  Stable, minimally complex right renal cyst without \nsuspicious\nfeatures.  No abnormality is identified to account for \nhematuria, including no\nevidence of stones or concerning masses.  The urinary bladder is \ncollapsed and\nnot evaluated.\n.\n___ CTA Chest\nIMPRESSION:\n1.  No evidence of pulmonary embolus or acute aortic syndrome.\n2.  In comparison to ___ exam, there is no significant \nchange in mosaic\nattenuation, ground-glass opacities, and interlobular septal \nthickening.  The\nabove findings are chronic and likely sequela of prior scarring, \norganized\npneumonia, or hemorrhage due to patient's known history of \nillicit drug use.\n3.  Stable cardiomegaly.\n4.  Stable appearance of a 15-mm right upper lobe spiculated \nnodule, which may\nrepresent malignancy or scarring. Follow up is recommended.\n5.  Minimal  interval increase in known central lymphadenopathy.\n 6.  Small right and trace left pleural effusions have decreased \nin size since\n___ exam.\n.\n___ CXR\nIMPRESSION:  AP chest compared to ___ through ___:\nPrevious bibasilar opacification improved substantially from \n___\nthrough ___, and has subsequently worsened.  Chronic \ncardiomegaly and\nmediastinal and vascular engorgement suggest a component of \npulmonary edema,\nbut the bibasilar lung abnormality could be due to pneumonia or \npulmonary\nhemorrhage as well as recurrent aspiration, of which the \ncomponent of edema\nhas improved since ___.\n.\n___ CT Head\nIMPRESSION:  No acute intracranial abnormality.\n.\n___ CT C Spine\nIMPRESSION:\n1.  No cervical spine fracture or malalignment:\n2.  Increased patchy opacity in the right lung apex compared to \nyesterday's CT\nexamination as well as increase in bilateral pleural effusions \ncompatible with\nprogression of ongoing pulmonary process.\n3.  Loose mandibular teeth #23 and #24.\n. \n___ Cardiac Echo\nThe left atrial volume is severely increased. No atrial septal \ndefect is seen by 2D or color Doppler. The estimated right \natrial pressure is at least 15 mmHg. Left ventricular wall \nthicknesses are normal. The left ventricular cavity is \nmoderately dilated. There is severe global left ventricular \nhypokinesis (LVEF = 15 %). The estimated cardiac index is \ndepressed (<2.0L/min/m2). Tissue Doppler imaging suggests an \nincreased left ventricular filling pressure (PCWP>18mmHg). \nDoppler parameters are most consistent with Grade III/IV \n(severe) left ventricular diastolic dysfunction. The right \nventricular cavity is mildly dilated with moderate global free \nwall hypokinesis. There is abnormal septal motion/position \nconsistent with right ventricular pressure/volume overload. The \naortic valve leaflets (3) appear structurally normal with good \nleaflet excursion and no aortic stenosis or aortic \nregurgitation. The mitral valve leaflets are structurally \nnormal. There is no mitral valve prolapse. Mild to moderate \n(___) mitral regurgitation is seen. Severe [4+] tricuspid \nregurgitation is seen. There is moderate pulmonary artery \nsystolic hypertension. [In the setting of at least moderate to \nsevere tricuspid regurgitation, the estimated pulmonary artery \nsystolic pressure may be underestimated due to a very high right \natrial pressure.] Severe pulmonic regurgitation is seen. The \nend-diastolic pulmonic regurgitation velocity is increased \nsuggesting pulmonary artery diastolic hypertension. There is a \ntrivial/physiologic pericardial effusion. \n.\nIMPRESSION: Globally severe depressed left ventricular function. \nModerate pulmonary hypertension by tricuspid regurgitation jet. \nThis however is underestimated due to 4 + tricuspid \nregurgitation. Pulmonary diastolic pressure by pulmonary \nregurgitation spectral doppler has characteristic W-pattern for \npulmonary hypertension and enddiastolic pulmonic regurgitation \nvelocity is elevated (equaling depending on RA pressure at least \n37 mm Hg).\n.\nCompared with the prior study (images reviewed) of ___, \nleft ventricular function was severely depressed and now may \nhave worsened further. Tricuspid regurgitation has increased. \n.\n___ CXR\nIMPRESSION:  AP chest compared to ___ through ___:\nCoarse reticular abnormality in the lower lungs has been present \nto varying\nextent since ___.  The transient and severe worsening of \nabnormality at\nthe lung bases was accompanied by new abnormality in the lung \napices. \nOverall, the pattern is most consistent with pulmonary fibrosis \nand subsequent\ndevelopment of pulmonary edema, consistent with a severe chronic \ndilated\ncardiomegaly.  \n.\nDISCHARGE LABS \n___ 06:30AM BLOOD WBC-9.0 RBC-4.49* Hgb-10.4* Hct-34.3* \nMCV-76* MCH-23.0* MCHC-30.2* RDW-18.0* Plt ___\n___ 06:30AM BLOOD ___\n___ 06:30AM BLOOD Glucose-217* UreaN-42* Creat-1.6* Na-135 \nK-4.6 Cl-94* HCO3-34* AnGap-12\n \nBrief Hospital Course:\nMr. ___ is a ___ M with a history of heart failure \n(likely due to prior cocaine abuse, LVEF 15% ___, CKD III, \nrestrictive lung disease (likely due to cocaine use), hepatitis \nC, schizophrenia, DM2, recent diagnosis of RLE DVT who presents \nwith hematuria, s/p syncopal episode this admission, with \ndyspnea.\n.\nACUTE ISSUES\n#) Syncope\nThe patient had an unwitness syncopal episode during his \nadmission. Prior to this episode, the patient  reported 2 other \nepisodes of syncope. The syncopal episode took place as the \npatient was getting up to use the restroom and then fell. A CT \nhead and CT C spine showed no fracture or acute process. \nHowever, he did suffer two loose teeth, #23 and #24, which were \nextracted by OMFS. Fall precautions were placed, and the patient \nhad no further syncopal episodes. \n.\nThere was no clear precipitant for Mr. ___ syncopal episode. \nNo events on telemetry and no post-cital period, bowel, or \nbladder incontinence to indicate seizure. The patient had \nevidence of pulmonary hypertension on last echo ___ and poor \nlung function at baseline due to restrictive lung disease, \nthought to be due to cocaine use. Thus pulmonary hypertension \nand hypoxemia was thought to be related to his syncopal \nepisodes. A repeat cardiac echo showed an EF of 15% and moderate \npulmonary hypertension that may be underestimated due to 4+ \ntricuspid regurgitation. \n.\nThe pulmonary team was consulted and felt that his worsening \npulmonary hypertension was due to worsening left heart failure. \nThey recommended diuresing the patient to his dry weight, \nweaning oxygen, and obtaining DLCO soon after discharge. \n.\n#) HYPOXEMIA: \nThe patient developed worsening hypoxemia s/p his syncopal \nepisode. He has poor lung function at baseline as described \nabove. His hypoxemia was likely multi-factorial related to \ndecompensated heart failure, restrictive lung disease, and \npulmonary hypertension. A CTA was negative for pulmonary \nembolism. CT C spine showed worsening opacification at the right \napex for which he was started on levofloxacin for CAP. A \nlegionella antigen was negative. The patient also received \nnebulizers and was diuresed with his home torsemide and \nfurosemide. \n.\n#)Tachycardia \nThe patient developed worsening tachycardia s/p his syncopal \nepisode. His baseline heart rate during his last admission was \nin the 100s likely due to his heart failure and poor lung \nfunction as described above. However his pulse increased to the \n___ s/p fall. This worsening tachycardia was likely due to \nhypovolemia due to diuresis, poor PO intake, and pain s/p fall. \nHis cardiac enzymes were cycled and were negative. He received \noxycodone for pain management, and nebulizers as above, with \nimprovement in his tachycardia. \n.\n# PNA\nThe patient was found to have worsening opacification at the \nright lung apex s/p fall on CT C spine. Given his worsening \ndyspnea and hypoxia, he was started on levofloxacin for HCAP \nwhich was completed prior to discharge. \n.\n#)Hypotension \nThe patient developed transient hypotension during admission, \nwith SBP in the ___. He remained asymptomatic and was mentating \nnormally. This hypotension was most likely ___ hypovolemia as \npatient had been NPO that morning, in addition to prior poor PO \nintake ___ mouth pain, and some blood loss ___ from the mouth. \nIn addition, the patient had been diuresed the day prior to his \nhypotension.  Sepsis was less likely given that he had no \nleukocytosis and no fever. He responded well to fluid boluses \nwith SBP in the 100s, and remained normotensive thereafter. \n.\n#) HEMATURIA: \nThe patient initially presented to the ED w/ gross hematuria. He \nhad no further episodes of gross hematuria during admission, his \nUA was positive for 65 RBCs. A subsequent UA showed 5 RBCs.  \nAlthough he was on anticoagulation, is abnormal. Fortunately, he \ndid not exhibit hemodynamic instability on presentation and did \nnot present with a significant drop in hematocrit (36% down from \n37% at prior discharge). Thus, he was continued on \nanticoagulation.  A renal U/S did not show evidence of stone. An \ninitial urine cx was positive for alpha strep vs lactobacillus, \nlikely contaminants. A subsequent urine cx showed no growth. An \nHIV test was negative during admission, and the patient had had \nrecent gonorrhea and chlamydia testing which were both negative.\n.\nCHRONIC ISSUES\n#) DVT: \nThe patient was diagnosed with RLE DVT during his ___ \nadmission. On this admission his INR was subtherapeutic. He was \nstarted on a heparin drip, and his warfarin was initially held \nin anticipation of his tooth extraction. The patient was \ndischarged with warfarin and enoxaparin bridge. \n.\n#) COPD: \nThe patient has a known diagnosis of COPD. He was continued on \nhis home nebulizers during admission. \n.\n#) CHRONIC KIDNEY DISEASE, STAGE III: GFR ___. Baseline \ncreatinine 1.5-1.7.  \nThe patient has a known diagnosis of CKD. His medications were \nrenally dosed and he remained stable with regards to his kidney \ndisease.  \n.\n#) HEART FAILURE:\nAs described above, the patient has a known diagnosis of heart \nfailure, with an EF of 15%. He was continued on his home \nlosartan, torsemide, and digoxin.  \n.\n#) DIABETES MELLITUS, TYPE 2:\nThe patient has a known diagnosis of DM2. He was continued on \nlantus at a lower dose than his home regimen given an episode of \nhypoglycemia during admission. His insulin sliding scale was \nalso adjusted accordingly, without further episodes of \nhypoglycemia. \n.\n#) ANXIETY: \nThe patient has a known diagnosis of anxiety and was continued \non his home benzodiazepines  \n. \nTRANSITIONAL ISSUES\n-enoxaparin 90mg BID with continuation of warfarin (decreased to \n2mg given antibiotics), please follow in ___ clinic\n-OMFS recommended week-long course of amoxicillin given teeth \nextraction along with chlorhexidine oral rinse for a week\n-Torsemide dosing changed to 100mg daily with 100mg qPM on ___\n-Pulmonary recommended re-testing PFTs (specifically DLCO) as \noutpatient\n-Pulmonary recommended Palliative Care evaluation given \nprogression of heart failure/lung disease \n-Consider rechecking digoxin level on ___ given med changes\n-The patient's insulin requirement decreased during the \nhospitalization, possibly secondary to decreased po's in setting \nof dental procedure, but will likely require uptitration as an \noutpatient\n.\nIncidental findings:\n-___ CT Chest: \"\"Stable appearance of a 15-mm right upper \nlobe spiculated nodule, which may represent malignancy or \nscarring. Follow-up is recommended.\"\" \n-___ Renal U/S: \"\"Stable, minimally complex right renal cyst \nwithout suspicious findings.\"",
+  "problem_prompt_block": "- Gross hematuria\n- Pneumonia, organism unspecified\n- Acute on chronic systolic heart failure\n- Other chronic pulmonary heart diseases\n- Diabetes with other specified manifestations, type II or unspecified type, not stated as uncontrolled\n- Closed fracture of mandible, alveolar border of body\n- Syncope and collapse\n- Congestive heart failure, unspecified\n- Chronic venous embolism and thrombosis of unspecified deep vessels of lower extremity\n- Postinflammatory pulmonary fibrosis\n- Long-term (current) use of anticoagulants\n- Chronic kidney disease, Stage III (moderate)\n- Other specified forms of chronic ischemic heart disease\n- Long-term (current) use of insulin\n- Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified\n- Chronic airway obstruction, not elsewhere classified\n- Personal history of Methicillin resistant Staphylococcus aureus\n- Tobacco use disorder\n- Cocaine abuse, unspecified\n- Other diseases of lung, not elsewhere classified\n- Diseases of tricuspid valve\n- Anxiety state, unspecified\n- Open wound of tooth (broken) (fractured) (due to trauma), without mention of complication\n- Unspecified fall\n- Hypoxemia\n- Dental caries, unspecified\n- Accidents occurring in residential institution\n- History of fall",
+  "supporting_context_block": "Radiology:\n- 2174-05-04 20:35:00: HISTORY: Shortness of breath with fall and head injury. Evaluate for interval hemorrhage. COMPARISON: Head CT ___. TECHNIQUE: Continuous axial sections were acquired through the brain without the administration of IV...\n- 2174-05-04 21:05:00: HISTORY: Shortness of breath status post fall with head strike, on anticoagulation. COMPARISON: Multiple chest radiographs dating back to ___. TECHNIQUE: AP and lateral chest three views. FINDINGS: Moderate-to-severe...\n- 2174-05-05 08:37:00: INDICATION: Hematuria on anticoagulation, please evaluate for nephrolithiasis or other explanation for hematuria. COMPARISON: Abdominal ultrasound of ___. TECHNIQUE: Renal ultrasound. FINDINGS: The right kidney measur...\n- 2174-05-05 16:44:00: INDICATION: Patient with history of deep venous thrombosis, now with tachycardia and hypoxia. Assess for PE. COMPARISONS: ___ and ___. TECHNIQUE: MDCT-acquired contiguous images through the chest were obtained with in...\n- 2174-05-06 05:39:00: AP CHEST, 5:41 A.M., ___ HISTORY: A ___ man with DVT and tachycardia after syncopal episode. IMPRESSION: AP chest compared to ___ through ___: Previous bibasilar opacification improved substantially from ___ through _...\n- 2174-05-06 05:40:00: HISTORY: DVT on heparin drip, now with syncopal episode, fell on face with loose teeth. COMPARISON: Non-contrast head CT, ___. TECHNIQUE: Contiguous axial MDCT images were obtained of the head without contrast. Multip...\n- 2174-05-06 05:41:00: HISTORY: DVT on heparin drip with syncopal episode, fell on face. COMPARISON: None available. TECHNIQUE: Axial helical MDCT images were obtained of the cervical spine without contrast. Multiplanar reformatted images w...\n- 2174-05-07 11:02:00: AP CHEST, 11:16 A.M., ___ HISTORY: A ___ man with heart failure and pulmonary fibrosis, treated for pneumonia, now with worsening radiographic appearance. IMPRESSION: AP chest compared to ___ through ___: Coarse retic...\n\nProcedures:\n- 2174-05-11 12:00:00: Extraction of other tooth\n\nMicrobiology:\n- 2174-05-07 10:36:00: BLOOD CULTURE (NO GROWTH.)\n- 2174-05-07 10:37:00: URINE (NO GROWTH.)\n- 2174-05-07 13:05:00: BLOOD CULTURE (NO GROWTH.)\n- 2174-05-10 17:46:00: URINE (Negative for Chlamydia trachomatis by ___, APTIMA COMBO 2 Assay.  Validated for use on Urine Samples by the ___ Microbiology Laboratory. Performance characteristics on urine samples were found to be equivalent to those of FDA- approved TIGRIS APTIMA COMBO 2 and/or COBAS Amplicor methods.)\n- 2174-05-10 17:46:00: URINE (Negative for Neisseria gonorrhoeae by ___, APTIMA COMBO 2 Assay.  Validated for use on Urine Samples by the ___ Microbiology Laboratory. Performance characteristics on urine samples were found to be equivalent to those of FDA- approved TIGRIS APTIMA COMBO 2 and/or COBAS Amplicor methods.)",
+  "formed_packet": {
+    "subject_id": "19509694",
+    "hadm_id": "28950235",
+    "admission_start": "2174-05-04 23:21:00",
+    "admission_end": "2174-05-13 17:15:00",
+    "previous_admission_summary": {
+      "admission_start": "2174-04-24 22:07:00",
+      "admission_end": "2174-04-29 17:51:00",
+      "summary_paragraph": "A man with a history of ischemic cardiomyopathy, COPD, chronic kidney disease, and polysubstance abuse was admitted for nausea, vomiting, diarrhea, worsening dyspnea, and a syncopal episode. His heart failure exacerbation was attributed to poor medication absorption due to gastrointestinal symptoms, leading to fluid overload. He was treated with intravenous diuresis and transitioned back to oral torsemide, with improvement in respiratory status. A small deep vein thrombosis in the right lower extremity was identified, and anticoagulation was initiated with enoxaparin and warfarin. His viral gastroenteritis resolved with supportive care, and renal function stabilized. He was discharged home in stable condition with instructions on medication management, weight monitoring, and follow-up for anticoagulation control.",
+      "problems": [
+        "Acute on chronic systolic heart failure",
+        "Acute kidney failure, unspecified",
+        "Postinflammatory pulmonary fibrosis",
+        "Acute venous embolism and thrombosis of deep vessels of distal lower extremity",
+        "Congestive heart failure, unspecified",
+        "Intestinal infection due to other organism, not elsewhere classified",
+        "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "Chronic kidney disease, unspecified",
+        "Other chest pain",
+        "Chronic airway obstruction, not elsewhere classified",
+        "Syncope and collapse",
+        "Other specified forms of chronic ischemic heart disease",
+        "Cocaine abuse, unspecified",
+        "Cannabis abuse, unspecified",
+        "Alcohol abuse, unspecified",
+        "Diabetes mellitus without mention of complication, type II or unspecified type, not stated as uncontrolled",
+        "Long-term (current) use of insulin",
+        "Other and unspecified hyperlipidemia",
+        "Tobacco use disorder",
+        "Anxiety state, unspecified",
+        "Other acquired deformities of ankle and foot",
+        "Hepatitis C carrier",
+        "Other nonspecific abnormal serum enzyme levels"
+      ]
+    },
+    "discharge_notes": [
+      {
+        "note_id": "19509694-DS-27",
+        "note_seq": 27,
+        "charttime": "2174-05-13 00:00:00",
+        "storetime": "2174-05-13 21:15:00",
+        "text": " \nName:  ___.                  Unit No:   ___\n \nAdmission Date:  ___              Discharge Date:   ___\n \nDate of Birth:  ___             Sex:   M\n \nService: MEDICINE\n \nAllergies: \nNo Known Allergies / Adverse Drug Reactions\n \nAttending: ___.\n \nChief Complaint:\nHematuria\n \nMajor Surgical or Invasive Procedure:\nNone\n\n \nHistory of Present Illness:\nMr. ___ is a ___ M with a history of heart failure \n(likely due to prior cocaine abuse, LVEF 25% ___, CKD III, \nrestrictive lung disease (likely due to crack lung), hepatitis \nC, schizophrenia, DM2, recent diagnosis of RLE DVT who presents \nwith a fall and a single episode of gross hematuria.\nMr. ___ was recently admitted to ___ ___ with a DVT \nin his RLE and was discharged on enoxaparin and warfarin. He was \ndoing well at home and reports being adherent to his enoxaparin \nand warfarin but this morning noticed he had \"\"dark red blood\"\" in \nhis urine. He also endorses dysuria over the last several days, \nbut denies urgency, frequency, fevers, chills, flank pain. He \nnotes one new sexual contact recently, and he did not use \nbarrier protection.\nOf note, yesterday Mr. ___ fell after trying to get out of bed \nand stumbled against his night stand. He denies LOC, headstrike, \nor trauma to his abdomen. He further denies bowel/bladder \nincontinence, syncope, dizziness, palpitations.\nBecause of his hematuria and knowing that he was taking \nanticoagulants, Mr. ___ called ___. Per EMS documentation, \ninitial vitas were: HR 120 BP 102/62 RR 24 SaO2 88% on RA.\n.\nIn the ED intial vitals were: 97.7 112 104/68 24 96% 4L Nasal \nCannula.\n- In the ED, Mr. ___ voided straw colored urine. It was \ndiscussed about assessing for PE given his known DVT, \nsubtherapeutic INR, and new O2 requirement, but because of his \nCKD a CTA was relatively contraindicated, and a V/Q scan would \nbe of little utility given his parenchymal lung disease.\n- The ED housestaff strongly recommended a foley catheter for \nbladder irrigation, but Mr. ___ refused.\n- Labs were significant for INR 1.6, Cr 1.7 (baseline 1.5-1.7), \nurinalysis with 67 RBCs, 44 RBCs, 2 epithelial cells, +leuk \nesterace, no bacteria. FOBT negative.\n- Patient was given 1g IV ceftriaxone, and started on a heparin \ngtt\nVitals prior to transfer were: 0 97.4 ___ 25 98% Nasal \nCannula\nOn the floor Mr ___ reports feeling well, and denies dyspnea. \nHe denies any further episodes of gross hematuria outside of the \nepisode this morning.\n \nPast Medical History:\n1. CARDIAC RISK FACTORS: (+)Diabetes, (+)Dyslipidemia, \n(+)Hypertension\n2. CARDIAC HISTORY:\n- ischemic cardiomyopathy (EF ___ as of ___, likely \ncocaine-related, with last hospitalization for acute \ndecompensated CHF from ___ to ___.\n3. OTHER PAST MEDICAL HISTORY:  \n- Insulin-dependent diabetes\n- Hyperlipidemia\n- HTN\n- hepatitis C antibody positive\n- h/o MRSA pneumonia (requiring trach)\n- COPD\n- Schizophrenia (functioning well on no medications)\n- Substance abuse (cocaine, alcohol, weed)\n- Tobacco abuse\n- Anxiety\n- cocaine induced pneumonitis\n- restrictive lung disease\n- pulmonary hypertension\n \nSocial History:\n___\nFamily History:\nFather: ___, ___, deceased.  Mother with breast CA.  No \nfamily history of pulmonary disease. \n\n \nPhysical Exam:\nINITIAL PHYSICAL EXAM\nVitals- T 97.5 BP 117/75 HR 108 RR 20 SaO2 95% on 4L  \nGeneral- Chronically-ill appearing man in no apparent distress.  \n\nHEENT- EOMI. Poor dentition.  \nNeck- Unable to assess JVP due to presents of external jugular \nIV in R EJ.  \nLungs- Coarse breath sounds with mild crackles at bases, but \nbreathing comfortably, and moving air well.  \nCV- RRR,  no rubs, or gallops  \nAbdomen- Soft, nontender, nondistended. bowel sounds present  \nGU- No foley  \nExt- No ___ pitting edema \nNeuro- A&Ox3. Moving all four extremities spontaneously. Follows \ncommands.\n.\nDISCHARGE PHYSICAL EXAM\nVitals- 98.3 113/77 92 18 95/2L  \nGeneral- well appearing, NAD, upright in bed  \nHEENT- EOMI. Nearly adentulous, very minimal gingival oozing  \nNeck- supple  \nLungs- Generally CTAB, few crackles at bases  \nCV- RRR, no rubs, or gallops  \nAbdomen- Soft, nontender, nondistended.  \nGU- No foley  \nExt- improved 1+ pitting edema to knees bilaterally, L>R.  \nNeuro- AOx3, ambulating without assistance, non-focal\n \nPertinent Results:\nINITIAL LAB RESULTS\n___ 09:00PM BLOOD WBC-8.1 RBC-4.65 Hgb-10.8* Hct-36.1* \nMCV-78* MCH-23.2* MCHC-29.8* RDW-18.6* Plt ___\n___ 09:00PM BLOOD Neuts-73* Bands-0 ___ Monos-5 Eos-2 \nBaso-0 ___ Myelos-0\n___ 09:00PM BLOOD Hypochr-2+ Anisocy-2+ Poiklo-1+ \nMacrocy-NORMAL Microcy-1+ Polychr-NORMAL Ovalocy-1+ Target-1+ \nSchisto-OCCASIONAL\n___ 09:00PM BLOOD Plt Smr-NORMAL Plt ___\n___ 09:00PM BLOOD Glucose-212* UreaN-36* Creat-1.7* Na-137 \nK-5.1 Cl-100 HCO3-22 AnGap-20\n___ 06:00AM BLOOD CK(CPK)-457*\n___ 06:00AM BLOOD CK-MB-10 MB Indx-2.2 cTropnT-0.09*\n___ 07:00AM BLOOD Calcium-8.4 Phos-3.3 Mg-2.1\n___ 06:30AM BLOOD HIV Ab-NEGATIVE\n___ 07:00AM BLOOD Digoxin-0.5*\n___ 06:45AM BLOOD Type-ART pO2-62* pCO2-30* pH-7.47* \ncalTCO2-22 Base XS-0\n___ 06:45AM BLOOD Glucose-123* Lactate-1.5 Na-137 K-4.1 \nCl-104\n___ 11:20AM BLOOD O2 Sat-98\n___ 10:00PM URINE Color-Yellow Appear-Clear Sp ___\n___ 10:00PM URINE Blood-MOD Nitrite-NEG Protein-30 \nGlucose-NEG Ketone-NEG Bilirub-NEG Urobiln-NEG pH-6.0 Leuks-MOD\n___ 10:00PM URINE RBC-67* WBC-44* Bacteri-NONE Yeast-NONE \nEpi-2\n___ 10:00PM URINE CastHy-4*\n___ 10:00PM URINE Mucous-RARE\n___ 10:00PM URINE cocaine-NEG\n.\nMICRO DATA\n.\n___ 10:00 pm URINE     Site: NOT SPECIFIED\n.\n                            **FINAL REPORT ___\n.\n   URINE CULTURE (Final ___: \n      GRAM POSITIVE BACTERIA.    10,000-100,000 ORGANISMS/ML.. \n         Alpha hemolytic colonies consistent with alpha \nstreptococcus or\n         Lactobacillus sp. \n.\n___ 10:00 pm URINE\n      OLD S#S ___, 8312B ___ ADDED ___. \n.\n                            **FINAL REPORT ___\n.\n   Legionella Urinary Antigen  (Final ___: \n      NEGATIVE FOR LEGIONELLA SEROGROUP 1 ANTIGEN. \n           (Reference Range-Negative). \n.\n.\n___ 10:37 am URINE      Source: Unknown. \n.\n                            **FINAL REPORT ___\n.\n   URINE CULTURE (Final ___:    NO GROWTH. \n.\nIMAGING\n.\n___ CT HEAD\nIMPRESSION: No acute intracranial process.\n .\n___ CXR\nIMPRESSION:  Scattered areas of increased parenchymal opacity \nare likely\nchronic and unchanged since ___ without suggestion of \nsuperimposed process.\n .\n___ Renal Ultrasound\nIMPRESSION:  Stable, minimally complex right renal cyst without \nsuspicious\nfeatures.  No abnormality is identified to account for \nhematuria, including no\nevidence of stones or concerning masses.  The urinary bladder is \ncollapsed and\nnot evaluated.\n.\n___ CTA Chest\nIMPRESSION:\n1.  No evidence of pulmonary embolus or acute aortic syndrome.\n2.  In comparison to ___ exam, there is no significant \nchange in mosaic\nattenuation, ground-glass opacities, and interlobular septal \nthickening.  The\nabove findings are chronic and likely sequela of prior scarring, \norganized\npneumonia, or hemorrhage due to patient's known history of \nillicit drug use.\n3.  Stable cardiomegaly.\n4.  Stable appearance of a 15-mm right upper lobe spiculated \nnodule, which may\nrepresent malignancy or scarring. Follow up is recommended.\n5.  Minimal  interval increase in known central lymphadenopathy.\n 6.  Small right and trace left pleural effusions have decreased \nin size since\n___ exam.\n.\n___ CXR\nIMPRESSION:  AP chest compared to ___ through ___:\nPrevious bibasilar opacification improved substantially from \n___\nthrough ___, and has subsequently worsened.  Chronic \ncardiomegaly and\nmediastinal and vascular engorgement suggest a component of \npulmonary edema,\nbut the bibasilar lung abnormality could be due to pneumonia or \npulmonary\nhemorrhage as well as recurrent aspiration, of which the \ncomponent of edema\nhas improved since ___.\n.\n___ CT Head\nIMPRESSION:  No acute intracranial abnormality.\n.\n___ CT C Spine\nIMPRESSION:\n1.  No cervical spine fracture or malalignment:\n2.  Increased patchy opacity in the right lung apex compared to \nyesterday's CT\nexamination as well as increase in bilateral pleural effusions \ncompatible with\nprogression of ongoing pulmonary process.\n3.  Loose mandibular teeth #23 and #24.\n. \n___ Cardiac Echo\nThe left atrial volume is severely increased. No atrial septal \ndefect is seen by 2D or color Doppler. The estimated right \natrial pressure is at least 15 mmHg. Left ventricular wall \nthicknesses are normal. The left ventricular cavity is \nmoderately dilated. There is severe global left ventricular \nhypokinesis (LVEF = 15 %). The estimated cardiac index is \ndepressed (<2.0L/min/m2). Tissue Doppler imaging suggests an \nincreased left ventricular filling pressure (PCWP>18mmHg). \nDoppler parameters are most consistent with Grade III/IV \n(severe) left ventricular diastolic dysfunction. The right \nventricular cavity is mildly dilated with moderate global free \nwall hypokinesis. There is abnormal septal motion/position \nconsistent with right ventricular pressure/volume overload. The \naortic valve leaflets (3) appear structurally normal with good \nleaflet excursion and no aortic stenosis or aortic \nregurgitation. The mitral valve leaflets are structurally \nnormal. There is no mitral valve prolapse. Mild to moderate \n(___) mitral regurgitation is seen. Severe [4+] tricuspid \nregurgitation is seen. There is moderate pulmonary artery \nsystolic hypertension. [In the setting of at least moderate to \nsevere tricuspid regurgitation, the estimated pulmonary artery \nsystolic pressure may be underestimated due to a very high right \natrial pressure.] Severe pulmonic regurgitation is seen. The \nend-diastolic pulmonic regurgitation velocity is increased \nsuggesting pulmonary artery diastolic hypertension. There is a \ntrivial/physiologic pericardial effusion. \n.\nIMPRESSION: Globally severe depressed left ventricular function. \nModerate pulmonary hypertension by tricuspid regurgitation jet. \nThis however is underestimated due to 4 + tricuspid \nregurgitation. Pulmonary diastolic pressure by pulmonary \nregurgitation spectral doppler has characteristic W-pattern for \npulmonary hypertension and enddiastolic pulmonic regurgitation \nvelocity is elevated (equaling depending on RA pressure at least \n37 mm Hg).\n.\nCompared with the prior study (images reviewed) of ___, \nleft ventricular function was severely depressed and now may \nhave worsened further. Tricuspid regurgitation has increased. \n.\n___ CXR\nIMPRESSION:  AP chest compared to ___ through ___:\nCoarse reticular abnormality in the lower lungs has been present \nto varying\nextent since ___.  The transient and severe worsening of \nabnormality at\nthe lung bases was accompanied by new abnormality in the lung \napices. \nOverall, the pattern is most consistent with pulmonary fibrosis \nand subsequent\ndevelopment of pulmonary edema, consistent with a severe chronic \ndilated\ncardiomegaly.  \n.\nDISCHARGE LABS \n___ 06:30AM BLOOD WBC-9.0 RBC-4.49* Hgb-10.4* Hct-34.3* \nMCV-76* MCH-23.0* MCHC-30.2* RDW-18.0* Plt ___\n___ 06:30AM BLOOD ___\n___ 06:30AM BLOOD Glucose-217* UreaN-42* Creat-1.6* Na-135 \nK-4.6 Cl-94* HCO3-34* AnGap-12\n \nBrief Hospital Course:\nMr. ___ is a ___ M with a history of heart failure \n(likely due to prior cocaine abuse, LVEF 15% ___, CKD III, \nrestrictive lung disease (likely due to cocaine use), hepatitis \nC, schizophrenia, DM2, recent diagnosis of RLE DVT who presents \nwith hematuria, s/p syncopal episode this admission, with \ndyspnea.\n.\nACUTE ISSUES\n#) Syncope\nThe patient had an unwitness syncopal episode during his \nadmission. Prior to this episode, the patient  reported 2 other \nepisodes of syncope. The syncopal episode took place as the \npatient was getting up to use the restroom and then fell. A CT \nhead and CT C spine showed no fracture or acute process. \nHowever, he did suffer two loose teeth, #23 and #24, which were \nextracted by OMFS. Fall precautions were placed, and the patient \nhad no further syncopal episodes. \n.\nThere was no clear precipitant for Mr. ___ syncopal episode. \nNo events on telemetry and no post-cital period, bowel, or \nbladder incontinence to indicate seizure. The patient had \nevidence of pulmonary hypertension on last echo ___ and poor \nlung function at baseline due to restrictive lung disease, \nthought to be due to cocaine use. Thus pulmonary hypertension \nand hypoxemia was thought to be related to his syncopal \nepisodes. A repeat cardiac echo showed an EF of 15% and moderate \npulmonary hypertension that may be underestimated due to 4+ \ntricuspid regurgitation. \n.\nThe pulmonary team was consulted and felt that his worsening \npulmonary hypertension was due to worsening left heart failure. \nThey recommended diuresing the patient to his dry weight, \nweaning oxygen, and obtaining DLCO soon after discharge. \n.\n#) HYPOXEMIA: \nThe patient developed worsening hypoxemia s/p his syncopal \nepisode. He has poor lung function at baseline as described \nabove. His hypoxemia was likely multi-factorial related to \ndecompensated heart failure, restrictive lung disease, and \npulmonary hypertension. A CTA was negative for pulmonary \nembolism. CT C spine showed worsening opacification at the right \napex for which he was started on levofloxacin for CAP. A \nlegionella antigen was negative. The patient also received \nnebulizers and was diuresed with his home torsemide and \nfurosemide. \n.\n#)Tachycardia \nThe patient developed worsening tachycardia s/p his syncopal \nepisode. His baseline heart rate during his last admission was \nin the 100s likely due to his heart failure and poor lung \nfunction as described above. However his pulse increased to the \n___ s/p fall. This worsening tachycardia was likely due to \nhypovolemia due to diuresis, poor PO intake, and pain s/p fall. \nHis cardiac enzymes were cycled and were negative. He received \noxycodone for pain management, and nebulizers as above, with \nimprovement in his tachycardia. \n.\n# PNA\nThe patient was found to have worsening opacification at the \nright lung apex s/p fall on CT C spine. Given his worsening \ndyspnea and hypoxia, he was started on levofloxacin for HCAP \nwhich was completed prior to discharge. \n.\n#)Hypotension \nThe patient developed transient hypotension during admission, \nwith SBP in the ___. He remained asymptomatic and was mentating \nnormally. This hypotension was most likely ___ hypovolemia as \npatient had been NPO that morning, in addition to prior poor PO \nintake ___ mouth pain, and some blood loss ___ from the mouth. \nIn addition, the patient had been diuresed the day prior to his \nhypotension.  Sepsis was less likely given that he had no \nleukocytosis and no fever. He responded well to fluid boluses \nwith SBP in the 100s, and remained normotensive thereafter. \n.\n#) HEMATURIA: \nThe patient initially presented to the ED w/ gross hematuria. He \nhad no further episodes of gross hematuria during admission, his \nUA was positive for 65 RBCs. A subsequent UA showed 5 RBCs.  \nAlthough he was on anticoagulation, is abnormal. Fortunately, he \ndid not exhibit hemodynamic instability on presentation and did \nnot present with a significant drop in hematocrit (36% down from \n37% at prior discharge). Thus, he was continued on \nanticoagulation.  A renal U/S did not show evidence of stone. An \ninitial urine cx was positive for alpha strep vs lactobacillus, \nlikely contaminants. A subsequent urine cx showed no growth. An \nHIV test was negative during admission, and the patient had had \nrecent gonorrhea and chlamydia testing which were both negative.\n.\nCHRONIC ISSUES\n#) DVT: \nThe patient was diagnosed with RLE DVT during his ___ \nadmission. On this admission his INR was subtherapeutic. He was \nstarted on a heparin drip, and his warfarin was initially held \nin anticipation of his tooth extraction. The patient was \ndischarged with warfarin and enoxaparin bridge. \n.\n#) COPD: \nThe patient has a known diagnosis of COPD. He was continued on \nhis home nebulizers during admission. \n.\n#) CHRONIC KIDNEY DISEASE, STAGE III: GFR ___. Baseline \ncreatinine 1.5-1.7.  \nThe patient has a known diagnosis of CKD. His medications were \nrenally dosed and he remained stable with regards to his kidney \ndisease.  \n.\n#) HEART FAILURE:\nAs described above, the patient has a known diagnosis of heart \nfailure, with an EF of 15%. He was continued on his home \nlosartan, torsemide, and digoxin.  \n.\n#) DIABETES MELLITUS, TYPE 2:\nThe patient has a known diagnosis of DM2. He was continued on \nlantus at a lower dose than his home regimen given an episode of \nhypoglycemia during admission. His insulin sliding scale was \nalso adjusted accordingly, without further episodes of \nhypoglycemia. \n.\n#) ANXIETY: \nThe patient has a known diagnosis of anxiety and was continued \non his home benzodiazepines  \n. \nTRANSITIONAL ISSUES\n-enoxaparin 90mg BID with continuation of warfarin (decreased to \n2mg given antibiotics), please follow in ___ clinic\n-OMFS recommended week-long course of amoxicillin given teeth \nextraction along with chlorhexidine oral rinse for a week\n-Torsemide dosing changed to 100mg daily with 100mg qPM on ___\n-Pulmonary recommended re-testing PFTs (specifically DLCO) as \noutpatient\n-Pulmonary recommended Palliative Care evaluation given \nprogression of heart failure/lung disease \n-Consider rechecking digoxin level on ___ given med changes\n-The patient's insulin requirement decreased during the \nhospitalization, possibly secondary to decreased po's in setting \nof dental procedure, but will likely require uptitration as an \noutpatient\n.\nIncidental findings:\n-___ CT Chest: \"\"Stable appearance of a 15-mm right upper \nlobe spiculated nodule, which may represent malignancy or \nscarring. Follow-up is recommended.\"\" \n-___ Renal U/S: \"\"Stable, minimally complex right renal cyst \nwithout suspicious findings.\""
+      }
+    ],
+    "radiology_notes": [
+      {
+        "note_id": "19509694-RR-106",
+        "charttime": "2174-05-04 20:35:00",
+        "storetime": "2174-05-04 21:18:00",
+        "text": "HISTORY:  Shortness of breath with fall and head injury.  Evaluate for\ninterval hemorrhage.\n\nCOMPARISON:  Head CT ___.  \n\nTECHNIQUE: Continuous axial sections were acquired through the brain without\nthe administration of IV contrast.  Coronal and sagittal reformations were\nprovided and reviewed.\n\nFINDINGS: There is no acute hemorrhage, edema or shift in the midline\nstructures.  The ventricles and sulci are of normal size and configuration. \nThe gray-white matter differentiation is preserved and the basal cisterns\nremain patent.  There is no evidence for an acute territorial vascular\ninfarction.  Calcifications are seen in the carotid siphons.  \n\nThe included paranasal sinuses and mastoid air cells are well aerated.  The\nlenses and globes are normal.  There is no fracture.\n\nIMPRESSION: No acute intracranial process.\n\n"
+      },
+      {
+        "note_id": "19509694-RR-107",
+        "charttime": "2174-05-04 21:05:00",
+        "storetime": "2174-05-04 21:57:00",
+        "text": "HISTORY:  Shortness of breath status post fall with head strike, on\nanticoagulation.\n\nCOMPARISON:  Multiple chest radiographs dating back to ___.\n\nTECHNIQUE:  AP and lateral chest three views.\n\nFINDINGS:  Moderate-to-severe cardiomegaly and mild widening of the\nmediastinum is chronic and unchanged since at least ___.  Scattered\nparenchymal opacities particularly at the lung bases as well as spiculated\nareas of probable scarring in the lung apices are unchanged since ___.  There\nis no clear superimposed opacity.  There is no pleural effusion or\npneumothorax.\n\nIMPRESSION:  Scattered areas of increased parenchymal opacity are likely\nchronic and unchanged since ___ without suggestion of superimposed process.\n"
+      },
+      {
+        "note_id": "19509694-RR-108",
+        "charttime": "2174-05-05 08:37:00",
+        "storetime": "2174-05-05 10:48:00",
+        "text": "INDICATION:  Hematuria on anticoagulation, please evaluate for nephrolithiasis\nor other explanation for hematuria.\n\nCOMPARISON:  Abdominal ultrasound of ___.\n\nTECHNIQUE:  Renal ultrasound.\n\nFINDINGS:  The right kidney measures 11.5 cm.  A cyst in the interpolar region\nof the right kidney measures 2.3 x 2.4 x 2.7 cm and contains a couple of thin\nperipheral incomplete septations or foci of mural calcification.  However,\nthere is no internal nodularity or vascularity.  The left kidney measures 9.9\ncm.  No stones, masses, or hydronephrosis are identified in either kidney. \nThe urinary bladder is contracted/collapsed and not visualized.\n\nComparison is made to the abdominal ultrasound of ___.  The right\nrenal cyst is not significantly changed in size, having previously measured\n3.3 x 2.5 x 2.7 cm.\n\nIMPRESSION:  Stable, minimally complex right renal cyst without suspicious\nfeatures.  No abnormality is identified to account for hematuria, including no\nevidence of stones or concerning masses.  The urinary bladder is collapsed and\nnot evaluated.\n"
+      },
+      {
+        "note_id": "19509694-RR-109",
+        "charttime": "2174-05-05 16:44:00",
+        "storetime": "2174-05-06 10:01:00",
+        "text": "INDICATION:  Patient with history of deep venous thrombosis, now with\ntachycardia and hypoxia.  Assess for PE.\n\nCOMPARISONS:  ___ and ___.\n\nTECHNIQUE:  MDCT-acquired contiguous images through the chest were obtained\nwith intravenous contrast at 3-mm slice thickness.  Coronally and sagittally\nreformatted images are provided.\n\nDLP:  299 mGy-cm.\n\nFINDINGS:\n\nThe pulmonary artery is well opacified without filling defects to suggest\nacute pulmonary embolus.  The main pulmonary artery is normal in size\nmeasuring 3 cm.  Intrathoracic aorta is normal in caliber.  Minimal calcified\natherosclerotic disease of the aorta is noted without aneurysmal changes. \nBiventricular enlargement is longstanding.  Mild coronary artery\ncalcifications are noted.  There are multiple pathologically enlarged central\nlymph nodes, the majority of which are stable. Several of the central lymph\nnodes appear slightly increased since prior exams.  For example, a prevascular\nlymph node now measures 18 mm, previously 14 mm (5:30).  Subcarinal lymph node\nnow measures 26 mm, previously 22 mm.    A 17-mm right paratracheal lymph node\npreviously measured 15 mm (5:21).  \n\nThe tracheobronchial tree appears patent to subsegmental levels.  The lungs\ndemonstrate mosaic attenuation, which is largely unchanged since prior exams. \nInterlobular septal thickening and ground glass opacities are most pronounced\nin the lower lobes.  There is mild bronchiolectasis and bronchial wall\nthickening bilaterally.\n\nA 15-mm spiculated density in the right upper lobe previously measured 14 mm. \n5-mm nodular opacities in the right lung apex are new since prior (5:20, 23). \nSmall right and trace left pleural effusions have slightly decreased since\nprior exam.  Paraseptal and centrilobular emphysema is moderately severe.\n\nThis study is not tailored for subdiaphragmatic evaluation; however, partially\nimaged upper abdominal visceral organs are unremarkable.  A partially\nexophytic hypodense lesion arising from the right kidney is incompletely\nimaged and is most compatible with a cyst.\n\nOSSEOUS STRUCTURES:  No suspicious lytic or sclerotic bony lesion is seen.\n\nIMPRESSION:\n\n1.  No evidence of pulmonary embolus or acute aortic syndrome.\n\n2.  In comparison to ___ exam, there is no significant change in mosaic\nattenuation, ground-glass opacities, and interlobular septal thickening.  The\nabove findings are chronic and likely sequela of prior scarring, organized\npneumonia, or hemorrhage due to patient's known history of illicit drug use.\n\n3.  Stable cardiomegaly.\n\n4.  Stable appearance of a 15-mm right upper lobe spiculated nodule, which may\nrepresent malignancy or scarring. Follow up is recommended.\n\n5.  Minimal  interval increase in known central lymphadenopathy.\n\n6.  Small right and trace left pleural effusions have decreased in size since\n___ exam.\n"
+      },
+      {
+        "note_id": "19509694-RR-110",
+        "charttime": "2174-05-06 05:39:00",
+        "storetime": "2174-05-06 13:18:00",
+        "text": "AP CHEST, 5:41 A.M., ___  \n\nHISTORY:  A ___ man with DVT and tachycardia after syncopal episode.\n\nIMPRESSION:  AP chest compared to ___ through ___:\n\nPrevious bibasilar opacification improved substantially from ___\nthrough ___, and has subsequently worsened.  Chronic cardiomegaly and\nmediastinal and vascular engorgement suggest a component of pulmonary edema,\nbut the bibasilar lung abnormality could be due to pneumonia or pulmonary\nhemorrhage as well as recurrent aspiration, of which the component of edema\nhas improved since ___.\n"
+      },
+      {
+        "note_id": "19509694-RR-111",
+        "charttime": "2174-05-06 05:40:00",
+        "storetime": "2174-05-06 07:53:00",
+        "text": "HISTORY:  DVT on heparin drip, now with syncopal episode, fell on face with\nloose teeth.\n\nCOMPARISON:  Non-contrast head CT, ___.\n\nTECHNIQUE:  Contiguous axial MDCT images were obtained of the head without\ncontrast.  Multiplanar reformatted images were generated in the coronal and\nsagittal planes as well as thin section bone algorithm images.\n\nDLP:  891.93 mGy-cm.\n\nCTDIvol:  52.55 mGy.\n\nFINDINGS:\n\nCT HEAD WITHOUT CONTRAST:  There is no hemorrhage, edema, mass effect, or\nacute infarct.  Mild prominence of the ventricles and sulci are suggestive of\nage-related involutional change.  The basal cisterns are patent and there is\npreservation of gray-white matter differentiation.  No fracture is identified.\nThe visualized paranasal sinuses, mastoid air cells, and middle ear cavities\nare clear.  The orbits are unremarkable.\n\nIMPRESSION:  No acute intracranial abnormality.\n"
+      },
+      {
+        "note_id": "19509694-RR-112",
+        "charttime": "2174-05-06 05:41:00",
+        "storetime": "2174-05-06 07:55:00",
+        "text": "HISTORY:  DVT on heparin drip with syncopal episode, fell on face.\n\nCOMPARISON:  None available.\n\nTECHNIQUE:  Axial helical MDCT images were obtained of the cervical spine\nwithout contrast.  Multiplanar reformatted images were generated in the\ncoronal and sagittal planes.\n\nDLP:  915.13 mGy-cm.\n\nCTDIvol:  37.21 mGy.\n\nFINDINGS:\n\nCT CERVICAL SPINE WITHOUT CONTRAST:  There is no fracture or malalignment. \nThe prevertebral soft tissues are unremarkable.  Degenerative change is\nminimal.\n\nCT resolution of the thecal sac is limited; however, the contour is smooth. \nThe thyroid is unremarkable.  Widespread ground-glass opacity is again noted\nin bilateral lung apices with increase in bilateral pleural effusions as\ncompared to prior examination with interval increase of patchy opacity,\nparticularly in the right apex compared to yesterday's CT examination, likely\nrepresentative of ongoing progression of pulmonary process.  Mandibular teeth\n#23 and #24 are loosened with posterior displacement and apical lucency.\n\nIMPRESSION:\n1.  No cervical spine fracture or malalignment:\n2.  Increased patchy opacity in the right lung apex compared to yesterday's CT\nexamination as well as increase in bilateral pleural effusions compatible with\nprogression of ongoing pulmonary process.\n3.  Loose mandibular teeth #23 and #24.\n"
+      },
+      {
+        "note_id": "19509694-RR-114",
+        "charttime": "2174-05-07 11:02:00",
+        "storetime": "2174-05-07 14:02:00",
+        "text": "AP CHEST, 11:16 A.M., ___   \n\nHISTORY:  A ___ man with heart failure and pulmonary fibrosis, treated\nfor pneumonia, now with worsening radiographic appearance.\n\nIMPRESSION:  AP chest compared to ___ through ___:\n\nCoarse reticular abnormality in the lower lungs has been present to varying\nextent since ___.  The transient and severe worsening of abnormality at\nthe lung bases was accompanied by new abnormality in the lung apices. \nOverall, the pattern is most consistent with pulmonary fibrosis and subsequent\ndevelopment of pulmonary edema, consistent with a severe chronic dilated\ncardiomegaly.  \n\nFindings were discussed by telephone with the house officer caring for this\npatient at 1:30 p.m. when the findings were recognized.\n"
+      }
+    ],
+    "diagnoses": [
+      {
+        "seq_num": 1,
+        "icd_code": "59971",
+        "icd_version": 9,
+        "long_title": "Gross hematuria",
+        "normalized_time": "2174-05-13 16:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 2,
+        "icd_code": "486",
+        "icd_version": 9,
+        "long_title": "Pneumonia, organism unspecified",
+        "normalized_time": "2174-05-13 16:17:13",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 3,
+        "icd_code": "42823",
+        "icd_version": 9,
+        "long_title": "Acute on chronic systolic heart failure",
+        "normalized_time": "2174-05-13 16:19:27",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 4,
+        "icd_code": "4168",
+        "icd_version": 9,
+        "long_title": "Other chronic pulmonary heart diseases",
+        "normalized_time": "2174-05-13 16:21:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 5,
+        "icd_code": "25080",
+        "icd_version": 9,
+        "long_title": "Diabetes with other specified manifestations, type II or unspecified type, not stated as uncontrolled",
+        "normalized_time": "2174-05-13 16:23:53",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 6,
+        "icd_code": "80227",
+        "icd_version": 9,
+        "long_title": "Closed fracture of mandible, alveolar border of body",
+        "normalized_time": "2174-05-13 16:26:07",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 7,
+        "icd_code": "7802",
+        "icd_version": 9,
+        "long_title": "Syncope and collapse",
+        "normalized_time": "2174-05-13 16:28:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 8,
+        "icd_code": "4280",
+        "icd_version": 9,
+        "long_title": "Congestive heart failure, unspecified",
+        "normalized_time": "2174-05-13 16:30:33",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 9,
+        "icd_code": "45350",
+        "icd_version": 9,
+        "long_title": "Chronic venous embolism and thrombosis of unspecified deep vessels of lower extremity",
+        "normalized_time": "2174-05-13 16:32:47",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 10,
+        "icd_code": "515",
+        "icd_version": 9,
+        "long_title": "Postinflammatory pulmonary fibrosis",
+        "normalized_time": "2174-05-13 16:35:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 11,
+        "icd_code": "V5861",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of anticoagulants",
+        "normalized_time": "2174-05-13 16:37:13",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 12,
+        "icd_code": "5853",
+        "icd_version": 9,
+        "long_title": "Chronic kidney disease, Stage III (moderate)",
+        "normalized_time": "2174-05-13 16:39:27",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 13,
+        "icd_code": "4148",
+        "icd_version": 9,
+        "long_title": "Other specified forms of chronic ischemic heart disease",
+        "normalized_time": "2174-05-13 16:41:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 14,
+        "icd_code": "V5867",
+        "icd_version": 9,
+        "long_title": "Long-term (current) use of insulin",
+        "normalized_time": "2174-05-13 16:43:53",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 15,
+        "icd_code": "40390",
+        "icd_version": 9,
+        "long_title": "Hypertensive chronic kidney disease, unspecified, with chronic kidney disease stage I through stage IV, or unspecified",
+        "normalized_time": "2174-05-13 16:46:07",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 16,
+        "icd_code": "496",
+        "icd_version": 9,
+        "long_title": "Chronic airway obstruction, not elsewhere classified",
+        "normalized_time": "2174-05-13 16:48:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 17,
+        "icd_code": "V1204",
+        "icd_version": 9,
+        "long_title": "Personal history of Methicillin resistant Staphylococcus aureus",
+        "normalized_time": "2174-05-13 16:50:33",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 18,
+        "icd_code": "3051",
+        "icd_version": 9,
+        "long_title": "Tobacco use disorder",
+        "normalized_time": "2174-05-13 16:52:47",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 19,
+        "icd_code": "30560",
+        "icd_version": 9,
+        "long_title": "Cocaine abuse, unspecified",
+        "normalized_time": "2174-05-13 16:55:00",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 20,
+        "icd_code": "51889",
+        "icd_version": 9,
+        "long_title": "Other diseases of lung, not elsewhere classified",
+        "normalized_time": "2174-05-13 16:57:13",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 21,
+        "icd_code": "3970",
+        "icd_version": 9,
+        "long_title": "Diseases of tricuspid valve",
+        "normalized_time": "2174-05-13 16:59:27",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 22,
+        "icd_code": "30000",
+        "icd_version": 9,
+        "long_title": "Anxiety state, unspecified",
+        "normalized_time": "2174-05-13 17:01:40",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 23,
+        "icd_code": "87363",
+        "icd_version": 9,
+        "long_title": "Open wound of tooth (broken) (fractured) (due to trauma), without mention of complication",
+        "normalized_time": "2174-05-13 17:03:53",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 24,
+        "icd_code": "E8889",
+        "icd_version": 9,
+        "long_title": "Unspecified fall",
+        "normalized_time": "2174-05-13 17:06:07",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 25,
+        "icd_code": "79902",
+        "icd_version": 9,
+        "long_title": "Hypoxemia",
+        "normalized_time": "2174-05-13 17:08:20",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 26,
+        "icd_code": "52100",
+        "icd_version": 9,
+        "long_title": "Dental caries, unspecified",
+        "normalized_time": "2174-05-13 17:10:33",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 27,
+        "icd_code": "E8497",
+        "icd_version": 9,
+        "long_title": "Accidents occurring in residential institution",
+        "normalized_time": "2174-05-13 17:12:47",
+        "time_provenance": "discharge_phase_anchor"
+      },
+      {
+        "seq_num": 28,
+        "icd_code": "V1588",
+        "icd_version": 9,
+        "long_title": "History of fall",
+        "normalized_time": "2174-05-13 17:15:00",
+        "time_provenance": "discharge_phase_anchor"
+      }
+    ],
+    "procedures": [
+      {
+        "seq_num": 1,
+        "chartdate": "2174-05-11",
+        "icd_code": "2309",
+        "icd_version": 9,
+        "long_title": "Extraction of other tooth",
+        "normalized_time": "2174-05-11 12:00:00",
+        "time_provenance": "date_only_normalized"
+      }
+    ],
+    "microbiology": [
+      {
+        "chartdate": "2174-05-07 00:00:00",
+        "charttime": "2174-05-07 10:36:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2174-05-07 00:00:00",
+        "charttime": "2174-05-07 10:37:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "URINE CULTURE",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2174-05-07 00:00:00",
+        "charttime": "2174-05-07 13:05:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "BLOOD CULTURE",
+        "test_name": "Blood Culture, Routine",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "NO GROWTH.  "
+      },
+      {
+        "chartdate": "2174-05-10 00:00:00",
+        "charttime": "2174-05-10 17:46:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "Chlamydia trachomatis, Nucleic Acid Probe, with Amplification",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Negative for Chlamydia trachomatis by ___, APTIMA COMBO 2 Assay.  Validated for use on Urine Samples by the ___ Microbiology Laboratory. Performance characteristics on urine samples were found to be equivalent to those of FDA- approved TIGRIS APTIMA COMBO 2 and/or COBAS Amplicor methods.  "
+      },
+      {
+        "chartdate": "2174-05-10 00:00:00",
+        "charttime": "2174-05-10 17:46:00",
+        "normalized_time": null,
+        "time_provenance": null,
+        "spec_type_desc": "URINE",
+        "test_name": "NEISSERIA GONORRHOEAE (GC), NUCLEIC ACID PROBE, WITH AMPLIFICATION",
+        "org_name": "",
+        "ab_name": "",
+        "interpretation": "",
+        "comments": "Negative for Neisseria gonorrhoeae by ___, APTIMA COMBO 2 Assay.  Validated for use on Urine Samples by the ___ Microbiology Laboratory. Performance characteristics on urine samples were found to be equivalent to those of FDA- approved TIGRIS APTIMA COMBO 2 and/or COBAS Amplicor methods.  "
+      }
+    ],
+    "timing_rules": {
+      "discharge_backbone": true,
+      "ignore_unlinked_radiology": true,
+      "diagnoses_policy": "anchor_to_discharge_phase",
+      "procedure_date_only_policy": "chartdate_plus_12_00_00",
+      "microbiology_date_only_policy": "chartdate_plus_12_00_00",
+      "admission_end_fallback": "latest_discharge_charttime_or_storetime"
+    }
+  },
+  "api_usage": {
+    "input_tokens": 19267,
+    "output_tokens": 5170,
+    "total_tokens": 24437
+  },
+  "response_id": "chatcmpl-b493ac3456453fc2",
+  "latency_ms": 94111,
+  "raw_structured_response": {
+    "conversation_lines": [
+      {
+        "turn_number": 1,
+        "time": "2174-05-04 23:30:00",
+        "speaker": "Doctor",
+        "text": "Hi, Mr. ___. I'm Dr. ___, one of the hospitalists. I understand you came in because you saw blood in your urine this morning?"
+      },
+      {
+        "turn_number": 2,
+        "time": "2174-05-04 23:31:00",
+        "speaker": "Patient",
+        "text": "Yes, dark red blood. Scared me. I’m on blood thinners, so I called for help right away."
+      },
+      {
+        "turn_number": 3,
+        "time": "2174-05-04 23:32:00",
+        "speaker": "Doctor",
+        "text": "That was the right call. We also saw you had a fall yesterday—anything hurt? Head, back, chest?"
+      },
+      {
+        "turn_number": 4,
+        "time": "2174-05-04 23:33:00",
+        "speaker": "Patient",
+        "text": "I hit my face on the nightstand. Mouth’s sore, but no headache or back pain."
+      },
+      {
+        "turn_number": 5,
+        "time": "2174-05-04 23:34:00",
+        "speaker": "Doctor",
+        "text": "We’ll get a CT of your head and neck to be safe. And we’re checking your urine and kidney function. Your INR was a bit low—1.6—so we started a heparin drip to keep your clotting covered."
+      },
+      {
+        "turn_number": 6,
+        "time": "2174-05-04 23:35:00",
+        "speaker": "Patient",
+        "text": "So I’m still protected from clots? I’ve been taking my warfarin."
+      },
+      {
+        "turn_number": 7,
+        "time": "2174-05-04 23:36:00",
+        "speaker": "Doctor",
+        "text": "Yes, but with the fall and possible bleeding, we’re being cautious. We’ll adjust as we go. You also mentioned some burning when you pee?"
+      },
+      {
+        "turn_number": 8,
+        "time": "2174-05-04 23:37:00",
+        "speaker": "Patient",
+        "text": "Yeah, a few days now. And I did have a new partner recently—no protection."
+      },
+      {
+        "turn_number": 9,
+        "time": "2174-05-04 23:38:00",
+        "speaker": "Doctor",
+        "text": "We’ll test for infections, but your urine culture so far shows likely harmless bacteria. We gave you one dose of IV ceftriaxone just in case."
+      },
+      {
+        "turn_number": 10,
+        "time": "2174-05-04 23:39:00",
+        "speaker": "Patient",
+        "text": "Will I need a catheter? The ER doctor wanted one."
+      },
+      {
+        "turn_number": 11,
+        "time": "2174-05-04 23:40:00",
+        "speaker": "Doctor",
+        "text": "No, you don’t need one. You’re passing urine fine, and no more blood since this morning. We’ll keep monitoring."
+      },
+      {
+        "turn_number": 12,
+        "time": "2174-05-05 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. Your kidney ultrasound showed no stones or tumors. The cyst we saw is stable and not causing the bleeding."
+      },
+      {
+        "turn_number": 13,
+        "time": "2174-05-05 08:01:00",
+        "speaker": "Patient",
+        "text": "So what’s causing the blood then?"
+      },
+      {
+        "turn_number": 14,
+        "time": "2174-05-05 08:02:00",
+        "speaker": "Doctor",
+        "text": "Hard to say. Could be from the anticoagulants, or minor irritation. Your hemoglobin is stable, so no active bleeding. We’ll keep watching."
+      },
+      {
+        "turn_number": 15,
+        "time": "2174-05-05 17:00:00",
+        "speaker": "Doctor",
+        "text": "We did a CT scan to check for a lung clot. Good news—it’s negative. But we did see your heart is enlarged, and your lung changes are chronic, likely from past drug use."
+      },
+      {
+        "turn_number": 16,
+        "time": "2174-05-05 17:01:00",
+        "speaker": "Patient",
+        "text": "I haven’t used in years. But I do get short of breath."
+      },
+      {
+        "turn_number": 17,
+        "time": "2174-05-05 17:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, and your echo shows your heart function is quite low—EF is 15%. That’s contributing to your breathing issues."
+      },
+      {
+        "turn_number": 18,
+        "time": "2174-05-06 06:00:00",
+        "speaker": "Doctor",
+        "text": "Mr. ___, you had a fall last night when you got up. You passed out, didn’t you?"
+      },
+      {
+        "turn_number": 19,
+        "time": "2174-05-06 06:01:00",
+        "speaker": "Patient",
+        "text": "Yeah, just stood up and everything went black. Woke up on the floor."
+      },
+      {
+        "turn_number": 20,
+        "time": "2174-05-06 06:02:00",
+        "speaker": "Doctor",
+        "text": "CT head and neck show no fractures. But you’ve got two loose teeth—#23 and #24. Oral surgery will extract them today."
+      },
+      {
+        "turn_number": 21,
+        "time": "2174-05-06 06:03:00",
+        "speaker": "Patient",
+        "text": "Oh man, my mouth’s a mess. Is the fainting serious?"
+      },
+      {
+        "turn_number": 22,
+        "time": "2174-05-06 06:04:00",
+        "speaker": "Doctor",
+        "text": "We’re watching closely. It could be due to your heart and lung disease. Your oxygen dropped, and your heart rate went up. We’re adjusting your diuretics."
+      },
+      {
+        "turn_number": 23,
+        "time": "2174-05-06 12:00:00",
+        "speaker": "Doctor",
+        "text": "Teeth were extracted without issues. You’ll need amoxicillin and mouth rinse for a week."
+      },
+      {
+        "turn_number": 24,
+        "time": "2174-05-06 12:01:00",
+        "speaker": "Patient",
+        "text": "Thanks. I’m feeling weak though."
+      },
+      {
+        "turn_number": 25,
+        "time": "2174-05-06 12:02:00",
+        "speaker": "Doctor",
+        "text": "You had a low blood pressure this morning—likely from not eating and some fluid loss. We gave fluids, and you’re stabilizing."
+      },
+      {
+        "turn_number": 26,
+        "time": "2174-05-07 08:00:00",
+        "speaker": "Doctor",
+        "text": "Your repeat urine test shows only 5 red blood cells now—much better. No growth in the culture. Infection seems unlikely."
+      },
+      {
+        "turn_number": 27,
+        "time": "2174-05-07 08:01:00",
+        "speaker": "Patient",
+        "text": "So the blood’s stopping?"
+      },
+      {
+        "turn_number": 28,
+        "time": "2174-05-07 08:02:00",
+        "speaker": "Doctor",
+        "text": "Yes. We’ll keep you on anticoagulation since your DVT risk is high. But we’ll watch closely."
+      },
+      {
+        "turn_number": 29,
+        "time": "2174-05-07 08:03:00",
+        "speaker": "Patient",
+        "text": "What about the pneumonia the scan showed?"
+      },
+      {
+        "turn_number": 30,
+        "time": "2174-05-07 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, the CT showed new opacity in your right lung apex. We started levofloxacin for pneumonia. You’ll finish the course before discharge."
+      },
+      {
+        "turn_number": 31,
+        "time": "2174-05-07 08:05:00",
+        "speaker": "Patient",
+        "text": "Will that help me breathe better?"
+      },
+      {
+        "turn_number": 32,
+        "time": "2174-05-07 08:06:00",
+        "speaker": "Doctor",
+        "text": "It should. We’re also optimizing your heart failure meds—torsemide twice daily now. Pulmonary team says your lung issues are tied to your heart."
+      },
+      {
+        "turn_number": 33,
+        "time": "2174-05-08 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your oxygen levels are improving. We’re weaning you down to 2 liters. How’s your breathing?"
+      },
+      {
+        "turn_number": 34,
+        "time": "2174-05-08 09:01:00",
+        "speaker": "Patient",
+        "text": "Better. Not as winded."
+      },
+      {
+        "turn_number": 35,
+        "time": "2174-05-08 09:02:00",
+        "speaker": "Doctor",
+        "text": "Good. Your heart rate has come down too. We adjusted your pain meds and fluids, which helped."
+      },
+      {
+        "turn_number": 36,
+        "time": "2174-05-08 09:03:00",
+        "speaker": "Patient",
+        "text": "I had a low blood sugar the other night."
+      },
+      {
+        "turn_number": 37,
+        "time": "2174-05-08 09:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, we reduced your Lantus dose temporarily. We’ll go back to your usual dose soon, but we’ll monitor closely."
+      },
+      {
+        "turn_number": 38,
+        "time": "2174-05-09 10:00:00",
+        "speaker": "Doctor",
+        "text": "Your labs are stable. Creatinine is 1.6—within your normal range. Kidneys are holding up."
+      },
+      {
+        "turn_number": 39,
+        "time": "2174-05-09 10:01:00",
+        "speaker": "Patient",
+        "text": "Good. Any more tests?"
+      },
+      {
+        "turn_number": 40,
+        "time": "2174-05-09 10:02:00",
+        "speaker": "Doctor",
+        "text": "We’ll repeat your echo soon. Pulmonary wants you to get lung function tests after discharge, especially DLCO."
+      },
+      {
+        "turn_number": 41,
+        "time": "2174-05-10 11:00:00",
+        "speaker": "Doctor",
+        "text": "Your chlamydia and gonorrhea tests came back negative. So no STI concerns."
+      },
+      {
+        "turn_number": 42,
+        "time": "2174-05-10 11:01:00",
+        "speaker": "Patient",
+        "text": "Thanks. I was worried."
+      },
+      {
+        "turn_number": 43,
+        "time": "2174-05-10 11:02:00",
+        "speaker": "Doctor",
+        "text": "We also saw a small nodule in your right lung—15mm, spiculated. It’s been stable, but you’ll need follow-up imaging in a few months."
+      },
+      {
+        "turn_number": 44,
+        "time": "2174-05-10 11:03:00",
+        "speaker": "Patient",
+        "text": "Could it be cancer?"
+      },
+      {
+        "turn_number": 45,
+        "time": "2174-05-10 11:04:00",
+        "speaker": "Doctor",
+        "text": "It could be scar tissue from old drug use, but we can’t rule out malignancy. That’s why follow-up is important."
+      },
+      {
+        "turn_number": 46,
+        "time": "2174-05-11 13:00:00",
+        "speaker": "Doctor",
+        "text": "You’re doing well. We’re planning for discharge in a couple of days. We’ll send you home on warfarin and enoxaparin."
+      },
+      {
+        "turn_number": 47,
+        "time": "2174-05-11 13:01:00",
+        "speaker": "Patient",
+        "text": "Will I need to come back for shots?"
+      },
+      {
+        "turn_number": 48,
+        "time": "2174-05-11 13:02:00",
+        "speaker": "Doctor",
+        "text": "Yes, twice daily enoxaparin for now. Your warfarin dose is lowered to 2mg due to the antibiotic. You’ll need INR checks weekly at first."
+      },
+      {
+        "turn_number": 49,
+        "time": "2174-05-11 13:03:00",
+        "speaker": "Patient",
+        "text": "And my heart meds?"
+      },
+      {
+        "turn_number": 50,
+        "time": "2174-05-11 13:04:00",
+        "speaker": "Doctor",
+        "text": "Torsemide is now 100mg in the morning and 100mg at night. Keep taking losartan and digoxin. We’ll check your digoxin level soon."
+      },
+      {
+        "turn_number": 51,
+        "time": "2174-05-12 09:00:00",
+        "speaker": "Doctor",
+        "text": "Your oxygen is 95% on 2 liters. We’re confident you can go home tomorrow."
+      },
+      {
+        "turn_number": 52,
+        "time": "2174-05-12 09:01:00",
+        "speaker": "Patient",
+        "text": "I’m glad. What about the fainting?"
+      },
+      {
+        "turn_number": 53,
+        "time": "2174-05-12 09:02:00",
+        "speaker": "Doctor",
+        "text": "We think it’s related to your heart and lung disease. Pulmonary suggested a palliative care consult to help with long-term planning."
+      },
+      {
+        "turn_number": 54,
+        "time": "2174-05-12 09:03:00",
+        "speaker": "Patient",
+        "text": "Palliative? That’s for people dying, isn’t it?"
+      },
+      {
+        "turn_number": 55,
+        "time": "2174-05-12 09:04:00",
+        "speaker": "Doctor",
+        "text": "Not just that. It’s about managing symptoms and quality of life, especially with chronic heart and lung disease. They can help coordinate care."
+      },
+      {
+        "turn_number": 56,
+        "time": "2174-05-12 09:05:00",
+        "speaker": "Patient",
+        "text": "Okay, I’ll think about it."
+      },
+      {
+        "turn_number": 57,
+        "time": "2174-05-13 08:00:00",
+        "speaker": "Doctor",
+        "text": "Good morning. You’re cleared for discharge. We’ll review your meds and follow-up."
+      },
+      {
+        "turn_number": 58,
+        "time": "2174-05-13 08:01:00",
+        "speaker": "Patient",
+        "text": "Finally. What do I need to watch for?"
+      },
+      {
+        "turn_number": 59,
+        "time": "2174-05-13 08:02:00",
+        "speaker": "Doctor",
+        "text": "Watch for shortness of breath, chest pain, or any more blood in urine. Keep taking your meds, check your weight daily, and call if you gain more than 3 pounds in a day."
+      },
+      {
+        "turn_number": 60,
+        "time": "2174-05-13 08:03:00",
+        "speaker": "Patient",
+        "text": "And the enoxaparin?"
+      },
+      {
+        "turn_number": 61,
+        "time": "2174-05-13 08:04:00",
+        "speaker": "Doctor",
+        "text": "Yes, twice daily. You’ll follow up in the anticoagulation clinic. Also, see your primary doctor in a week, and get your lung tests done."
+      },
+      {
+        "turn_number": 62,
+        "time": "2174-05-13 08:05:00",
+        "speaker": "Patient",
+        "text": "Thanks, doc. I’ll try to stay out of trouble."
+      },
+      {
+        "turn_number": 63,
+        "time": "2174-05-13 08:06:00",
+        "speaker": "Doctor",
+        "text": "Take care. And remember—no sudden standing. Get up slowly."
+      },
+      {
+        "turn_number": 64,
+        "time": "2174-05-13 08:07:00",
+        "speaker": "Patient",
+        "text": "Got it. Thanks again."
+      },
+      {
+        "turn_number": 65,
+        "time": "2174-05-13 08:08:00",
+        "speaker": "Doctor",
+        "text": "You’re welcome. We’ll see you in follow-up."
+      }
+    ],
+    "summary": {
+      "admission_start": "2174-05-04 23:21:00",
+      "admission_end": "2174-05-13 17:15:00",
+      "summary_paragraph": "A man with a history of ischemic cardiomyopathy, COPD, chronic kidney disease, and polysubstance abuse was admitted for gross hematuria while on anticoagulation and after a recent fall. He experienced a syncopal episode during admission, resulting in loose teeth that required extraction. Workup revealed no acute intracranial or spinal injury, no pulmonary embolism, and no source of hematuria on renal ultrasound. His hematuria resolved without intervention, and anticoagulation was continued. He developed hypoxemia and radiographic findings consistent with pneumonia, for which he was treated with levofloxacin. Heart failure was managed with diuresis, and his warfarin was bridged with heparin and enoxaparin. He was discharged on adjusted anticoagulation, antibiotics for dental care, and optimized heart failure therapy, with plans for outpatient follow-up including lung function testing and palliative care evaluation.",
+      "problems": [
+        "Gross hematuria",
+        "Pneumonia, organism unspecified",
+        "Acute on chronic systolic heart failure",
+        "Other chronic pulmonary heart diseases",
+        "Syncope and collapse",
+        "Congestive heart failure, unspecified",
+        "Chronic venous embolism and thrombosis of unspecified deep vessels of lower extremity",
+        "Postinflammatory pulmonary fibrosis",
+        "Long-term (current) use of anticoagulants",
+        "Chronic kidney disease, Stage III (moderate)",
+        "Other specified forms of chronic ischemic heart disease",
+        "Long-term (current) use of insulin",
+        "Chronic airway obstruction, not elsewhere classified",
+        "Personal history of Methicillin resistant Staphylococcus aureus",
+        "Tobacco use disorder",
+        "Cocaine abuse, unspecified",
+        "Other diseases of lung, not elsewhere classified",
+        "Diseases of tricuspid valve",
+        "Anxiety state, unspecified",
+        "Open wound of tooth (broken) (fractured) (due to trauma), without mention of complication",
+        "Unspecified fall",
+        "Hypoxemia",
+        "Dental caries, unspecified",
+        "Accidents occurring in residential institution",
+        "History of fall"
+      ]
+    }
+  },
+  "raw_response": {
+    "id": "chatcmpl-b493ac3456453fc2",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"conversation_lines\": [\n    {\n      \"turn_number\": 1,\n      \"time\": \"2174-05-04 23:30:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hi, Mr. ___. I'm Dr. ___, one of the hospitalists. I understand you came in because you saw blood in your urine this morning?\"\n    },\n    {\n      \"turn_number\": 2,\n      \"time\": \"2174-05-04 23:31:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yes, dark red blood. Scared me. I’m on blood thinners, so I called for help right away.\"\n    },\n    {\n      \"turn_number\": 3,\n      \"time\": \"2174-05-04 23:32:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"That was the right call. We also saw you had a fall yesterday—anything hurt? Head, back, chest?\"\n    },\n    {\n      \"turn_number\": 4,\n      \"time\": \"2174-05-04 23:33:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I hit my face on the nightstand. Mouth’s sore, but no headache or back pain.\"\n    },\n    {\n      \"turn_number\": 5,\n      \"time\": \"2174-05-04 23:34:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll get a CT of your head and neck to be safe. And we’re checking your urine and kidney function. Your INR was a bit low—1.6—so we started a heparin drip to keep your clotting covered.\"\n    },\n    {\n      \"turn_number\": 6,\n      \"time\": \"2174-05-04 23:35:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So I’m still protected from clots? I’ve been taking my warfarin.\"\n    },\n    {\n      \"turn_number\": 7,\n      \"time\": \"2174-05-04 23:36:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, but with the fall and possible bleeding, we’re being cautious. We’ll adjust as we go. You also mentioned some burning when you pee?\"\n    },\n    {\n      \"turn_number\": 8,\n      \"time\": \"2174-05-04 23:37:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yeah, a few days now. And I did have a new partner recently—no protection.\"\n    },\n    {\n      \"turn_number\": 9,\n      \"time\": \"2174-05-04 23:38:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll test for infections, but your urine culture so far shows likely harmless bacteria. We gave you one dose of IV ceftriaxone just in case.\"\n    },\n    {\n      \"turn_number\": 10,\n      \"time\": \"2174-05-04 23:39:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I need a catheter? The ER doctor wanted one.\"\n    },\n    {\n      \"turn_number\": 11,\n      \"time\": \"2174-05-04 23:40:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"No, you don’t need one. You’re passing urine fine, and no more blood since this morning. We’ll keep monitoring.\"\n    },\n    {\n      \"turn_number\": 12,\n      \"time\": \"2174-05-05 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. Your kidney ultrasound showed no stones or tumors. The cyst we saw is stable and not causing the bleeding.\"\n    },\n    {\n      \"turn_number\": 13,\n      \"time\": \"2174-05-05 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So what’s causing the blood then?\"\n    },\n    {\n      \"turn_number\": 14,\n      \"time\": \"2174-05-05 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Hard to say. Could be from the anticoagulants, or minor irritation. Your hemoglobin is stable, so no active bleeding. We’ll keep watching.\"\n    },\n    {\n      \"turn_number\": 15,\n      \"time\": \"2174-05-05 17:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We did a CT scan to check for a lung clot. Good news—it’s negative. But we did see your heart is enlarged, and your lung changes are chronic, likely from past drug use.\"\n    },\n    {\n      \"turn_number\": 16,\n      \"time\": \"2174-05-05 17:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I haven’t used in years. But I do get short of breath.\"\n    },\n    {\n      \"turn_number\": 17,\n      \"time\": \"2174-05-05 17:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, and your echo shows your heart function is quite low—EF is 15%. That’s contributing to your breathing issues.\"\n    },\n    {\n      \"turn_number\": 18,\n      \"time\": \"2174-05-06 06:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Mr. ___, you had a fall last night when you got up. You passed out, didn’t you?\"\n    },\n    {\n      \"turn_number\": 19,\n      \"time\": \"2174-05-06 06:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Yeah, just stood up and everything went black. Woke up on the floor.\"\n    },\n    {\n      \"turn_number\": 20,\n      \"time\": \"2174-05-06 06:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"CT head and neck show no fractures. But you’ve got two loose teeth—#23 and #24. Oral surgery will extract them today.\"\n    },\n    {\n      \"turn_number\": 21,\n      \"time\": \"2174-05-06 06:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Oh man, my mouth’s a mess. Is the fainting serious?\"\n    },\n    {\n      \"turn_number\": 22,\n      \"time\": \"2174-05-06 06:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’re watching closely. It could be due to your heart and lung disease. Your oxygen dropped, and your heart rate went up. We’re adjusting your diuretics.\"\n    },\n    {\n      \"turn_number\": 23,\n      \"time\": \"2174-05-06 12:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Teeth were extracted without issues. You’ll need amoxicillin and mouth rinse for a week.\"\n    },\n    {\n      \"turn_number\": 24,\n      \"time\": \"2174-05-06 12:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks. I’m feeling weak though.\"\n    },\n    {\n      \"turn_number\": 25,\n      \"time\": \"2174-05-06 12:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You had a low blood pressure this morning—likely from not eating and some fluid loss. We gave fluids, and you’re stabilizing.\"\n    },\n    {\n      \"turn_number\": 26,\n      \"time\": \"2174-05-07 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your repeat urine test shows only 5 red blood cells now—much better. No growth in the culture. Infection seems unlikely.\"\n    },\n    {\n      \"turn_number\": 27,\n      \"time\": \"2174-05-07 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"So the blood’s stopping?\"\n    },\n    {\n      \"turn_number\": 28,\n      \"time\": \"2174-05-07 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes. We’ll keep you on anticoagulation since your DVT risk is high. But we’ll watch closely.\"\n    },\n    {\n      \"turn_number\": 29,\n      \"time\": \"2174-05-07 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"What about the pneumonia the scan showed?\"\n    },\n    {\n      \"turn_number\": 30,\n      \"time\": \"2174-05-07 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, the CT showed new opacity in your right lung apex. We started levofloxacin for pneumonia. You’ll finish the course before discharge.\"\n    },\n    {\n      \"turn_number\": 31,\n      \"time\": \"2174-05-07 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will that help me breathe better?\"\n    },\n    {\n      \"turn_number\": 32,\n      \"time\": \"2174-05-07 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It should. We’re also optimizing your heart failure meds—torsemide twice daily now. Pulmonary team says your lung issues are tied to your heart.\"\n    },\n    {\n      \"turn_number\": 33,\n      \"time\": \"2174-05-08 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your oxygen levels are improving. We’re weaning you down to 2 liters. How’s your breathing?\"\n    },\n    {\n      \"turn_number\": 34,\n      \"time\": \"2174-05-08 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Better. Not as winded.\"\n    },\n    {\n      \"turn_number\": 35,\n      \"time\": \"2174-05-08 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good. Your heart rate has come down too. We adjusted your pain meds and fluids, which helped.\"\n    },\n    {\n      \"turn_number\": 36,\n      \"time\": \"2174-05-08 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I had a low blood sugar the other night.\"\n    },\n    {\n      \"turn_number\": 37,\n      \"time\": \"2174-05-08 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, we reduced your Lantus dose temporarily. We’ll go back to your usual dose soon, but we’ll monitor closely.\"\n    },\n    {\n      \"turn_number\": 38,\n      \"time\": \"2174-05-09 10:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your labs are stable. Creatinine is 1.6—within your normal range. Kidneys are holding up.\"\n    },\n    {\n      \"turn_number\": 39,\n      \"time\": \"2174-05-09 10:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Good. Any more tests?\"\n    },\n    {\n      \"turn_number\": 40,\n      \"time\": \"2174-05-09 10:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We’ll repeat your echo soon. Pulmonary wants you to get lung function tests after discharge, especially DLCO.\"\n    },\n    {\n      \"turn_number\": 41,\n      \"time\": \"2174-05-10 11:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your chlamydia and gonorrhea tests came back negative. So no STI concerns.\"\n    },\n    {\n      \"turn_number\": 42,\n      \"time\": \"2174-05-10 11:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks. I was worried.\"\n    },\n    {\n      \"turn_number\": 43,\n      \"time\": \"2174-05-10 11:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We also saw a small nodule in your right lung—15mm, spiculated. It’s been stable, but you’ll need follow-up imaging in a few months.\"\n    },\n    {\n      \"turn_number\": 44,\n      \"time\": \"2174-05-10 11:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Could it be cancer?\"\n    },\n    {\n      \"turn_number\": 45,\n      \"time\": \"2174-05-10 11:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"It could be scar tissue from old drug use, but we can’t rule out malignancy. That’s why follow-up is important.\"\n    },\n    {\n      \"turn_number\": 46,\n      \"time\": \"2174-05-11 13:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re doing well. We’re planning for discharge in a couple of days. We’ll send you home on warfarin and enoxaparin.\"\n    },\n    {\n      \"turn_number\": 47,\n      \"time\": \"2174-05-11 13:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Will I need to come back for shots?\"\n    },\n    {\n      \"turn_number\": 48,\n      \"time\": \"2174-05-11 13:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, twice daily enoxaparin for now. Your warfarin dose is lowered to 2mg due to the antibiotic. You’ll need INR checks weekly at first.\"\n    },\n    {\n      \"turn_number\": 49,\n      \"time\": \"2174-05-11 13:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And my heart meds?\"\n    },\n    {\n      \"turn_number\": 50,\n      \"time\": \"2174-05-11 13:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Torsemide is now 100mg in the morning and 100mg at night. Keep taking losartan and digoxin. We’ll check your digoxin level soon.\"\n    },\n    {\n      \"turn_number\": 51,\n      \"time\": \"2174-05-12 09:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Your oxygen is 95% on 2 liters. We’re confident you can go home tomorrow.\"\n    },\n    {\n      \"turn_number\": 52,\n      \"time\": \"2174-05-12 09:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"I’m glad. What about the fainting?\"\n    },\n    {\n      \"turn_number\": 53,\n      \"time\": \"2174-05-12 09:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"We think it’s related to your heart and lung disease. Pulmonary suggested a palliative care consult to help with long-term planning.\"\n    },\n    {\n      \"turn_number\": 54,\n      \"time\": \"2174-05-12 09:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Palliative? That’s for people dying, isn’t it?\"\n    },\n    {\n      \"turn_number\": 55,\n      \"time\": \"2174-05-12 09:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Not just that. It’s about managing symptoms and quality of life, especially with chronic heart and lung disease. They can help coordinate care.\"\n    },\n    {\n      \"turn_number\": 56,\n      \"time\": \"2174-05-12 09:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Okay, I’ll think about it.\"\n    },\n    {\n      \"turn_number\": 57,\n      \"time\": \"2174-05-13 08:00:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Good morning. You’re cleared for discharge. We’ll review your meds and follow-up.\"\n    },\n    {\n      \"turn_number\": 58,\n      \"time\": \"2174-05-13 08:01:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Finally. What do I need to watch for?\"\n    },\n    {\n      \"turn_number\": 59,\n      \"time\": \"2174-05-13 08:02:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Watch for shortness of breath, chest pain, or any more blood in urine. Keep taking your meds, check your weight daily, and call if you gain more than 3 pounds in a day.\"\n    },\n    {\n      \"turn_number\": 60,\n      \"time\": \"2174-05-13 08:03:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"And the enoxaparin?\"\n    },\n    {\n      \"turn_number\": 61,\n      \"time\": \"2174-05-13 08:04:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Yes, twice daily. You’ll follow up in the anticoagulation clinic. Also, see your primary doctor in a week, and get your lung tests done.\"\n    },\n    {\n      \"turn_number\": 62,\n      \"time\": \"2174-05-13 08:05:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Thanks, doc. I’ll try to stay out of trouble.\"\n    },\n    {\n      \"turn_number\": 63,\n      \"time\": \"2174-05-13 08:06:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"Take care. And remember—no sudden standing. Get up slowly.\"\n    },\n    {\n      \"turn_number\": 64,\n      \"time\": \"2174-05-13 08:07:00\",\n      \"speaker\": \"Patient\",\n      \"text\": \"Got it. Thanks again.\"\n    },\n    {\n      \"turn_number\": 65,\n      \"time\": \"2174-05-13 08:08:00\",\n      \"speaker\": \"Doctor\",\n      \"text\": \"You’re welcome. We’ll see you in follow-up.\"\n    }\n  ],\n  \"summary\": {\n    \"admission_start\": \"2174-05-04 23:21:00\",\n    \"admission_end\": \"2174-05-13 17:15:00\",\n    \"summary_paragraph\": \"A man with a history of ischemic cardiomyopathy, COPD, chronic kidney disease, and polysubstance abuse was admitted for gross hematuria while on anticoagulation and after a recent fall. He experienced a syncopal episode during admission, resulting in loose teeth that required extraction. Workup revealed no acute intracranial or spinal injury, no pulmonary embolism, and no source of hematuria on renal ultrasound. His hematuria resolved without intervention, and anticoagulation was continued. He developed hypoxemia and radiographic findings consistent with pneumonia, for which he was treated with levofloxacin. Heart failure was managed with diuresis, and his warfarin was bridged with heparin and enoxaparin. He was discharged on adjusted anticoagulation, antibiotics for dental care, and optimized heart failure therapy, with plans for outpatient follow-up including lung function testing and palliative care evaluation.\",\n    \"problems\": [\n      \"Gross hematuria\",\n      \"Pneumonia, organism unspecified\",\n      \"Acute on chronic systolic heart failure\",\n      \"Other chronic pulmonary heart diseases\",\n      \"Syncope and collapse\",\n      \"Congestive heart failure, unspecified\",\n      \"Chronic venous embolism and thrombosis of unspecified deep vessels of lower extremity\",\n      \"Postinflammatory pulmonary fibrosis\",\n      \"Long-term (current) use of anticoagulants\",\n      \"Chronic kidney disease, Stage III (moderate)\",\n      \"Other specified forms of chronic ischemic heart disease\",\n      \"Long-term (current) use of insulin\",\n      \"Chronic airway obstruction, not elsewhere classified\",\n      \"Personal history of Methicillin resistant Staphylococcus aureus\",\n      \"Tobacco use disorder\",\n      \"Cocaine abuse, unspecified\",\n      \"Other diseases of lung, not elsewhere classified\",\n      \"Diseases of tricuspid valve\",\n      \"Anxiety state, unspecified\",\n      \"Open wound of tooth (broken) (fractured) (due to trauma), without mention of complication\",\n      \"Unspecified fall\",\n      \"Hypoxemia\",\n      \"Dental caries, unspecified\",\n      \"Accidents occurring in residential institution\",\n      \"History of fall\"\n    ]\n  }\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": [],
+          "reasoning": null
+        },
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1776959614,
+    "model": "Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    "object": "chat.completion",
+    "service_tier": null,
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5170,
+      "prompt_tokens": 19267,
+      "total_tokens": 24437,
+      "completion_tokens_details": null,
+      "prompt_tokens_details": null
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "kv_transfer_params": null
+  }
+}
