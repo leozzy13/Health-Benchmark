@@ -13,7 +13,7 @@ from .llm_client import LLMCallResult, build_llm_client
 from .prompting import append_repair_message, render_prompt
 from .qa_pipeline import generate_patient_qa
 from .verify_outputs import verify_patient_outputs
-from .utils import conversation_token_render, ensure_dir, round_mean, utc_now_iso
+from .utils import ensure_dir, round_mean, utc_now_iso
 from .validation import ValidationError, validate_generation
 from .writers import (
     admission_artifact_paths,
@@ -30,6 +30,8 @@ from .writers import (
     write_prompt_record,
     write_summary,
 )
+from ..evaluation.context_renderer import render_conversation_lines
+from ..evaluation.hf_tokenizer import count_text_tokens
 
 
 def _import_tiktoken():
@@ -183,7 +185,7 @@ class BenchmarkPipeline:
             llm_usage_rows=llm_usage_rows,
             conversation_turn_counts=conversation_turn_counts,
             conversation_token_counts=conversation_token_counts,
-            tokenizer_name=tokenizer_name or "o200k_base",
+            tokenizer_name=tokenizer_name or resolved_model,
         )
         if skipped_admissions:
             patient_summary["skipped_admissions"] = skipped_admissions
@@ -407,23 +409,21 @@ class BenchmarkPipeline:
         }
 
     def _count_conversation_tokens(self, model_name: str, conversation_lines: list[dict[str, Any]]) -> tuple[int, str]:
+        rendered_text = render_conversation_lines(conversation_lines)
+        if self.config.llm.tokenizer_name:
+            return count_text_tokens(
+                model_name=model_name,
+                tokenizer_name=self.config.llm.tokenizer_name,
+                text=rendered_text,
+            )
         tiktoken = _import_tiktoken()
-        configured_tokenizer = self.config.llm.tokenizer_name
-        if configured_tokenizer:
-            try:
-                encoding = tiktoken.get_encoding(configured_tokenizer)
-                rendered_text = conversation_token_render(conversation_lines)
-                return len(encoding.encode(rendered_text)), configured_tokenizer
-            except KeyError:
-                pass
         try:
             encoding = tiktoken.encoding_for_model(model_name)
             encoding_name = getattr(encoding, "name", model_name)
         except KeyError:
             encoding = tiktoken.get_encoding("o200k_base")
             encoding_name = "o200k_base"
-        rendered_text = conversation_token_render(conversation_lines)
-        return len(encoding.encode(rendered_text)), encoding_name
+        return len(encoding.encode(rendered_text)), str(encoding_name)
 
     def _build_batch_run_id(self) -> str:
         timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")

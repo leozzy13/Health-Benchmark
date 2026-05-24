@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -27,6 +28,27 @@ class LLMCallResult:
     usage: dict[str, int]
     response_id: str | None
     latency_ms: int
+
+
+class StructuredResponseValidationError(RuntimeError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        content: str,
+        raw_response: dict[str, Any],
+        usage: dict[str, int],
+        response_id: str | None,
+        latency_ms: int,
+        schema_name: str,
+    ) -> None:
+        super().__init__(message)
+        self.content = content
+        self.raw_response = raw_response
+        self.usage = usage
+        self.response_id = response_id
+        self.latency_ms = latency_ms
+        self.schema_name = schema_name
 
 
 class BaseLLMClient(Protocol):
@@ -222,15 +244,25 @@ def _generate_chat_completion_structured_response(
     content = _coerce_chat_content(getattr(message, "content", None))
     if not content.strip():
         raise RuntimeError(f"{provider_label} response did not contain JSON content.")
+    response_usage = getattr(response, "usage", None)
     try:
-        parsed_output = response_schema.model_validate_json(content)
+        parsed_output = _validate_structured_content(response_schema, content)
     except PydanticValidationError as exc:
-        raise RuntimeError(f"{provider_label} response did not match expected schema: {exc}") from exc
-    usage = getattr(response, "usage", None)
+        raw_response = _serialize_response(response)
+        usage = _usage_from_response(response_usage, input_field="prompt_tokens", output_field="completion_tokens")
+        raise StructuredResponseValidationError(
+            f"{provider_label} response did not match expected schema: {exc}",
+            content=content,
+            raw_response=raw_response,
+            usage=usage,
+            response_id=getattr(response, "id", None),
+            latency_ms=latency_ms,
+            schema_name=getattr(response_schema, "__name__", str(response_schema)),
+        ) from exc
     return LLMCallResult(
         parsed_output=parsed_output.model_dump(mode="json"),
         raw_response=_serialize_response(response),
-        usage=_usage_from_response(usage, input_field="prompt_tokens", output_field="completion_tokens"),
+        usage=_usage_from_response(response_usage, input_field="prompt_tokens", output_field="completion_tokens"),
         response_id=getattr(response, "id", None),
         latency_ms=latency_ms,
     )
@@ -280,6 +312,98 @@ def _coerce_chat_content(content: Any) -> str:
                 rendered.append(text.value)
         return "".join(rendered)
     return ""
+
+
+def _validate_structured_content(response_schema: type[BaseModel], content: str) -> BaseModel:
+    last_exc: PydanticValidationError | None = None
+    for candidate in _structured_content_candidates(content):
+        try:
+            return response_schema.model_validate_json(candidate)
+        except PydanticValidationError as exc:
+            last_exc = exc
+    if last_exc is None:  # pragma: no cover - candidates is never empty
+        raise RuntimeError("No structured content candidates were available.")
+    raise last_exc
+
+
+def _structured_content_candidates(content: str) -> list[str]:
+    candidates: list[str] = []
+
+    def add(candidate: str | None) -> None:
+        if candidate is None:
+            return
+        stripped = candidate.strip()
+        if stripped and stripped not in candidates:
+            candidates.append(stripped)
+
+    add(content)
+    add(_strip_markdown_json_fence(content))
+    for block in _extract_markdown_fenced_blocks(content):
+        add(block)
+    for block in _extract_balanced_json_blocks(content):
+        add(block)
+    for candidate in list(candidates):
+        add(_normalize_jsonish_quote_delimiters(candidate))
+    return candidates
+
+
+def structured_content_candidates(content: str) -> list[str]:
+    return _structured_content_candidates(content)
+
+
+def _strip_markdown_json_fence(content: str) -> str | None:
+    stripped = content.strip()
+    if not stripped.startswith("```"):
+        return None
+    lines = stripped.splitlines()
+    if len(lines) < 3:
+        return None
+    if not lines[0].strip().startswith("```"):
+        return None
+    if lines[-1].strip() != "```":
+        return None
+    return "\n".join(lines[1:-1]).strip()
+
+
+_FENCED_BLOCK_PATTERN = re.compile(r"```(?:[A-Za-z0-9_-]+)?\s*(.*?)```", re.DOTALL)
+
+
+def _extract_markdown_fenced_blocks(content: str) -> list[str]:
+    return [match.group(1).strip() for match in _FENCED_BLOCK_PATTERN.finditer(content)]
+
+
+def _extract_balanced_json_blocks(content: str) -> list[str]:
+    decoder = json.JSONDecoder(strict=False)
+    blocks: list[str] = []
+    for source in _jsonish_decode_sources(content):
+        for match in re.finditer(r"[\{\[]", source):
+            start = match.start()
+            try:
+                parsed, end = decoder.raw_decode(source[start:])
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(parsed, (dict, list)):
+                continue
+            block = source[start : start + end].strip()
+            if block and block not in blocks:
+                blocks.append(block)
+    return blocks
+
+
+def _jsonish_decode_sources(content: str) -> list[str]:
+    sources = [content]
+    normalized = _normalize_jsonish_quote_delimiters(content)
+    if normalized is not None and normalized not in sources:
+        sources.append(normalized)
+    return sources
+
+
+def _normalize_jsonish_quote_delimiters(content: str) -> str | None:
+    normalized = re.sub(r"([:\[,{]\s*)[\u201c\u201d]", r'\1"', content)
+    normalized = re.sub(r"[\u201c\u201d](\s*[:,}\]])", r'"\1', normalized)
+    if normalized == content:
+        return None
+    return normalized
 
 
 def _serialize_response(response: Any) -> dict[str, Any]:

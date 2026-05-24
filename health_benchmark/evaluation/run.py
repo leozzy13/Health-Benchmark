@@ -8,7 +8,7 @@ from pathlib import Path
 from ..scripts.config import build_default_config
 from .config import EVALUATION_STAGE_CHOICES, build_settings
 from .loader import resolve_patient_root
-from .pipeline import TemporalEvaluationPipeline
+from .pipeline import EvaluationPipeline
 
 
 PROVIDER_CHOICES = ("openai", "vllm")
@@ -21,7 +21,9 @@ def build_parser() -> argparse.ArgumentParser:
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--subject-id", type=int, help="Patient subject_id whose artifacts already exist.")
     target.add_argument("--patient-dir", help="Existing patient output directory containing conversation and QA artifacts.")
-    parser.add_argument("--output-root", help="Override the output root directory.")
+    parser.add_argument("--benchmark-root", help="Benchmark input root. Defaults to output/benchmark.")
+    parser.add_argument("--evaluation-root", help="Evaluation artifact root. Defaults to output/evaluation.")
+    parser.add_argument("--output-root", help="Alias for --benchmark-root.")
     parser.add_argument("--provider", choices=PROVIDER_CHOICES, help="Evaluation provider override. Defaults to vllm.")
     parser.add_argument("--base-url", help="OpenAI-compatible base URL override.")
     parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the fixed Qwen/Qwen3.5-27B judge.")
@@ -44,6 +46,8 @@ def main(argv: list[str] | None = None) -> int:
     base_config = build_default_config(project_dir)
     if args.output_root:
         base_config.output.root = Path(args.output_root).expanduser().resolve()
+    if args.benchmark_root:
+        base_config.output.root = Path(args.benchmark_root).expanduser().resolve()
 
     patient_root, subject_id = resolve_patient_root(
         output_root=base_config.output.root,
@@ -59,8 +63,9 @@ def main(argv: list[str] | None = None) -> int:
         models=args.models,
         stage=args.stage,
         replace_existing=True if args.replace_existing else None,
+        evaluation_root=Path(args.evaluation_root).expanduser().resolve() if args.evaluation_root else None,
     )
-    pipeline = TemporalEvaluationPipeline(base_config, settings)
+    pipeline = EvaluationPipeline(base_config, settings)
     summary = pipeline.run([(subject_id, patient_root)])
     print(json.dumps(summary, indent=2))
     return 0 if summary["final_status"] == "completed" else 1

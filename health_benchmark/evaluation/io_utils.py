@@ -58,11 +58,14 @@ def write_model_outputs(
     replace_existing: bool,
     run_config: dict[str, Any],
     question_batches: dict[str, Any],
+    memory_store: dict[str, Any] | None = None,
+    memory_events: list[dict[str, Any]] | None = None,
     raw_predictions: list[dict[str, Any]],
     scored_predictions: list[dict[str, Any]],
     llm_judgments: list[dict[str, Any]],
     summary_payload: dict[str, Any],
     error_records: list[dict[str, Any]],
+    retrieval_store: dict[str, Any] | None = None,
 ) -> None:
     staging_dir = paths.model_dir.parent / f".tmp_{paths.model_dir.name}"
     if staging_dir.exists():
@@ -72,6 +75,9 @@ def write_model_outputs(
         model_dir=staging_dir,
         run_config_json=staging_dir / "run_config.json",
         question_batches_json=staging_dir / "question_batches.json",
+        memory_store_json=staging_dir / "memory_store.json",
+        memory_events_jsonl=staging_dir / "memory_events.jsonl",
+        retrieval_store_json=staging_dir / "retrieval_store.json",
         raw_predictions_jsonl=staging_dir / "raw_predictions.jsonl",
         scored_predictions_jsonl=staging_dir / "scored_predictions.jsonl",
         llm_judgments_jsonl=staging_dir / "llm_judgments.jsonl",
@@ -80,6 +86,9 @@ def write_model_outputs(
     )
     write_json(staged.run_config_json, run_config)
     write_json(staged.question_batches_json, question_batches)
+    write_json(staged.memory_store_json, memory_store or {"mode": "none", "enabled": False})
+    write_jsonl(staged.memory_events_jsonl, list(memory_events or []))
+    write_json(staged.retrieval_store_json, retrieval_store or {"mode": "none", "enabled": False})
     write_jsonl(staged.raw_predictions_jsonl, raw_predictions)
     write_jsonl(staged.scored_predictions_jsonl, scored_predictions)
     write_jsonl(staged.llm_judgments_jsonl, llm_judgments)

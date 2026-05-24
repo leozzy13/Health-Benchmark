@@ -59,6 +59,9 @@ class QuestionBatch:
     batch_id: str
     questions: list[EvalQuestion]
     estimated_prompt_tokens: int
+    adjusted_estimated_prompt_tokens: int
+    context_text: str
+    context_record: dict[str, Any]
 
     def qa_ids(self) -> list[str]:
         return [question.qa_id for question in self.questions]
@@ -73,6 +76,8 @@ class QuestionBatch:
             "batch_id": self.batch_id,
             "qa_ids": self.qa_ids(),
             "estimated_prompt_tokens": int(self.estimated_prompt_tokens),
+            "adjusted_estimated_prompt_tokens": int(self.adjusted_estimated_prompt_tokens),
+            "context": self.context_record,
             "questions": [question.to_record() for question in self.questions],
             "model_payload": self.model_payload(),
         }
@@ -109,6 +114,9 @@ class ModelArtifactPaths:
     model_dir: Path
     run_config_json: Path
     question_batches_json: Path
+    memory_store_json: Path
+    memory_events_jsonl: Path
+    retrieval_store_json: Path
     raw_predictions_jsonl: Path
     scored_predictions_jsonl: Path
     llm_judgments_jsonl: Path
@@ -119,6 +127,9 @@ class ModelArtifactPaths:
         return {
             "run_config_json": str(self.run_config_json),
             "question_batches_json": str(self.question_batches_json),
+            "memory_store_json": str(self.memory_store_json),
+            "memory_events_jsonl": str(self.memory_events_jsonl),
+            "retrieval_store_json": str(self.retrieval_store_json),
             "raw_predictions_jsonl": str(self.raw_predictions_jsonl),
             "scored_predictions_jsonl": str(self.scored_predictions_jsonl),
             "llm_judgments_jsonl": str(self.llm_judgments_jsonl),
@@ -144,23 +155,10 @@ class AnswerableJudgeItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     qa_id: str
-    score: Literal[0, 0.5, 1]
+    score: Literal[0, 1]
 
 
 class AnswerableJudgeBatchResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     judgments: list[AnswerableJudgeItem]
-
-
-class AdversarialJudgeItem(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    qa_id: str
-    score: Literal[0, 1]
-
-
-class AdversarialJudgeBatchResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    judgments: list[AdversarialJudgeItem]

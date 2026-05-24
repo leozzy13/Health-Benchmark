@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -1714,6 +1715,37 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertEqual(request["extra_body"]["top_k"], 20)
         self.assertFalse(request["extra_body"]["chat_template_kwargs"]["enable_thinking"])
 
+    def test_vllm_client_accepts_markdown_fenced_json_content(self) -> None:
+        config = self._config()
+        config.llm.provider = "vllm"
+        config.llm.base_url = None
+        payload = self._make_single_qa_payload("10")
+        factory = FakeOpenAIClientFactory(chat_content=f"```json\n{json.dumps(payload)}\n```")
+
+        with patch("health_benchmark.scripts.llm_client._import_openai", return_value=factory):
+            client = build_llm_client(config)
+            result = client.generate_structured_response("system", "user", SingleAdmissionQAFile)
+
+        self.assertEqual(result.parsed_output, payload)
+        request = factory.chat_requests[0]
+        self.assertNotIn("response_format", request)
+
+    def test_vllm_client_accepts_prefaced_markdown_fenced_json_content(self) -> None:
+        config = self._config()
+        config.llm.provider = "vllm"
+        config.llm.base_url = None
+        payload = self._make_single_qa_payload("10")
+        content = f"Based on the guidelines, here is the JSON:\n```json\n{json.dumps(payload)}\n```"
+        factory = FakeOpenAIClientFactory(chat_content=content)
+
+        with patch("health_benchmark.scripts.llm_client._import_openai", return_value=factory):
+            client = build_llm_client(config)
+            result = client.generate_structured_response("system", "user", SingleAdmissionQAFile)
+
+        self.assertEqual(result.parsed_output, payload)
+        request = factory.chat_requests[0]
+        self.assertNotIn("response_format", request)
+
     def test_vllm_client_validates_schema_locally_without_response_format(self) -> None:
         config = self._config()
         config.llm.provider = "vllm"
@@ -2419,7 +2451,7 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("/projects/p33194/health-benchmark/output/benchmark", script)
         self.assertIn("/projects/p33194/health-benchmark/runtime/hf_cache", script)
         self.assertIn("/hpc/software/mamba/24.3.0", script)
-        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench-qwen", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench", script)
         self.assertIn("/software/singularity/3.8.1/bin/singularity", script)
         self.assertIn("/projects/p33194/health-benchmark/runtime/containers/vllm-openai_latest.sif", script)
         self.assertIn("/gpfs/projects", script)
@@ -2622,7 +2654,7 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("/projects/p33194/health-benchmark/output/benchmark", script)
         self.assertIn("/projects/p33194/health-benchmark/runtime/hf_cache", script)
         self.assertIn("/hpc/software/mamba/24.3.0", script)
-        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench-qwen", script)
+        self.assertIn("/projects/p33194/health-benchmark/runtime/envs/medbench", script)
         self.assertIn("/software/singularity/3.8.1/bin/singularity", script)
         self.assertIn("/projects/p33194/health-benchmark/runtime/containers/vllm-openai_latest.sif", script)
         self.assertIn("/gpfs/projects", script)
@@ -2670,94 +2702,206 @@ class BenchmarkTestCase(unittest.TestCase):
 
     def test_quest_evaluation_scripts_use_trio_profile_and_manifest_flow(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        slurm_script = (repo_root / "quest" / "qwen_open_eval_multi_patient.slurm").read_text(encoding="utf-8")
-        small_slurm_script = (repo_root / "quest" / "qwen_open_eval_small_models.slurm").read_text(encoding="utf-8")
-        small_1gpu_slurm_script = (repo_root / "quest" / "qwen_open_eval_small_models_1gpu.slurm").read_text(encoding="utf-8")
-        slurm_27b_2gpu_script = (repo_root / "quest" / "qwen_open_eval_27b_2gpu.slurm").read_text(encoding="utf-8")
+        canonical_slurm_script = (repo_root / "quest" / "evaluate_models.slurm").read_text(encoding="utf-8")
         run_script = (repo_root / "quest" / "run_multi_patient_eval_job.sh").read_text(encoding="utf-8")
         launch_script = (repo_root / "quest" / "launch_vllm_server.sh").read_text(encoding="utf-8")
         stop_script = (repo_root / "quest" / "stop_vllm_server.sh").read_text(encoding="utf-8")
         wait_script = (repo_root / "quest" / "wait_for_server.py").read_text(encoding="utf-8")
+        ignored = subprocess.run(
+            ["git", "check-ignore", "-q", "quest/evaluate_models.slurm"],
+            cwd=repo_root,
+            check=False,
+        )
 
-        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", slurm_script)
-        self.assertIn("qwen_open_eval_multi_patient.slurm is retired for judged evaluation.", slurm_script)
-        self.assertIn("qwen_open_eval_small_models.slurm", slurm_script)
-        self.assertIn("qwen_open_eval_27b_2gpu.slurm", slurm_script)
-        self.assertNotIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', slurm_script)
+        self.assertEqual(ignored.returncode, 0)
+        self.assertFalse((repo_root / "quest" / "qwen_open_eval_multi_patient.slurm").exists())
+        self.assertFalse((repo_root / "quest" / "qwen_open_eval_small_models.slurm").exists())
+        self.assertFalse((repo_root / "quest" / "qwen_open_eval_small_models_1gpu.slurm").exists())
+        self.assertFalse((repo_root / "quest" / "qwen_open_eval_27b_2gpu.slurm").exists())
+        self.assertIn("#SBATCH --job-name=medbench-eval", canonical_slurm_script)
+        self.assertIn("#SBATCH --time=06:00:00", canonical_slurm_script)
+        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-qwen3.5_trio}"', canonical_slurm_script)
+        self.assertIn('EVAL_VARIANT="${EVAL_VARIANT:-normal}"', canonical_slurm_script)
+        self.assertIn('EVAL_STAGE="${EVAL_STAGE:-full}"', canonical_slurm_script)
+        self.assertIn('EVAL_RETRY_LIMIT="${EVAL_RETRY_LIMIT:-3}"', canonical_slurm_script)
+        self.assertIn('EVAL_TIMEOUT_SECONDS="${EVAL_TIMEOUT_SECONDS:-600}"', canonical_slurm_script)
+        self.assertIn('SERVER_READY_TIMEOUT_S="${SERVER_READY_TIMEOUT_S:-1800}"', canonical_slurm_script)
+        self.assertIn('JUDGE_TENSOR_PARALLEL_SIZE="${JUDGE_TENSOR_PARALLEL_SIZE:-}"', canonical_slurm_script)
+        self.assertIn('JUDGE_MAX_MODEL_LEN="${JUDGE_MAX_MODEL_LEN:-}"', canonical_slurm_script)
+        self.assertIn('JUDGE_GPU_DEVICE_IDS="${JUDGE_GPU_DEVICE_IDS:-}"', canonical_slurm_script)
+        self.assertIn("/projects/p33194/health-benchmark/output/benchmark", canonical_slurm_script)
+        self.assertIn("/projects/p33194/health-benchmark/output/evaluation", canonical_slurm_script)
+        self.assertIn('EVALUATION_ROOT="$(resolve_optional_env EVALUATION_ROOT "$DEFAULT_EVALUATION_ROOT")"', canonical_slurm_script)
+        self.assertIn('QUEST_JOB_OUTPUT_ROOT="$EVALUATION_ROOT/quest_job_outputs/${SLURM_JOB_ID:-manual}"', canonical_slurm_script)
+        self.assertIn('REQUIRED_TOTAL_GPU_COUNT="${REQUIRED_TOTAL_GPU_COUNT:-2}"', canonical_slurm_script)
+        self.assertIn('MODEL_RECORD_ARGS=()', canonical_slurm_script)
+        self.assertIn('MODEL_ARGS=()', canonical_slurm_script)
+        self.assertIn('PATIENT_ARGS=()', canonical_slurm_script)
+        self.assertIn('MODEL_PRESET_ARG_SET=0', canonical_slurm_script)
+        self.assertIn("--models MODEL...", canonical_slurm_script)
+        self.assertIn("--model-preset PRESET", canonical_slurm_script)
+        self.assertIn("medgemma_pair", canonical_slurm_script)
+        self.assertIn("medical_next_small", canonical_slurm_script)
+        self.assertIn("medical_next_32b", canonical_slurm_script)
+        self.assertIn("--model-record RECORD", canonical_slurm_script)
+        self.assertIn("--patients SUBJECT_ID...", canonical_slurm_script)
+        self.assertIn("--patient-manifest PATH", canonical_slurm_script)
+        self.assertIn("--memory, --mem0", canonical_slurm_script)
+        self.assertIn("--stage full|answers|judge", canonical_slurm_script)
+        self.assertIn("--judge-tensor-parallel-size N", canonical_slurm_script)
+        self.assertIn("--judge-max-model-len N", canonical_slurm_script)
+        self.assertIn("--judge-gpu-device-ids IDS", canonical_slurm_script)
+        self.assertIn("--retry-limit N", canonical_slurm_script)
+        self.assertIn("--timeout-seconds N", canonical_slurm_script)
+        self.assertIn("--server-ready-timeout-seconds N", canonical_slurm_script)
+        self.assertIn("--mem0-answer-retrieval-top-k N", canonical_slurm_script)
+        self.assertIn("--mem0-embedding-model MODEL", canonical_slurm_script)
+        self.assertIn("--mem0-model-max-len N", canonical_slurm_script)
+        self.assertIn('validate_non_negative_integer "EVAL_RETRY_LIMIT" "$EVAL_RETRY_LIMIT"', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "EVAL_TIMEOUT_SECONDS" "$EVAL_TIMEOUT_SECONDS"', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "SERVER_READY_TIMEOUT_S" "$SERVER_READY_TIMEOUT_S"', canonical_slurm_script)
+        self.assertIn('EVAL_STAGE must be one of: full, answers, judge.', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "JUDGE_TENSOR_PARALLEL_SIZE" "$JUDGE_TENSOR_PARALLEL_SIZE"', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "JUDGE_MAX_MODEL_LEN" "$JUDGE_MAX_MODEL_LEN"', canonical_slurm_script)
+        self.assertIn('if [[ "$EVAL_STAGE" == "judge" && "$REQUIRED_TOTAL_GPU_COUNT_ENV_SET" -eq 0 ]]; then', canonical_slurm_script)
+        self.assertIn('EVAL_VARIANT must be one of: normal, memory, mem0, rag.', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "MEM0_ANSWER_RETRIEVAL_TOP_K" "$MEM0_ANSWER_RETRIEVAL_TOP_K"', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "MEM0_EMBEDDING_BATCH_SIZE" "$MEM0_EMBEDDING_BATCH_SIZE"', canonical_slurm_script)
+        self.assertIn('validate_positive_integer "MEM0_MODEL_MAX_LEN" "$MEM0_MODEL_MAX_LEN"', canonical_slurm_script)
+        self.assertIn('EVAL_MODELS="$(printf', canonical_slurm_script)
+        self.assertIn('EVAL_MODEL_RECORDS="$(printf', canonical_slurm_script)
+        self.assertIn('Use --model-preset by itself', canonical_slurm_script)
+        self.assertIn('Using evaluation variant: $EVAL_VARIANT', canonical_slurm_script)
+        self.assertIn('Using evaluation stage: $EVAL_STAGE', canonical_slurm_script)
+        self.assertIn('Using judge tensor parallel size override: ${JUDGE_TENSOR_PARALLEL_SIZE:-auto}', canonical_slurm_script)
+        self.assertIn('Using Gemma vLLM dtype: ${GEMMA_VLLM_DTYPE:-auto}', canonical_slurm_script)
+        self.assertIn('EVAL_RETRY_LIMIT EVAL_TIMEOUT_SECONDS', canonical_slurm_script)
+        self.assertIn('JUDGE_TENSOR_PARALLEL_SIZE JUDGE_MAX_MODEL_LEN JUDGE_GPU_DEVICE_IDS', canonical_slurm_script)
+        self.assertIn('VLLM_DTYPE VLLM_CHAT_TEMPLATE GEMMA_VLLM_DTYPE GEMMA_VLLM_CHAT_TEMPLATE', canonical_slurm_script)
+        self.assertIn('MEM0_CHUNK_TOKEN_CAP MEM0_PREVIOUS_CHUNK_SUMMARIES', canonical_slurm_script)
+        self.assertIn('MEM0_EMBEDDING_MODEL MEM0_EMBEDDING_DEVICE', canonical_slurm_script)
+        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "${RUN_PATIENT_ARGS[@]}"', canonical_slurm_script)
 
-        self.assertIn("#SBATCH --nodes=1", small_slurm_script)
-        self.assertIn("#SBATCH --ntasks=1", small_slurm_script)
-        self.assertIn("#SBATCH --gres=gpu:2", small_slurm_script)
-        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", small_slurm_script)
-        self.assertIn("#SBATCH --constraint=sxm", small_slurm_script)
-        self.assertIn("#SBATCH --mem=256G", small_slurm_script)
-        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-small}"', small_slurm_script)
-        self.assertIn("required_total_gpu_count=2", small_slurm_script)
-        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', small_slurm_script)
-
-        self.assertIn("#SBATCH --nodes=1", small_1gpu_slurm_script)
-        self.assertIn("#SBATCH --ntasks=1", small_1gpu_slurm_script)
-        self.assertIn("#SBATCH --gres=gpu:1", small_1gpu_slurm_script)
-        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", small_1gpu_slurm_script)
-        self.assertIn("#SBATCH --constraint=sxm", small_1gpu_slurm_script)
-        self.assertIn("#SBATCH --mem=256G", small_1gpu_slurm_script)
-        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-small_1gpu}"', small_1gpu_slurm_script)
-        self.assertIn("required_total_gpu_count=1", small_1gpu_slurm_script)
-        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', small_1gpu_slurm_script)
-
-        self.assertIn("#SBATCH --nodes=1", slurm_27b_2gpu_script)
-        self.assertIn("#SBATCH --ntasks=1", slurm_27b_2gpu_script)
-        self.assertIn("#SBATCH --gres=gpu:2", slurm_27b_2gpu_script)
-        self.assertIn("#SBATCH --output=quest/slurm_logs/%x-%j.out", slurm_27b_2gpu_script)
-        self.assertIn("#SBATCH --constraint=sxm", slurm_27b_2gpu_script)
-        self.assertIn("#SBATCH --mem=256G", slurm_27b_2gpu_script)
-        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-27b_2gpu}"', slurm_27b_2gpu_script)
-        self.assertIn("required_total_gpu_count=2", slurm_27b_2gpu_script)
-        self.assertIn('bash "$REPO_ROOT/quest/run_multi_patient_eval_job.sh" "$@"', slurm_27b_2gpu_script)
-
-        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-trio}"', run_script)
-        self.assertIn('case "${1:-}" in', run_script)
-        self.assertIn("trio)", run_script)
-        self.assertIn("small)", run_script)
-        self.assertIn("small_1gpu)", run_script)
-        self.assertIn("27b_2gpu)", run_script)
-        self.assertIn("retired for judged evaluation", run_script)
-        self.assertIn('Qwen/Qwen3.5-4B|qwen3.5-4b|1|262144', run_script)
-        self.assertIn('Qwen/Qwen3.5-9B|qwen3.5-9b|1|262144', run_script)
-        self.assertIn('Qwen/Qwen3.5-27B|qwen3.5-27b|2|131072', run_script)
+        self.assertIn('EVAL_MODEL_PRESET="${EVAL_MODEL_PRESET:-qwen3.5_trio}"', run_script)
+        self.assertIn('REASONING_PARSER="${REASONING_PARSER-qwen3}"', run_script)
+        self.assertNotIn('REASONING_PARSER="${REASONING_PARSER:-qwen3}"', run_script)
+        self.assertIn('EVAL_VARIANT="${EVAL_VARIANT:-normal}"', run_script)
+        self.assertIn('EVAL_STAGE="${EVAL_STAGE:-full}"', run_script)
+        self.assertIn('EVAL_RETRY_LIMIT="${EVAL_RETRY_LIMIT:-3}"', run_script)
+        self.assertIn('EVAL_TIMEOUT_SECONDS="${EVAL_TIMEOUT_SECONDS:-600}"', run_script)
+        self.assertIn('SERVER_READY_TIMEOUT_S="${SERVER_READY_TIMEOUT_S:-1800}"', run_script)
+        self.assertIn('EVAL_MODEL_RECORDS', run_script)
+        self.assertIn('EVAL_MODELS', run_script)
+        self.assertIn('model_record_for_name()', run_script)
+        self.assertIn("trio|qwen3.5_trio)", run_script)
+        self.assertIn("gemma3_trio|gemma-3-trio|gemma_trio)", run_script)
+        self.assertIn("medgemma_pair|medgemma-pair|medgemma)", run_script)
+        self.assertIn("medical_next_small|medical-next-small|medical_small)", run_script)
+        self.assertIn("medical_next_32b|medical-next-32b|medical_32b)", run_script)
+        self.assertIn("medical_next_all|medical-next-all|medical_all)", run_script)
+        self.assertIn("small|qwen3.5_small|small_1gpu|qwen3.5_small_1gpu)", run_script)
+        self.assertIn("27b_2gpu|qwen3.5_27b_2gpu)", run_script)
+        self.assertNotIn("retired for judged evaluation", run_script)
+        self.assertIn('model_record_for_name "Qwen/Qwen3.5-4B"', run_script)
+        self.assertIn('model_record_for_name "Qwen/Qwen3.5-9B"', run_script)
+        self.assertIn('model_record_for_name "Qwen/Qwen3.5-27B"', run_script)
+        self.assertIn('Qwen/Qwen3.5-27B|qwen3.5-27b|2|131072|', run_script)
+        self.assertIn('google/gemma-3-4b-it|gemma-3-4b-it', run_script)
+        self.assertIn('google/gemma-3-12b-it|gemma-3-12b-it', run_script)
+        self.assertIn('google/gemma-3-27b-it|gemma-3-27b-it|2|131072|', run_script)
+        self.assertIn('google/medgemma-4b-it|medgemma-4b-it', run_script)
+        self.assertIn('google/medgemma-27b-it|medgemma-27b-it|2|131072|', run_script)
+        self.assertIn('MBZUAI/MedMO-4B-Next" "medmo-4b-next"', run_script)
+        self.assertIn('MBZUAI/MedMO-8B-Next" "medmo-8b-next"', run_script)
+        self.assertIn('microsoft/MediPhi-Instruct" "mediphi-instruct"', run_script)
+        self.assertIn('lingshu-medical-mllm/Lingshu-32B|lingshu-32b|2|128000|', run_script)
+        self.assertNotIn('baichuan-inc/Baichuan-M2-32B|baichuan-m2-32b|2|131072|', run_script)
+        self.assertIn('google/medgemma-*|medgemma-*', run_script)
+        self.assertIn('is_gemma3_model()', run_script)
+        self.assertIn('is_medical_next_parser_free_model()', run_script)
+        self.assertNotIn('is_baichuan_m2_model()', run_script)
+        self.assertIn('is_bfloat16_answer_model()', run_script)
+        self.assertIn('printf \'%s\\n\' "$REASONING_PARSER"', run_script)
+        self.assertIn('printf \'%s\\n\' "bfloat16"', run_script)
+        self.assertIn('snapshot_has_tokenizer_files()', run_script)
+        self.assertIn('snapshot_has_weight_files()', run_script)
+        self.assertIn('snapshot_is_complete_for_vllm()', run_script)
+        self.assertIn('snapshot_is_complete_for_vllm "$snapshot"', run_script)
+        self.assertIn('server_reasoning_parser_for_model()', run_script)
+        self.assertIn('GEMMA_VLLM_DTYPE="${GEMMA_VLLM_DTYPE:-bfloat16}"', run_script)
+        self.assertIn('reasoning parser: ${server_reasoning_parser:-none}', run_script)
+        self.assertIn('MEM0_EMBEDDING_MODEL="${MEM0_EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-8B}"', run_script)
+        self.assertIn('MEM0_EMBEDDING_GPU_DEVICE_IDS="${MEM0_EMBEDDING_GPU_DEVICE_IDS:-1}"', run_script)
+        self.assertIn('MEM0_MODEL_MAX_LEN="${MEM0_MODEL_MAX_LEN:-32768}"', run_script)
+        self.assertIn('MEM0_MODEL_TENSOR_PARALLEL_SIZE="${MEM0_MODEL_TENSOR_PARALLEL_SIZE:-1}"', run_script)
+        self.assertIn('MEM0_MODEL_GPU_DEVICE_IDS="${MEM0_MODEL_GPU_DEVICE_IDS:-0}"', run_script)
         self.assertIn('mapfile -t MODELS < <(resolve_model_records "$EVAL_MODEL_PRESET")', run_script)
+        self.assertIn('write_patient_manifest_snapshot()', run_script)
+        self.assertIn('csv.DictReader', run_script)
+        self.assertIn('"subject_id"', run_script)
+        self.assertIn('write_status_row()', run_script)
         self.assertIn('DEFAULT_ANSWER_VLLM_PORT="$((20000 + (SLURM_JOB_ID % 10000) * 4))"', run_script)
         self.assertIn('ANSWER_VLLM_PORT="${ANSWER_VLLM_PORT:-${VLLM_PORT:-$DEFAULT_ANSWER_VLLM_PORT}}"', run_script)
         self.assertIn('DEFAULT_JUDGE_VLLM_PORT="$((ANSWER_VLLM_PORT + 2))"', run_script)
         self.assertIn('JUDGE_VLLM_PORT="${JUDGE_VLLM_PORT:-$DEFAULT_JUDGE_VLLM_PORT}"', run_script)
-        self.assertIn('ANSWER_GPU_DEVICE_IDS="${ANSWER_GPU_DEVICE_IDS:-0}"', run_script)
+        self.assertIn('DEFAULT_ANSWER_GPU_DEVICE_IDS="${DEFAULT_ANSWER_GPU_DEVICE_IDS:-0}"', run_script)
         self.assertIn('validate_tcp_port "ANSWER_VLLM_PORT" "$ANSWER_VLLM_PORT"', run_script)
         self.assertIn('validate_tcp_port "JUDGE_VLLM_PORT" "$JUDGE_VLLM_PORT"', run_script)
         self.assertIn('Using answer vLLM port: $ANSWER_VLLM_PORT', run_script)
         self.assertIn('Using judge vLLM port: $JUDGE_VLLM_PORT', run_script)
+        self.assertIn('VLLM_DTYPE_CLI=()', launch_script)
+        self.assertIn('--dtype "$VLLM_DTYPE"', launch_script)
+        self.assertIn('VLLM_CHAT_TEMPLATE_CLI=()', launch_script)
+        self.assertIn('--chat-template "$VLLM_CHAT_TEMPLATE"', launch_script)
         self.assertIn('DEFAULT_JUDGE_TENSOR_PARALLEL_SIZE="1"', run_script)
         self.assertIn('DEFAULT_JUDGE_MAX_MODEL_LEN="32768"', run_script)
         self.assertIn('DEFAULT_JUDGE_GPU_DEVICE_IDS="0"', run_script)
         self.assertIn('JUDGE_TENSOR_PARALLEL_SIZE="${JUDGE_TENSOR_PARALLEL_SIZE:-$DEFAULT_JUDGE_TENSOR_PARALLEL_SIZE}"', run_script)
         self.assertIn('JUDGE_MAX_MODEL_LEN="${JUDGE_MAX_MODEL_LEN:-$DEFAULT_JUDGE_MAX_MODEL_LEN}"', run_script)
         self.assertIn('JUDGE_GPU_DEVICE_IDS="${JUDGE_GPU_DEVICE_IDS:-$DEFAULT_JUDGE_GPU_DEVICE_IDS}"', run_script)
+        self.assertIn('validate_positive_integer "JUDGE_TENSOR_PARALLEL_SIZE" "$JUDGE_TENSOR_PARALLEL_SIZE"', run_script)
+        self.assertIn('validate_positive_integer "JUDGE_MAX_MODEL_LEN" "$JUDGE_MAX_MODEL_LEN"', run_script)
+        self.assertIn('EVAL_COMMAND="evaluate-memory"', run_script)
+        self.assertIn('MEMORY_EVAL_ARGS+=(--mem0-answer-retrieval-top-k "$MEM0_ANSWER_RETRIEVAL_TOP_K")', run_script)
+        self.assertIn('MEMORY_EVAL_ARGS+=(--mem0-embedding-model "$MEM0_EMBEDDING_MODEL")', run_script)
+        self.assertIn('MEMORY_EVAL_ARGS+=(--mem0-model-max-len "$MEM0_MODEL_MAX_LEN")', run_script)
+        self.assertIn('Using evaluation command: $EVAL_COMMAND', run_script)
+        self.assertIn('Using evaluation stage: $EVAL_STAGE', run_script)
+        self.assertIn('Using memory embedding GPU device ids: $MEM0_EMBEDDING_GPU_DEVICE_IDS', run_script)
+        self.assertIn('Dense memory retrieval requires torch and transformers', run_script)
         self.assertIn('CUDA_VISIBLE_DEVICES_OVERRIDE', run_script)
         self.assertIn('start_named_server', run_script)
         self.assertIn('stop_named_server', run_script)
         self.assertIn('run_answers_stage()', run_script)
         self.assertIn('run_judge_stage()', run_script)
-        self.assertIn('run_full_stage()', run_script)
         self.assertIn('--stage answers', run_script)
         self.assertIn('--stage judge', run_script)
+        self.assertIn('python "$REPO_ROOT/main.py" "$EVAL_COMMAND"', run_script)
         self.assertIn('--base-url "http://127.0.0.1:${answer_port}/v1"', run_script)
         self.assertIn('--judge-base-url "http://127.0.0.1:${judge_port}/v1"', run_script)
+        self.assertIn('--benchmark-root "$OUTPUT_ROOT"', run_script)
+        self.assertIn('--evaluation-root "$EVALUATION_ROOT"', run_script)
         self.assertIn('--expected-model "$model"', run_script)
+        self.assertIn('--pid-file "$vllm_pid_file"', run_script)
         self.assertIn('--patient-manifest "$PATIENT_MANIFEST"', run_script)
         self.assertIn('--models "$model"', run_script)
+        self.assertIn('--models "$@"', run_script)
+        self.assertIn('--retry-limit "$EVAL_RETRY_LIMIT"', run_script)
+        self.assertIn('--timeout-seconds "$EVAL_TIMEOUT_SECONDS"', run_script)
+        self.assertIn('"${MEMORY_EVAL_ARGS[@]}"', run_script)
+        self.assertIn('judge_mem0.log', run_script)
         self.assertIn('quest_job_outputs', run_script)
         self.assertIn('patient_manifest_snapshot.txt', run_script)
-        self.assertIn('if [[ "$EVAL_MODEL_PRESET" == "small" || "$EVAL_MODEL_PRESET" == "small_1gpu" ]]; then', run_script)
-        self.assertIn('start_named_server "$MODEL" "$MODEL_SLUG" "$TENSOR_PARALLEL_SIZE" "$MAX_MODEL_LEN" "$ANSWER_VLLM_PORT" "$ANSWER_GPU_DEVICE_IDS"', run_script)
+        self.assertIn('successful_models+=("$MODEL")', run_script)
+        self.assertIn('if [[ "$EVAL_STAGE" == "judge" ]]; then', run_script)
+        self.assertIn('Skipping answer stage; judging existing artifacts for requested models.', run_script)
+        self.assertIn('write_status_row "$MODEL_SLUG" "$MODEL" "existing" "pending" "judge_pending"', run_script)
+        self.assertIn('if [[ "$EVAL_STAGE" == "full" || "$EVAL_STAGE" == "judge" ]]; then', run_script)
+        self.assertIn('Skipping judge stage because EVAL_STAGE=$EVAL_STAGE.', run_script)
+        self.assertIn('"eval_stage": eval_stage', run_script)
+        self.assertIn('successful_statuses.add("answers_completed")', run_script)
+        self.assertIn('run_judge_stage "$JUDGE_VLLM_PORT" "${successful_models[@]}"', run_script)
+        self.assertIn('start_named_server "$MODEL" "$MODEL_SLUG" "$TENSOR_PARALLEL_SIZE" "$MAX_MODEL_LEN" "$ANSWER_VLLM_PORT" "$GPU_DEVICE_IDS"', run_script)
         self.assertIn('start_named_server "$JUDGE_MODEL" "$JUDGE_MODEL_SLUG" "$JUDGE_TENSOR_PARALLEL_SIZE" "$JUDGE_MAX_MODEL_LEN" "$JUDGE_VLLM_PORT" "$JUDGE_GPU_DEVICE_IDS"', run_script)
         self.assertNotIn('--base-url "http://127.0.0.1:${VLLM_PORT}/v1"', run_script)
         self.assertIn('MODEL="$model" \\', run_script)
@@ -2766,6 +2910,8 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertNotIn('export MODEL_SLUG="$server_slug"', run_script)
 
         self.assertIn("--distributed-executor-backend ray", launch_script)
+        self.assertIn('REASONING_PARSER="${REASONING_PARSER-qwen3}"', launch_script)
+        self.assertNotIn('REASONING_PARSER="${REASONING_PARSER:-qwen3}"', launch_script)
         self.assertIn('ray start --head', launch_script)
         self.assertIn('ray start --address', launch_script)
         self.assertIn('launch_local_server()', launch_script)
@@ -2781,7 +2927,132 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn('"/models"', wait_script)
         self.assertIn('"/health"', wait_script)
         self.assertIn("--expected-model", wait_script)
+        self.assertIn("--pid-file", wait_script)
+        self.assertIn("_process_exited_or_zombie", wait_script)
+        self.assertIn('fields[2] == "Z"', wait_script)
         self.assertIn("http.client.BadStatusLine", wait_script)
+
+    def test_wait_for_server_exits_when_pid_is_dead(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        wait_script = repo_root / "quest" / "wait_for_server.py"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pid_file = Path(temp_dir) / "vllm.pid"
+            proc = subprocess.Popen(["/bin/true"])
+            try:
+                time.sleep(0.1)
+                pid_file.write_text(f"{proc.pid}\n", encoding="utf-8")
+                started = time.monotonic()
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(wait_script),
+                        "--base-url",
+                        "http://127.0.0.1:9/v1",
+                        "--pid-file",
+                        str(pid_file),
+                        "--timeout-seconds",
+                        "30",
+                        "--sleep-seconds",
+                        "1",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+            finally:
+                proc.wait(timeout=5)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertLess(time.monotonic() - started, 5)
+
+    def test_quest_evaluation_script_rejects_invalid_retry_and_timeout_args(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        script_path = repo_root / "quest" / "evaluate_models.slurm"
+
+        invalid_retry = subprocess.run(
+            ["/bin/bash", str(script_path), "--retry-limit", "-1", "--patients", "11826927"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(invalid_retry.returncode, 2)
+        self.assertIn("EVAL_RETRY_LIMIT must be a non-negative integer, got: -1", invalid_retry.stderr)
+
+        invalid_timeout = subprocess.run(
+            ["/bin/bash", str(script_path), "--timeout-seconds", "0", "--patients", "11826927"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(invalid_timeout.returncode, 2)
+        self.assertIn("EVAL_TIMEOUT_SECONDS must be a positive integer, got: 0", invalid_timeout.stderr)
+
+        invalid_stage = subprocess.run(
+            ["/bin/bash", str(script_path), "--stage", "score", "--patients", "11826927"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(invalid_stage.returncode, 2)
+        self.assertIn("EVAL_STAGE must be one of: full, answers, judge. Got: score", invalid_stage.stderr)
+
+        invalid_judge_tp = subprocess.run(
+            [
+                "/bin/bash",
+                str(script_path),
+                "--stage",
+                "judge",
+                "--judge-tensor-parallel-size",
+                "0",
+                "--patients",
+                "11826927",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(invalid_judge_tp.returncode, 2)
+        self.assertIn(
+            "JUDGE_TENSOR_PARALLEL_SIZE must be a positive integer, got: 0",
+            invalid_judge_tp.stderr,
+        )
+
+        invalid_memory_arg = subprocess.run(
+            [
+                "/bin/bash",
+                str(script_path),
+                "--memory",
+                "--mem0-answer-retrieval-top-k",
+                "0",
+                "--patients",
+                "11826927",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(invalid_memory_arg.returncode, 2)
+        self.assertIn(
+            "MEM0_ANSWER_RETRIEVAL_TOP_K must be a positive integer, got: 0",
+            invalid_memory_arg.stderr,
+        )
+
+    def test_quest_evaluation_shell_scripts_have_valid_syntax(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        for relative_path in (
+            "quest/evaluate_models.slurm",
+            "quest/run_multi_patient_eval_job.sh",
+            "quest/launch_vllm_server.sh",
+            "quest/stop_vllm_server.sh",
+        ):
+            completed = subprocess.run(
+                ["/bin/bash", "-n", str(repo_root / relative_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0, f"{relative_path}: {completed.stderr}")
 
     def test_main_generate_qa_uses_fixed_harder_policy(self) -> None:
         fake_pipeline = Mock()

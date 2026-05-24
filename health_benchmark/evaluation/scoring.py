@@ -9,19 +9,10 @@ from typing import Any
 from .types import AnswerPrediction, CANONICAL_ABSTENTION_ANSWER, EvalQuestion
 
 
-ADVERSARIAL_ANSWER_ALIASES = frozenset(
-    {
-        CANONICAL_ABSTENTION_ANSWER,
-        "not answerable from the record",
-        "not answerable from the provided context",
-        "cannot be determined from the record",
-        "no information available",
-        "not mentioned",
-    }
-)
 _ARTICLES_RE = re.compile(r"\b(a|an|the|and)\b")
 _WHITESPACE_RE = re.compile(r"\s+")
 _PUNCT_TABLE = str.maketrans({character: " " for character in string.punctuation})
+_ABSTENTION_PUNCT_TABLE = str.maketrans({character: " " for character in string.punctuation})
 
 
 def normalize_answer(value: str) -> str:
@@ -31,11 +22,19 @@ def normalize_answer(value: str) -> str:
     return _WHITESPACE_RE.sub(" ", normalized).strip()
 
 
-NORMALIZED_ADVERSARIAL_ALIASES = frozenset(normalize_answer(alias) for alias in ADVERSARIAL_ANSWER_ALIASES)
+def normalize_abstention_answer(value: str) -> str:
+    normalized = str(value or "").casefold()
+    normalized = normalized.translate(_ABSTENTION_PUNCT_TABLE)
+    return _WHITESPACE_RE.sub(" ", normalized).strip()
 
 
 def score_adversarial(prediction: str) -> float:
-    return 1.0 if normalize_answer(prediction) in NORMALIZED_ADVERSARIAL_ALIASES else 0.0
+    return (
+        1.0
+        if normalize_abstention_answer(prediction)
+        == normalize_abstention_answer(CANONICAL_ABSTENTION_ANSWER)
+        else 0.0
+    )
 
 
 def score_answerable(prediction: str, gold_answer: str) -> dict[str, float | bool]:
@@ -82,7 +81,13 @@ def score_predictions(
         )
         if prediction is None:
             row["status"] = answer_failures.get(question.qa_id, "missing_prediction")
-            row["llm_judge_score"] = 0.0
+            if question.is_adversarial:
+                row["abstention_accuracy"] = 0.0
+            else:
+                row["precision"] = 0.0
+                row["recall"] = 0.0
+                row["f1"] = 0.0
+                row["llm_judge_score"] = 0.0
             scored_rows.append(row)
             continue
         if question.is_adversarial:
@@ -108,6 +113,14 @@ def build_summary_breakdowns(scored_rows: list[dict[str, Any]]) -> dict[str, Any
             scored_rows,
             lambda row: "adversarial" if row.get("is_adversarial") else "answerable",
         ),
+        "by_adversarial_scope": _metric_breakdown(
+            [row for row in scored_rows if bool(row.get("is_adversarial"))],
+            "scope",
+        ),
+        "by_answerable_scope": _metric_breakdown(
+            [row for row in scored_rows if not bool(row.get("is_adversarial"))],
+            "scope",
+        ),
     }
 
 
@@ -123,8 +136,7 @@ def build_top_level_metrics(scored_rows: list[dict[str, Any]]) -> dict[str, Any]
         "macro_f1_answerable": _macro_mean(answerable_rows, "f1"),
         "adversarial_accuracy": _macro_mean(adversarial_rows, "abstention_accuracy"),
         "macro_llm_score_answerable": _mean_score(answerable_rows, "llm_judge_score"),
-        "adversarial_llm_accuracy": _mean_score(adversarial_rows, "llm_judge_score"),
-        "llm_score": _mean_score(scored_rows, "llm_judge_score"),
+        "llm_score": _mean_score(answerable_rows, "llm_judge_score"),
         "overall_score": round(
             mean(float(row.get("per_question_score") or 0.0) for row in scored_rows),
             4,
@@ -156,13 +168,14 @@ def _aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     adversarial_rows = [row for row in rows if bool(row.get("is_adversarial"))]
     return {
         "count": len(rows),
+        "answerable_count": len(answerable_rows),
+        "adversarial_count": len(adversarial_rows),
         "macro_precision_answerable": _macro_mean(answerable_rows, "precision"),
         "macro_recall_answerable": _macro_mean(answerable_rows, "recall"),
         "macro_f1_answerable": _macro_mean(answerable_rows, "f1"),
         "adversarial_accuracy": _macro_mean(adversarial_rows, "abstention_accuracy"),
         "macro_llm_score_answerable": _mean_score(answerable_rows, "llm_judge_score"),
-        "adversarial_llm_accuracy": _mean_score(adversarial_rows, "llm_judge_score"),
-        "llm_score": _mean_score(rows, "llm_judge_score"),
+        "llm_score": _mean_score(answerable_rows, "llm_judge_score"),
         "overall_score": round(
             mean(float(row.get("per_question_score") or 0.0) for row in rows),
             4,
