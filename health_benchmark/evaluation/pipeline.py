@@ -642,9 +642,10 @@ class EvaluationPipeline:
             and model_spec.model_name == self.settings.judge_model_spec.model_name
         ):
             judge_base_url = self.settings.base_url
-        if not judge_base_url:
+        if not judge_base_url and self.settings.provider == "vllm":
             raise ValueError(
-                "judge_base_url is required for non-27B evaluation models. Pass --judge-base-url for Quest-hosted Qwen/Qwen3.5-27B judging."
+                "judge_base_url is required when the vLLM judge is not the active answer server. "
+                "Pass --judge-base-url for a hosted judge, or use --judge-model with an API provider."
             )
         config = clone_config_for_model(
             self.base_config,

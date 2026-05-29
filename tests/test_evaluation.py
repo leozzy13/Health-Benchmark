@@ -496,6 +496,29 @@ class EvaluationTestCase(unittest.TestCase):
         self.assertEqual(settings.mem0_embedding_device, "cuda")
         self.assertEqual(settings.mem0_embedding_batch_size, 8)
         self.assertEqual(settings.mem0_embedding_max_length, 1024)
+        self.assertEqual(settings.judge_model_spec.model_name, "Qwen/Qwen3.5-27B")
+        self.assertEqual(settings.judge_model_spec.slug, "qwen3.5-27b")
+
+    def test_build_settings_accepts_openai_api_judge_model(self) -> None:
+        settings = build_settings(
+            self._config(),
+            provider="openai",
+            base_url=None,
+            judge_base_url=None,
+            judge_model="gpt-5.1",
+            api_key_env="OPENAI_API_KEY",
+            models=["gpt-5.1"],
+            replace_existing=True,
+        )
+
+        self.assertEqual(settings.provider, "openai")
+        self.assertIsNone(settings.base_url)
+        self.assertIsNone(settings.judge_base_url)
+        self.assertEqual(settings.model_specs[0].model_name, "gpt-5.1")
+        self.assertEqual(settings.model_specs[0].slug, "gpt-5.1")
+        self.assertEqual(settings.judge_model_spec.model_name, "gpt-5.1")
+        self.assertEqual(settings.judge_model_spec.slug, "gpt-5.1")
+        self.assertEqual(settings.judge_model_spec.tensor_parallel_size, 1)
 
     def test_hf_tokenizer_snapshot_resolver_ignores_config_only_cache(self) -> None:
         from health_benchmark.evaluation.hf_tokenizer import _resolve_local_snapshot
@@ -754,6 +777,24 @@ class EvaluationTestCase(unittest.TestCase):
             token_estimate_safety_multiplier=1.0,
         )
         self.assertEqual(fitting_record["status"], "full_context_fits")
+
+    def test_preflight_uses_tiktoken_for_openai_api_models(self) -> None:
+        questions = normalize_benchmark(self._benchmark_payload())
+        record = build_preflight_record(
+            model_name="gpt-5.1",
+            tokenizer_name=None,
+            context_text="clinical detail " * 20,
+            questions=questions,
+            batch_size=10,
+            max_model_len=131072,
+            max_output_tokens=4096,
+            safe_margin_tokens=8192,
+            token_estimate_safety_multiplier=1.0,
+        )
+
+        self.assertEqual(record["status"], "full_context_fits")
+        self.assertTrue(str(record["tokenizer"]).startswith("tiktoken:"))
+        self.assertFalse(self.fake_tokenizer.chat_template_calls)
 
     def test_build_batches_truncates_recent_first_under_prompt_budget(self) -> None:
         questions = normalize_benchmark(self._benchmark_payload())[:10]
@@ -2826,6 +2867,47 @@ class EvaluationTestCase(unittest.TestCase):
         )
         self.assertEqual(model_summary["llm_score"], 1.0)
 
+    def test_pipeline_reuses_openai_answer_client_for_same_api_judge_model(self) -> None:
+        patient_root = self._write_patient_artifacts()
+        base_config = self._config()
+        settings = build_settings(
+            base_config,
+            provider="openai",
+            base_url=None,
+            judge_base_url=None,
+            judge_model="gpt-5.1",
+            api_key_env="OPENAI_API_KEY",
+            models=["gpt-5.1"],
+            replace_existing=True,
+        )
+        answerable_ids = [f"q{index:02d}" for index in range(1, 13) if index not in {4, 11}]
+        shared_client = FakeLLMClient(
+            [
+                {"parsed_output": self._predicted_answers_payload(1, 10)},
+                {"parsed_output": self._predicted_answers_payload(11, 12)},
+                {"parsed_output": self._judge_answerable_payload(answerable_ids)},
+            ]
+        )
+        pipeline = EvaluationPipeline(
+            base_config,
+            settings,
+            client_overrides={"gpt-5.1": shared_client},
+        )
+
+        summary = pipeline.run([(11826927, patient_root)])
+
+        self.assertEqual(summary["final_status"], "completed")
+        self.assertEqual(len(shared_client.calls), 3)
+        run_config = json.loads(
+            (self._evaluation_root() / "gpt-5.1" / "run_config.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(run_config["judge_model_name"], "gpt-5.1")
+        self.assertEqual(run_config["judge_model_slug"], "gpt-5.1")
+        model_summary = json.loads(
+            (self._evaluation_root() / "gpt-5.1" / "summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(model_summary["llm_score"], 1.0)
+
     def test_pipeline_fails_non_27b_eval_without_judge_base_url(self) -> None:
         patient_root = self._write_patient_artifacts()
         base_config = self._config()
@@ -2902,6 +2984,8 @@ class EvaluationTestCase(unittest.TestCase):
                     "3",
                     "--timeout-seconds",
                     "600",
+                    "--judge-model",
+                    "gpt-5.1",
                 ]
             )
 
@@ -2911,6 +2995,7 @@ class EvaluationTestCase(unittest.TestCase):
         self.assertEqual(build_settings_mock.call_args.kwargs["evaluation_root"], self.root / "custom_eval")
         self.assertEqual(build_settings_mock.call_args.kwargs["retry_limit"], 3)
         self.assertEqual(build_settings_mock.call_args.kwargs["timeout_seconds"], 600)
+        self.assertEqual(build_settings_mock.call_args.kwargs["judge_model"], "gpt-5.1")
         fake_pipeline.run.assert_called_once()
 
     def test_main_evaluate_memory_wires_memory_pipeline_and_settings(self) -> None:

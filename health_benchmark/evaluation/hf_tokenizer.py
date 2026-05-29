@@ -16,6 +16,12 @@ def count_chat_prompt_tokens(
     enable_thinking: bool,
 ) -> tuple[int, str]:
     tokenizer_model = _resolve_tokenizer_model(model_name, tokenizer_name)
+    if _is_openai_tokenizer_model(tokenizer_model):
+        return _count_openai_chat_tokens(
+            tokenizer_model=tokenizer_model,
+            system_message=system_message,
+            user_message=user_message,
+        )
     tokenizer = _load_hf_tokenizer(tokenizer_model)
     messages = [
         {"role": "system", "content": system_message},
@@ -39,6 +45,8 @@ def count_text_tokens(
     text: str,
 ) -> tuple[int, str]:
     tokenizer_model = _resolve_tokenizer_model(model_name, tokenizer_name)
+    if _is_openai_tokenizer_model(tokenizer_model):
+        return _count_openai_text_tokens(tokenizer_model=tokenizer_model, text=text)
     tokenizer = _load_hf_tokenizer(tokenizer_model)
     token_ids = _encode_text(tokenizer, str(text or ""))
     return int(len(token_ids)), tokenizer_model
@@ -51,6 +59,12 @@ def count_batch_text_tokens(
     texts: Sequence[str],
 ) -> tuple[list[int], str]:
     tokenizer_model = _resolve_tokenizer_model(model_name, tokenizer_name)
+    if _is_openai_tokenizer_model(tokenizer_model):
+        counts = [
+            _count_openai_text_tokens(tokenizer_model=tokenizer_model, text=str(text or ""))[0]
+            for text in texts
+        ]
+        return counts, _openai_encoding_name(tokenizer_model)
     tokenizer = _load_hf_tokenizer(tokenizer_model)
     counts = [
         int(len(_encode_text(tokenizer, str(text or ""))))
@@ -64,6 +78,52 @@ def _resolve_tokenizer_model(model_name: str, tokenizer_name: str | None) -> str
     if not candidate:
         raise ValueError("A model_name or tokenizer_name is required for HF token counting.")
     return candidate
+
+
+def _is_openai_tokenizer_model(tokenizer_model: str) -> bool:
+    normalized = str(tokenizer_model or "").strip().lower()
+    return normalized.startswith(("gpt-", "o1", "o3", "o4"))
+
+
+def _count_openai_chat_tokens(
+    *,
+    tokenizer_model: str,
+    system_message: str,
+    user_message: str,
+) -> tuple[int, str]:
+    encoding = _load_openai_encoding(tokenizer_model)
+    # Small chat envelope approximation; this is only used for prompt budgeting.
+    token_count = 8
+    token_count += len(encoding.encode(str(system_message or "")))
+    token_count += len(encoding.encode(str(user_message or "")))
+    return int(token_count), _openai_encoding_name(tokenizer_model)
+
+
+def _count_openai_text_tokens(*, tokenizer_model: str, text: str) -> tuple[int, str]:
+    encoding = _load_openai_encoding(tokenizer_model)
+    return int(len(encoding.encode(str(text or "")))), _openai_encoding_name(tokenizer_model)
+
+
+@lru_cache(maxsize=16)
+def _load_openai_encoding(tokenizer_model: str) -> Any:
+    try:
+        import tiktoken  # type: ignore
+    except ImportError as exc:  # pragma: no cover - runtime dependency
+        raise RuntimeError(
+            "tiktoken is required for OpenAI API evaluation token counting."
+        ) from exc
+    try:
+        return tiktoken.encoding_for_model(str(tokenizer_model))
+    except Exception:
+        try:
+            return tiktoken.get_encoding("o200k_base")
+        except Exception:
+            return tiktoken.get_encoding("cl100k_base")
+
+
+def _openai_encoding_name(tokenizer_model: str) -> str:
+    encoding = _load_openai_encoding(tokenizer_model)
+    return f"tiktoken:{getattr(encoding, 'name', 'unknown')}"
 
 
 @lru_cache(maxsize=16)

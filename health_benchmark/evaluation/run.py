@@ -26,7 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-root", help="Alias for --benchmark-root.")
     parser.add_argument("--provider", choices=PROVIDER_CHOICES, help="Evaluation provider override. Defaults to vllm.")
     parser.add_argument("--base-url", help="OpenAI-compatible base URL override.")
-    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the fixed Qwen/Qwen3.5-27B judge.")
+    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the judge.")
+    parser.add_argument("--judge-model", help="Optional judge model override. Defaults to Qwen/Qwen3.5-27B.")
     parser.add_argument(
         "--stage",
         choices=EVALUATION_STAGE_CHOICES,
@@ -59,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         provider=args.provider,
         base_url=args.base_url,
         judge_base_url=args.judge_base_url,
+        judge_model=args.judge_model,
         api_key_env=args.api_key_env,
         models=args.models,
         stage=args.stage,

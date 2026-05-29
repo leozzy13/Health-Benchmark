@@ -60,7 +60,8 @@ def _add_common_eval_args(parser: argparse.ArgumentParser) -> None:
         dest="base_url",
         help="Optional OpenAI-compatible base URL override.",
     )
-    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the fixed Qwen/Qwen3.5-27B judge.")
+    parser.add_argument("--judge-base-url", help="Optional OpenAI-compatible base URL for the judge.")
+    parser.add_argument("--judge-model", help="Optional judge model override. Defaults to Qwen/Qwen3.5-27B.")
     parser.add_argument("--retry-limit", type=_non_negative_int, help="Retry limit per evaluation batch after the first attempt.")
     parser.add_argument("--timeout-seconds", type=_positive_int, help="OpenAI-compatible request timeout in seconds.")
 
@@ -332,6 +333,7 @@ def main(argv: list[str] | None = None) -> int:
                 provider=args.provider,
                 base_url=args.base_url,
                 judge_base_url=args.judge_base_url,
+                judge_model=args.judge_model,
                 api_key_env=args.api_key_env,
                 models=args.models,
                 stage=args.stage,
@@ -358,6 +360,7 @@ def main(argv: list[str] | None = None) -> int:
                 provider=args.provider,
                 base_url=args.base_url,
                 judge_base_url=args.judge_base_url,
+                judge_model=args.judge_model,
                 api_key_env=args.api_key_env,
                 models=args.models,
                 stage=args.stage,
@@ -400,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
                 provider=args.provider,
                 base_url=args.base_url,
                 judge_base_url=args.judge_base_url,
+                judge_model=args.judge_model,
                 api_key_env=args.api_key_env,
                 models=args.models,
                 stage=args.stage,

@@ -2903,6 +2903,7 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn('run_judge_stage "$JUDGE_VLLM_PORT" "${successful_models[@]}"', run_script)
         self.assertIn('start_named_server "$MODEL" "$MODEL_SLUG" "$TENSOR_PARALLEL_SIZE" "$MAX_MODEL_LEN" "$ANSWER_VLLM_PORT" "$GPU_DEVICE_IDS"', run_script)
         self.assertIn('start_named_server "$JUDGE_MODEL" "$JUDGE_MODEL_SLUG" "$JUDGE_TENSOR_PARALLEL_SIZE" "$JUDGE_MAX_MODEL_LEN" "$JUDGE_VLLM_PORT" "$JUDGE_GPU_DEVICE_IDS"', run_script)
+
         self.assertNotIn('--base-url "http://127.0.0.1:${VLLM_PORT}/v1"', run_script)
         self.assertIn('MODEL="$model" \\', run_script)
         self.assertIn('MODEL_SLUG="$server_slug" \\', run_script)
@@ -2931,6 +2932,24 @@ class BenchmarkTestCase(unittest.TestCase):
         self.assertIn("_process_exited_or_zombie", wait_script)
         self.assertIn('fields[2] == "Z"', wait_script)
         self.assertIn("http.client.BadStatusLine", wait_script)
+
+    def test_api_evaluation_slurm_script_is_cpu_only_and_forwards_eval_args(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        script = (repo_root / "quest" / "evaluate_api.slurm").read_text(encoding="utf-8")
+
+        self.assertIn("#SBATCH --job-name=medbench-api-eval", script)
+        self.assertIn("#SBATCH --partition=normal", script)
+        self.assertNotIn("#SBATCH --gres", script)
+        self.assertIn('DEFAULT_ENV_PREFIX="/projects/p33194/health-benchmark/runtime/envs/medbench"', script)
+        self.assertIn('API_KEY_ENV="${API_KEY_ENV:-OPENAI_API_KEY}"', script)
+        self.assertIn('EVAL_ARGS=(--provider openai "${EVAL_ARGS[@]}")', script)
+        self.assertIn('EVAL_ARGS=(--api-key-env "$API_KEY_ENV" "${EVAL_ARGS[@]}")', script)
+        self.assertIn('Missing API key in environment variable ${API_KEY_ENV}.', script)
+        self.assertIn('importlib.util.find_spec("openai")', script)
+        self.assertIn('exec "$PYTHON" "$PROJECT_ROOT/main.py" evaluate', script)
+        self.assertIn('--benchmark-root "$OUTPUT_ROOT"', script)
+        self.assertIn('--evaluation-root "$EVALUATION_ROOT"', script)
+        self.assertIn('"${EVAL_ARGS[@]}"', script)
 
     def test_wait_for_server_exits_when_pid_is_dead(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

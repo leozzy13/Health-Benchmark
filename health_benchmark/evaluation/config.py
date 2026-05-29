@@ -298,6 +298,7 @@ def build_settings(
     models: Sequence[str] | None,
     replace_existing: bool | None,
     judge_base_url: str | None = None,
+    judge_model: str | None = None,
     stage: Literal["full", "answers", "judge"] = "full",
     evaluation_variant: str | None = None,
     timeout_seconds: int | None = None,
@@ -514,6 +515,9 @@ def build_settings(
         else _positive_setting("rag_model_tensor_parallel_size", rag_model_tensor_parallel_size)
     )
     resolved_model_specs = resolve_model_specs(models)
+    resolved_judge_model_spec = (
+        JUDGE_MODEL_SPEC if judge_model is None else resolve_model_specs([judge_model])[0]
+    )
     if resolved_evaluation_variant in MEMORY_EVALUATION_VARIANTS and (
         resolved_mem0_model_max_len is not None
         or resolved_mem0_model_tensor_parallel_size is not None
@@ -618,7 +622,7 @@ def build_settings(
             evaluation_root=evaluation_root,
         ),
         model_specs=resolved_model_specs,
-        judge_model_spec=JUDGE_MODEL_SPEC,
+        judge_model_spec=resolved_judge_model_spec,
     )
 
 
@@ -631,6 +635,7 @@ def build_memory_settings(
     models: Sequence[str] | None,
     replace_existing: bool | None,
     judge_base_url: str | None = None,
+    judge_model: str | None = None,
     stage: Literal["full", "answers", "judge"] = "full",
     timeout_seconds: int | None = None,
     retry_limit: int | None = None,
@@ -661,6 +666,7 @@ def build_memory_settings(
         provider=provider,
         base_url=base_url,
         judge_base_url=judge_base_url,
+        judge_model=judge_model,
         api_key_env=api_key_env,
         models=models,
         stage=stage,
@@ -699,6 +705,7 @@ def build_rag_settings(
     models: Sequence[str] | None,
     replace_existing: bool | None,
     judge_base_url: str | None = None,
+    judge_model: str | None = None,
     stage: Literal["full", "answers", "judge"] = "full",
     timeout_seconds: int | None = None,
     retry_limit: int | None = None,
@@ -724,6 +731,7 @@ def build_rag_settings(
         provider=provider,
         base_url=base_url,
         judge_base_url=judge_base_url,
+        judge_model=judge_model,
         api_key_env=api_key_env,
         models=models,
         stage=stage,
